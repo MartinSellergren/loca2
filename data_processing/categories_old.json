@@ -1,0 +1,178 @@
+{
+    "settlements": [
+
+    ],
+    "roads": [
+        {"bridge": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"tunnel": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"motorway": [
+            "",
+            "aaa=bbb"
+        ]},
+        {"country road": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"street": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"pedestrian street": [
+            "plaza",
+        ]},
+        {"road under construction": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+
+
+        {"hiking": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"cycleway": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"path": [
+            "track",
+            "aaa=bbb"
+        ]},
+
+        {"ferry way": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"road": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+
+        {"railway": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"aerialway": [
+            "Ski lifts, gondolas, cablecar"
+        ]},
+    ],
+    "nature": [
+        {"sea": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"lake": [
+            "water=lake",
+            "natural=lake"
+        ]},
+        {"waterbody": [
+            "natural=water",
+            "water=*"
+        ]},
+
+        {"bay": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+
+        {"river": [
+            "aaa=bbb"
+            "creek",
+        ]},
+        {"cacal": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"stream": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"ditch": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"waterway": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+
+        {"glacier": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"beach": [
+            "yyy=zzz",
+            "aaa=bbb"
+            "sand",
+            "dunes"
+        ]},
+        {"forest": [
+            "landuse=forest",
+            "aaa=bbb"
+            "woods",
+            "forestry"
+        ]},
+        {"park": [
+            "leisure=park",
+            "landuse=village_green",
+            "national parks",
+            "nature reserve",
+            "playground"
+        ]},
+        {"farmlands": [
+            "yyy=agriculture",
+            "aaa=bbb"
+        ]},
+        {"grasslands": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"wetland": [
+            "marsh, swamp, bog",
+            "mud, tidal flat"
+        ]},
+        {"field": [
+            "yyy=meadow",
+            "aaa=lawn"
+        ]},
+        {"cliff": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+
+    ],
+    "constructions": [
+        {"school": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"cemetary": [
+            "yyy=cemetary",
+            "aaa=graveyard"
+        ]},
+        {"hospital": [
+            "yyy=zzz",
+            "aaa=bbb"
+        ]},
+        {"industry": [
+            "building=industrial",
+            "landuse=industrial",
+            "usage=industrial"
+            "industrial=*"
+        ]},
+
+        {"building": [
+            "building=yes",
+            "building=*"
+        ]},
+    ],
+    "transport": [
+
+    ]
+}

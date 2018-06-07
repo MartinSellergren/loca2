@@ -1,0 +1,134 @@
+Local geography educator
+
+*Background*
+
+**Educational aspects**
+Human factors:
+-lazy evaluation
+-perception(emphasize do's, color(contrasting foreground), movement, no clutter, patterns(rule of thirds))
+-stress (chart)
+How to remember? Large number of associations! Repetitions.
+Recognition easier than recalling (use familiar concepts).
+Error support: Errors are OKAY. UI: undo-system. Quizz: no big deal.
+
+**Scenario analysis**
+1) Student in new town. Wants to know the city better. Uses app occationally before going to sleep.
+2) Healthcare worker dreaming of spending winter in some city in Spain. Searching for exchange to new hospital. Some broad studies of some potential cities, in evening when kids are sleeping.
+3) Immigrant working to become a taxidriver. Very focused on learning everything in the city and surroundings.
+4) Cutlure-intrested person, going on vacation, wants to learn landmarks etc.
+5) Sailer wants to explore the archipellago of Stockholm. Learning names of islands and cities close to shore.
+6) Competition with friends.
+
+**Functional requirements**
+- Create an exercise by selecting an arbitrary, size-limited area (or predefined for friends progress..).
+- Maintains an editable list of exerceise.
+- Divide geo-objects in exercise-area into groups of similar characteristics.
+- Present exercise-quizzes in a suitable way, with help of group-divisions.
+- Go through a quiz (of geo-object-questions).
+- A stressor during quizz.
+- A quiz-progress bar.
+- Give educational support.
+- Reminder-quizzes.
+- Tapping-practice.
+- Repete words, introduce extra associations (color based on size..).
+- Make exercises and progerss persistant (when app is killed).
+
+**Non-functional requirements**
+- Overall educational.
+- Error-resistant (undo).
+- Exersice structure to promote learning of big geo-objects before small.
+- Swift quizzes with basic design ("does what you think").
+- Stimulating apperence.
+
+**Existing applications**
+
+There currently exist multiple geography educational applications. Most of them are based on learning through quizzes. The user answers questions like "Where is Stockholm located?", or "What is this city?" and answers through e.g tapping in a map or selecting a multichoice alternative. But they often differ greatly in key aspects like motivation and goal. I've looked deeper into these applications and identified some strengths and weaknesses from an educational point of view. The result of my analisis can be seen in Tabel X.
+
+Worth mentioning is these applications all have a focus of global or regional geography, i.e education of things like continents, oceans, countries, capitals and important landmarks. This imply a difference in focus between these applications and the application if this project, which instead focuses on local geography i.e geographic objects like villages, roads and parks.
+
+**Key functionality for education /
+Educational areas of interest**
+
+I have put together a list of key-functionality from an educational point of view, of geographic education applications. The list have been compiled with human learning mechanisms in mind. I was guided by the existing applications mentioned in previous section, and the identified strengths and weaknesses in those. It seems they all struggle with similar problematic and important areas, and by identifying these I can make deliberate decisions on how to sculpture these areas in my application. Here follows a list including descriptions of these areas of interest.
+
+***Motivation/ goal***
+Motivation is the firts area of interest. Why do you want to continue using the application? Probably because you want to learn geography, but there is need of a specific motivator that shows you that you are making progress and drives you to keep going. One way to implement this is a hunt for highscore - you complete a quiz and get a score, then retakes the quiz to improve the score. The motivation is to achive good scores on lot's of quizzes. Another motivator is level progression - unlock difficulty by getting good results in exercises currently unlocked, and try to unlock everything (at which point you are a master in this area of geography). Some of the tested applications use a highscore-system, some use level progression and some use both.
+
+One example of an application that is highscore-based is Seterra, where lot's of quizzes are predefined (i.e the content of the quiz doesn't change next time you take it). The user can freely select interesting quizzes and tries to get a good highscore on those. This gives the user great freedom to select what to learn, and it's a powerfull educational strategy to retake quizzes and improve the score. Another example of a highscore-system is Geo Challenge where user tries to improve a global highscore by completing an automatic and randomly generated quiz. The upside with this approch is the simpicity (start practicing by simply pressing Play) but freedom of selection is lost completely, along with the comfort to be able to come back to the same quiz that you have taken before.
+
+One example of an application that uses level-progression is World Geography. Here, a quiz is automatically and randomly generated (from some specifications from the user) and by completing a quiz you gain xp (i.e points) that eventially takes you to next level. A new level means an increase in difficulty and options for quiz-specification. This system is good for motivation, and it opens up for a guided increase in difficulty. By using a points-system (i.e xp) it also enables the developert to inplement lot's of ways to encourage the user to watch advertisment-videos or pay them money - doing this will give the user a massive point-boost. Personally I would prefer to use a different app mainly because of the heavy use of advertisment and "phony motivators" (described below), but it's worth mentioning that this is the most popular geography-ducation app I've found.
+
+Many applications (such as World Geography mentioned above) use what I call phony motivators: xp-rewards, chest-unlockings, rankings, distinctions and achivements. These motivators are usually not the kind that shows the user that he/she is making learning-progress. You could argue that these motivators mostly act to cause a stressfull addiction and shouldn't be used too heavily in a serious educational application.
+
+**Structure**
+Structure is the second area of interest. It describes the logistics of the quizzes, how they are constructed and presented to the user and how they connect to eachother. This is tightly connected to motivation (described in previous section). The structure is a very important concept because of the connection to motivation. A bad structure
+
+**Question-type**
+How to ask questions? It's important that questions are asked in a way that is stimulating to answer. It's important that question difficulty corresponds to the user's knowledge, that it is challenging to answer but not too difficult or easy. If a user only has a slight idea of a subject, it's very rewarding with easy questions that capture this little knowledge and strengthens it.
+
+Question asking and answering should be swift and simple. Questions may vary in difficulty, and it's important for initial questions to be easy to answer. It's a good idea to (to some extent) guide the user to the correct answer so the user leaves the question feeling strengthened and not confused.
+
+Multichoce questions are good in this regard. "What is the name of the road?", an edited map and multiple answer-coices are presented where the user picks one. Answering involvs a swift and simple click and the user is lightly guided to corrent answer. The user might also be exposed to names of other geo-objects in this same quiz which never is a bad thing. This is a very popular question-form of the analysed applications.
+
+Answer through typing is not nearly as common, but exists in for example Geo Sverige. It's often more difficult than multichoice and quite tedious.
+
+Another quesion-type is "pin-on-map"-questions. "Where is Stockholm?" and the user answers by tapping somwhere in the map. Two types exists of this, either tapping a blank map, or tapping a map with visible answer-points/areas.
+
+Tapping a blank map means the user will have to tap close enough to the exact answer. GeoChallenge is an example of an application using this. A problem is that the user will never be able to tap exactly correctly so such questions will have a tendency to leave users feeling unsatisfied.
+
+Tapping visible answer-points might often be preferable, since it might also help to guide the user in correct direction. Seterra is an application wich relies soly on this type of questions, and does so in a good and educational way. Answering is swift and opens up for good educational  support (more on this in subsection below).
+
+**Education support**
+What should happen when the user answers a question incorrectly? This is a very important aspect when it comes to educational value. A bad way to implement this is a text popping up saying "Incorrect!" and moving to next question. Instead, this is a great opportunity to offer educational support.
+
+You might give the user multiple tries to answer.
+
+Repeted afterwards in smart-quiz.
+
+**Stimulation**
+
+
+**Appearance**
+
+*Design decisions*
+Here I present design-decitions taken after concidering scenario-analysis and analysis of existing applications.
+
+To create a new exercise, the user specifies a name, an area and a language. The area is the problematic part. This can be specified by creating a polygon in an embedded map (a feature provided by mapbox). Specified area must be size-limited. This limititation is enforced by only enabeling polygon-creation if the map is zoomed in enough. Once you start creating the polygon, zooming out is locked. When zoomed out, there is a red border around the embedded map, when zoomed in the border turns green. If you're zoomed out, there is a transparant text over map: zoom in.
+
+
+
+---------------------------------------------------------------------
+
+*Execution*
+
+**Application design**
+Beskriver designen med bilder. Kopplar löst till bakgrunden.
+
+-Select area
+List objects-color (aea-color) randomized during creation. Just created area placed first in list. Click element to go to area-specific screen.
+Hold element: Everything except element fades (opacity down). Bin shows above. Text turns into text-box containing same text. Percentage turns into color-dot (click for color-selection). Release hold now: Nothing changes - edit text/color, then click anywhere outside and everything turns back to normal (no textbox.., background unfades). Instead drag: Element turns to normal (textbox, percentage). Gap in list where element was is filled (below elements move up). Show line between list elements where element will go if released now. Line changes quickly as element is dragged. Release and list rearanges. Delete if dragged to bin (bin turns red when hoovering above, release and message: are you sure? -if no, element back to original pos).
+
+-Quiz, general notes
+Color objects based on ranking (often area). Not ideal since same as quiz-selection is based on but can't be helped (similar color for all objects in a level-quiz). If hourglass time runs out for a question: fade everything except hourglass (now red), out-in 0.3s, new screes displays correct answer, no hourgass and next-question button. Exit-click -> are you sure? After quiz, a single-word review (poor/decent/good/excellent). 'Level clered' if Good(>85%). Then repete incorrect questions, without progress-bar or hourglass.
+Interaction with a map in the quiz: 1 tap zoom in, 2 tap zoom out, hold select that object. Map has a border around active area (seen if zoom out). Reset map-button (to init zoomed-out state).
+About the interactive map: No labels of the category (categories if pair-it) in the question.
+
+-Quiz: Name it
+5 seconds. Alternatives, 2 or 4.
+Incorrect: gray alternative + draw gray object on map + correct answer's border blinking in color. Wait for user to click correct answer. Gray object fading.
+Incorrect again: gray alternative + draw gray fading object.
+Corrent: Hide hourglass. Color border of correct alternative and hide all other alternatives. Move correct alternative to center under map. Show next-question-button.
+
+-Quiz: Place it
+10 seconds. Click on object in map. Object (i.e closest object) turns black shortly.
+Incorrect: Fading gray bubble with text of incorrect object name. Correct object blinking.
+Correct: Big colored text-bubble + no hourglass + move ahead-arrow.
+
+-Quiz: Pair it
+4 or 6 alternatives. 20-30s. Much time. If time runs out, just fade screen, display next-question button. One main object (from the quiz), other object are close to this one (crossroad, store on street etc).
+-Click text-alternative. Box turns black. Click again - back to normal. Click other text-alternative, new one turns black, old normal. Click objec in map, object turns black, popup of red cross/ green check at point that was pressed. Correct: (black) box and object fades away. Incorrect: fades back yo normal.
+OR
+-Click object. Object turns black. Click again/other object.. Click box. Box turns black, popup where pressed (box), fades away/to normal. (i.e same as above).
+
+-Tapping
+Toggle between past levels (all objects in past levels) and current level (the one run when clicking play). Zoom by pinching, tap to show bubble. Tab object -> turns black quickly, bubble shows in object-color with name of object.

@@ -1,0 +1,78 @@
+Educational areas of interest
+Question-type: multichoice/ tap map/ pin on map/ write
+Stimulation: time ticking up/ down (/per question)
+Structure: predefined quizes/ random/ semi-random/ smart
+Motivation(goal): Highscore/ xp/ unlock difficulty(level) and reach 100%/ phony(chests, rewards..)
+Incorrect answers: Show answer/ repete at end/ repete right away (multiple tries)/ repete in reminder-quizz
+Appearance: Standard map/ fun colored map..
+
+Duolingo (not geographic education but still of intrest in some sense)
+ + Different question types
+ + Graphic questions
+ + Predefined quizzes without mess
+ + Reminder support
+ 0 No stimulation
+ - Unclear motivation
+
+Seterra - 50000, 4.7
+ + Predefined quiz-content
+ + High tempo
+ + 3 tries, then show answer, then click answer
+ + Never leave quesion before correct answer
+ 0 Time recorded
+ - Same type of questions (where is?)
+ - A bit messy o select quiz
+ (- No progress-system)
+
+World Geography, 5000000, 4.7
+ + Repete incorrect quesions after quiz, without time-stress
+ + Difficulty increases
+ 0 Bonus if quick answer
+ 0 Overall progress, compare with others
+ 0 Addictive, with xp, bonuses, rewards, chests, goals, distinctions, rankings
+ 0 Unlock difficulties, areas, quiz-types(countries, capitals, flags..)
+ - No prefeined quiz-content
+ - Ads and bonus-videos
+
+
+Geo Challenge, 100000, 4.5
+ + Beautiful and swift
+ 0 Simple
+ - Very stressful with time ticking down
+ - Random quiz
+
+MapPie, 5000, 4.8
+ + Many categories
+ + Both tapping and categories
+ - Unrelevant scoring
+ - No increasing difficulty
+ - Slow gameplay, no stimulation (stress)
+ - Ugly faint maps
+
+Countries of the world: 1000000, 4.0
+ + Simple
+ + Extra-info in question: asking for country, show flag and capital -> Large number of associations.
+ - Only multi-choice
+ - No stimulation
+ - Random quiz-content
+ - No scoring
+
+Blank map quiz: 10000, 4.6
+ + Simple
+ + Beautiful colouring of map
+ + Predefined exercises
+ + Hunt for highscore, and leveling: increasing difficulty
+ (+ What do you think of the app?, good integrated support to developer)
+ + Show correct answer when incorrect
+ 0 Time recorded
+ - Quiz could be quicker paced
+ - Incorrect answers not really attended
+
+
+
+
+Geography Quiz Game 3d: 500000, 4.2
+Geography Learning: 1000000, 3.8
+World citizen: 100000, 4.3
+Geography master quiz: 100000, 4.0
+Geo Sverige: 1000, 2.9

@@ -1,0 +1,23 @@
+Neighborhoods
+Roads
+Nature
+ - Water
+ - Islands
+ - Parks
+ - Forests
+ - Campsite
+ - Mountains
+Transport
+ - Bus
+ - Train
+ - Airport
+ - Ferry
+Buildings
+ - Schools
+ - Hospitals
+ - Stores
+ - Restaurants
+ - Museums
+ - Churches
+ - Libraries
+ - Amusement parks..
