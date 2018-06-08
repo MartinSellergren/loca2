@@ -1,12 +1,13 @@
 [out:xml][timeout:900][bbox:{{bbox}}];
 
 node[name];
-out qt;
+out qt meta;
 
 way[name];
-out qt ({{bbox}}) geom;
-convert WAY _id=id(), length=length(), is_closed=is_closed();
-out qt noids;
+foreach {
+   (._; convert WAY ::id=id(), version=version(), length=length(), is_closed=is_closed(););
+   out qt ({{bbox}}) geom;
+}
 
 rel[name];
 map_to_area; rel(pivot);
