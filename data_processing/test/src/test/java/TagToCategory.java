@@ -20,7 +20,7 @@ import com.google.gson.JsonElement;
 
 public class TagToCategory {
 
-    @Test
+    //@Test
     public void main() throws MalformedURLException, IOException {
         System.out.println("...");
 
@@ -53,7 +53,6 @@ public class TagToCategory {
             }
         }
     }
-
 
     /**
      * Load table for conversion from tags to category.

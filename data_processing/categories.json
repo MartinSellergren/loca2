@@ -261,6 +261,7 @@
             "waterway=lock_gate",
             "waterway=lock",
             "landuse=basin",
+            "water=reservoir",
 
             "amenity=fountain"
         ],
@@ -429,7 +430,18 @@
             "waterway=brook",
             "waterway=yes",
             "intermittent=yes",
-            "type=waterway"
+            "water=intermittent",
+            "type=waterway",
+            "water=river",
+            "water=canal"
+        ],
+        [
+            "pond",
+            "water=pond"
+        ],
+        [
+            "lake",
+            "water=lake"
         ],
         [
             "waterbody",

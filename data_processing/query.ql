@@ -1,15 +1,18 @@
 [out:xml][timeout:900][bbox:{{bbox}}];
 
 node[name];
-out qt meta;
+convert NODE ::id=id(), ::geom=geom(), version=version(), ::=::;
+out qt geom;
 
-way[name];
-foreach {
-   (._; convert WAY ::id=id(), version=version(), length=length(), is_closed=is_closed(););
-   out qt ({{bbox}}) geom;
-}
+way[name](if: is_closed());
+convert WAY ::id=id(), ::geom=hull(geom()), version=version(), ::=::;
+out qt geom noids;
+
+way[name](if: !is_closed());
+convert WAY ::id=id(), ::geom=trace(geom()), version=version(), ::=::;
+out qt geom noids;
 
 rel[name];
 map_to_area; rel(pivot);
-convert REL ::id=id(), ::geom=hull(geom()), ::=::, version=version(), no_members=count_members();
+convert REL ::id=id(), ::geom=hull(geom()), version=version(), ::=::;
 out qt geom;

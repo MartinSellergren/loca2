@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="Overpass API 0.7.55.3 9da5e7ae">
+<note>The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.</note>
+<meta osm_base="2018-06-12T10:58:02Z" areas="2018-06-12T10:51:01Z"/>
+
+  <bounds minlat="59.0036221" minlon="18.3657074" maxlat="59.1098946" maxlon="18.6231995"/>
+
+  <NODE id="435221450">
+    <point lat="59.0355543" lon="18.5105136"/>
+    <tag k="version" v="3"/>
+    <tag k="ferry" v="yes"/>
+    <tag k="name" v="Fjärdlång brygga"/>
+    <tag k="public_transport" v="stop_position"/>
+  </NODE>
+  <WAY id="5216574">
+    <group>
+      <vertex lat="59.0144945" lon="18.3726380"/>
+      <vertex lat="59.0146776" lon="18.3721726"/>
+      <vertex lat="59.0150896" lon="18.3718865"/>
+      <vertex lat="59.0160547" lon="18.3707440"/>
+    </group>
+    <tag k="version" v="2"/>
+    <tag k="name" v="Långträsk"/>
+    <tag k="natural" v="water"/>
+    <tag k="water" v="lake"/>
+  </WAY>
+  <REL id="2961935">
+    <linestring>
+      <vertex lat="59.0258592" lon="18.3878889"/>
+      <vertex lat="59.0216166" lon="18.3934779"/>
+      <vertex lat="59.0198913" lon="18.3964060"/>
+    </linestring>
+    <tag k="version" v="2"/>
+    <tag k="name" v="Maren"/>
+    <tag k="natural" v="water"/>
+    <tag k="type" v="multipolygon"/>
+  </REL>
+</osm>
