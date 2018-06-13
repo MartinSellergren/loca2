@@ -10,6 +10,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class AcquireGeoObjects {
 
@@ -18,12 +22,15 @@ public class AcquireGeoObjects {
         Shape area = getArea();
         GeoObjInstructionsIter iter = new GeoObjInstructionsIter(area);
         iter.open();
-        String[] instr;
+        List<String> instr;
 
         while ((instr=iter.next()) != null) {
-            System.out.println(instr);
-            // GeoObject go = new GeoObject(instr);
-            // saveToDB(go);
+            // for (String i : instr)
+            //     System.out.println(i);
+            // System.out.println("");
+
+            GeoObject go = new GeoObject(instr);
+            saveToDB(go);
         }
     }
 
@@ -43,12 +50,12 @@ public class AcquireGeoObjects {
         double e = 18.619389;
         double n = 59.080544;
 
-        return new Shape( new double[][]{
-                new double[]{w, s},
-                new double[]{w, n},
-                new double[]{e, n},
-                new double[]{e, s}
-            });
+        return new Shape(Arrays.asList(new double[][]{
+                    new double[]{w, s},
+                    new double[]{w, n},
+                    new double[]{e, n},
+                    new double[]{e, s}
+                }));
     }
 
     /**
@@ -86,6 +93,8 @@ public class AcquireGeoObjects {
         public GeoObjInstructionsIter(Shape area) {
             try {
                 this.url = getQueryURL(area);
+                // System.out.println(url);
+                // System.exit(0);
             }
             catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -133,19 +142,78 @@ public class AcquireGeoObjects {
          *
          * @return Next instruction, or NULL if no more.
          */
-        public String[] next() {
-            if (this.scanner.hasNextLine()) {
-                String line = scanner.nextLine();
+        public List<String> next() {
+            List<String> instr = new ArrayList<String>();
 
-                //...
+            while (this.scanner.hasNextLine()) {
+                String line = scanner.nextLine().trim();
 
-                return new String[]{line};
+                if (line.equals("</NODE>") ||
+                    line.equals("</WAY>") ||
+                    line.equals("</REL>")) {
+
+                    return instr;
+                }
+
+                String res;
+                if ((res=extractName(line)) != null) {
+                    instr.add("name " + res);
+                }
+                else if ((res=extractPoint(line)) != null) {
+                    instr.add("lat_lon " + res);
+                }
+                else if ((res=extractVersion(line)) != null) {
+                    instr.add("version " + res);
+                }
+                else if ((res=extractTag(line)) != null) {
+                    instr.add("tag " + res);
+                }
             }
-            else {
-                scanner.close();
-                return null;
-            }
+
+            scanner.close();
+            return null;
         }
+    }
+
+    /**
+     * @return "Name" or NULL.
+     */
+    private String extractName(String line) {
+        Pattern p = Pattern.compile("k=\"name\" v=\"(.*?)\"");
+        Matcher m = p.matcher(line);
+        if (m.find()) return m.group(1);
+        else return null;
+    }
+
+    /**
+     * @return "lat lon" or NULL.
+     */
+    private String extractPoint(String line) {
+        Pattern p = Pattern.compile("lat=\"(.*?)\" lon=\"(.*?)\"");
+        Matcher m = p.matcher(line);
+        if (m.find()) return m.group(1) + " " + m.group(2);
+        else return null;
+    }
+
+    /**
+     * @return "ver" or NULL.
+     */
+    private String extractVersion(String line) {
+        Pattern p = Pattern.compile("k=\"version\" v=\"(.*?)\"");
+        Matcher m = p.matcher(line);
+        if (m.find()) return m.group(1);
+        else return null;
+    }
+
+    /**
+     * @return "key=value" or NULL.
+     */
+    private String extractTag(String line) {
+        Pattern p = Pattern.compile("k=\"(.*?)\" v=\"(.*?)\"");
+        Matcher m = p.matcher(line);
+
+        if (m.find()) return m.group(1) + "=" + m.group(2);
+        else return null;
     }
 
     /**
@@ -158,13 +226,13 @@ public class AcquireGeoObjects {
 
         /**
          * [lon, lat]. */
-        private double[][] points;
+        private List<double[]> points;
 
-        public Shape(double[][] ps) {
+        public Shape(List<double[]> ps) {
             this.points = ps;
         }
 
-        public double[][] getPoints() {
+        public List<double[]> getPoints() {
             return this.points;
         }
 
@@ -195,7 +263,10 @@ public class AcquireGeoObjects {
 
         @Override
         public String toString() {
-            return Arrays.toString(this.points);
+            StringBuilder sb = new StringBuilder();
+            for (double[] p : this.points)
+                sb.append("lon: " + p[0] + ", lat: " + p[1] + "\n");
+            return sb.toString();
         }
     }
 
@@ -205,15 +276,62 @@ public class AcquireGeoObjects {
     class GeoObject {
         private String name;
         private Shape shape;
-        private int rank;
+        private double rank;
         private String supercat;
         private String subcat;
 
         /**
          * Construct the object from instructions.
          */
-        public GeoObject(String[] instr) {
-            //...
+        public GeoObject(List<String> instr) {
+            List<double[]> ps = new ArrayList<double[]>();
+            List<String> tags = new ArrayList<String>();
+            int version = -1;
+
+            for (String ins : instr) {
+                String[] parts = ins.split(" ");
+
+                if (parts[0].equals("name")) {
+                    this.name = ins.substring(5, ins.length());
+                }
+                else if (parts[0].equals("version")) {
+                    version = Integer.parseInt(parts[1]);
+                }
+                else if (parts[0].equals("lat_lon")) {
+                    double lat = Double.parseDouble(parts[1]);
+                    double lon = Double.parseDouble(parts[2]);
+                    ps.add(new double[]{lon, lat});
+                }
+                else if (parts[0].equals("tag")) {
+                    tags.add(ins.substring(4, ins.length()));
+                }
+                else {
+                    System.out.println(ins);
+                    System.out.println("Illegal instruction");
+                    System.exit(0);
+                }
+            }
+
+            this.shape = new Shape(ps);
+            this.rank = findRank(version, tags);
+            String cat = findCategory(tags);
+            this.supercat = cat.split(":")[0];
+            this.subcat = cat.split(":")[1];
+        }
+
+        /**
+         * @return Some kind of importance-ranking.
+         */
+        private double findRank(int version, List<String> tags) {
+            return version + tags.size() * 0.2;
+        }
+
+        /**
+         * Extracts relevant category from conversion-table.
+         * @return "supercat:subcat"
+         */
+        private String findCategory(List<String> tags) {
+            return "none_super:none_sub";
         }
 
         @Override
@@ -223,7 +341,7 @@ public class AcquireGeoObjects {
                 "rank: " + this.rank + "\n" +
                 "supercat: " + this.supercat + "\n" +
                 "subcat: " + this.subcat + "\n" +
-                "shape: " + this.shape.toString();
+                "shape:\n" + this.shape.toString() + "\n";
         }
     }
 }
