@@ -444,6 +444,10 @@
             "water=lake"
         ],
         [
+            "strait",
+            "natural=strait"
+        ],
+        [
             "waterbody",
             "natural=water"
         ]

@@ -6,11 +6,11 @@ out qt geom;
 
 way[name](if: is_closed());
 convert WAY ::id=id(), ::geom=hull(geom()), version=version(), ::=::;
-out qt geom noids;
+out qt geom;
 
 way[name](if: !is_closed());
 convert WAY ::id=id(), ::geom=trace(geom()), version=version(), ::=::;
-out qt geom noids;
+out qt geom;
 
 rel[name];
 map_to_area; rel(pivot);
