@@ -70,6 +70,8 @@ public class AcquireGeoObjects {
     @Test
     public void main() throws IOException {
         JsonObject convTable = getConversionTable();
+        DB db = new DB();
+
         Shape area = getArea();
         GeoObjInstructionsIter iter = new GeoObjInstructionsIter(area);
         iter.open();
@@ -78,12 +80,16 @@ public class AcquireGeoObjects {
         while ((instr=iter.next()) != null) {
             try {
                 GeoObject go = new GeoObject(instr, convTable);
-                saveToDB(go);
+                db.add(go);
+                LOGGER.fine(go.toString());
             }
             catch (GeoObject.BuildException e) {
                 LOGGER.info("Can't build:\n" + e.toString());
             }
         }
+
+        db.dedupe();
+        LOGGER.info(db.toString());
     }
 
     /**
@@ -116,13 +122,6 @@ public class AcquireGeoObjects {
                     new double[]{e, n},
                     new double[]{e, s}
                 }));
-    }
-
-    /**
-     * Save to database...print.
-     */
-    private void saveToDB(GeoObject go) {
-        LOGGER.fine(go.toString());
     }
 
     /**
@@ -170,7 +169,7 @@ public class AcquireGeoObjects {
             String bs_str = String.format("%s,%s,%s,%s", bs[1], bs[0], bs[3], bs[2]);
             String poly_str = area.toRawString();
 
-            String query = readFile("../query_old.ql");
+            String query = readFile("../query.ql");
             query = query.replace("{{bbox}}", bs_str);
             query = query.replace("{{poly}}", poly_str);
             query = URLEncoder.encode(query);
@@ -542,6 +541,47 @@ public class AcquireGeoObjects {
                 "supercat: " + this.supercat + "\n" +
                 "subcat: " + this.subcat + "\n";
             //"shape:\n" + this.shape.toString() + "\n";
+        }
+    }
+
+    /**
+     * Database interface.
+     */
+    class DB {
+        List<GeoObject> db = new ArrayList<GeoObject>();
+
+        public void add(GeoObject go) {
+            db.add(go);
+        }
+
+        /**
+         * Attempt to merge object-pices into one object.
+         * Same (similar) name + close proximity -> merge.
+         */
+        public void dedupe() {
+            SameNameIter iter = new SameNameIter();
+
+            List<GeoObject> sameName;
+            while((sameName=iter.next()) != null) {
+
+
+            }
+        }
+
+        /**
+         * Iterates over geo-object with same (or similar) name.
+         */
+        class SameNameIter {
+
+            /**
+             * Returns objects with same name, AND removes all these
+             * objects from the database.
+             *
+             * @return Same name-objects.
+             */
+            public List<GeoObject> next() {
+                return null;
+            }
         }
     }
 }
