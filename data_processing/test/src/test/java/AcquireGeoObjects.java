@@ -20,7 +20,52 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import java.io.FileReader;
 
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
+
 public class AcquireGeoObjects {
+
+    /**
+     * Usage:
+     * LOGGER.log( Level.FINE, "processing {0} entries", list.size() );
+     * LOGGER.log( Level.FINER, "processing[{0}]: {1}", new Object[]{ i, list.get(i) } );
+     * exception ex:
+     * LOGGER.log( Level.SEVERE, ex.toString(), ex );
+     *
+     *	severe(String msg)
+     *  warning(String msg)
+     *	info(String msg)
+     * 	config(String msg)
+     * 	fine(String msg)
+     *  finer(String msg)
+     * 	finest(String msg) */
+    public static final Logger LOGGER = Logger.getLogger("");
+
+    /**
+     * Level used when logging. Ignores messages with lower level.
+     * Severe, warning, info, config, fine, finer, finest. */
+    public static final Level LOG_LEVEL = Level.FINE;
+
+    static {
+         LOGGER.setLevel(LOG_LEVEL);
+         LOGGER.getHandlers()[0].setLevel(LOG_LEVEL);
+
+         //log to file
+         // try {
+         //     FileHandler fh = new FileHandler("log");
+         //     SimpleFormatter formatter = new SimpleFormatter();
+         //     fh.setFormatter(formatter);
+         //     LOGGER.addHandler(fh);
+         //     LOGGER.setUseParentHandlers(false);
+         // }
+         // catch (IOException e) {
+         //     System.out.println("Failed file logging");
+         // }
+    }
+
 
     @Test
     public void main() throws IOException {
@@ -36,7 +81,7 @@ public class AcquireGeoObjects {
                 saveToDB(go);
             }
             catch (GeoObject.BuildException e) {
-                System.out.println(e + "\n");
+                LOGGER.info("Can't build:\n" + e.toString());
             }
         }
     }
@@ -50,7 +95,7 @@ public class AcquireGeoObjects {
     }
 
     /**
-     * @return Area of interest.
+     * @return Area of interest. A closed shape.
      */
     private Shape getArea() {
         //uppsala
@@ -77,7 +122,7 @@ public class AcquireGeoObjects {
      * Save to database...print.
      */
     private void saveToDB(GeoObject go) {
-        System.out.println(go);
+        LOGGER.fine(go.toString());
     }
 
     /**
@@ -123,8 +168,11 @@ public class AcquireGeoObjects {
         private URL getQueryURL(Shape area) throws MalformedURLException {
             double[] bs = area.getBounds();
             String bs_str = String.format("%s,%s,%s,%s", bs[1], bs[0], bs[3], bs[2]);
-            String query = readFile("../query.ql");
+            String poly_str = area.toRawString();
+
+            String query = readFile("../query_old.ql");
             query = query.replace("{{bbox}}", bs_str);
+            query = query.replace("{{poly}}", poly_str);
             query = URLEncoder.encode(query);
 
             return new URL("https://overpass-api.de/api/interpreter?data=" + query);
@@ -290,6 +338,18 @@ public class AcquireGeoObjects {
                 if (p[1] > n) n = p[1];
             }
             return new double[]{w, s, e, n};
+        }
+
+        /**
+         * @return "lat1 lon1 lat2 lon2 lat3 lon3 ..."
+         * Note: lat lon, not lon lat.
+         */
+        public String toRawString() {
+            StringBuilder sb = new StringBuilder();
+            for (double[] p : this.points)
+                sb.append(p[1] + " " + p[0] + " ");
+            String raw = sb.toString();
+            return raw.substring(0, raw.length()-1);
         }
 
         @Override
