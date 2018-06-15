@@ -321,7 +321,10 @@
         [
             "park",
             "leisure=park",
-            "leisure=garden",
+            "leisure=garden"
+        ],
+        [
+            "nature reserve",
             "leisure=nature_reserve",
             "boundary=national_park"
         ],

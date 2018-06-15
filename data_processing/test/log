@@ -1,0 +1,1051 @@
+Jun 15, 2018 4:34:25 PM java.util.logging.LogManager$RootLogger log
+INFO: Query: file:/home/martin/loca2/data_processing/test/../response.xml
+Jun 15, 2018 4:34:25 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/435221450
+name: Fjärdlång brygga
+rank: 3.5
+supercat: transport
+subcat: public transport
+
+Jun 15, 2018 4:34:25 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/435221470
+name: Mefjärd
+rank: 3.75
+supercat: transport
+subcat: public transport
+
+Jun 15, 2018 4:34:25 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/1033132958
+name: Mörtviken
+rank: 3.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/1033241197
+name: Huvudskär
+rank: 7.75
+supercat: constructions
+subcat: construction
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2311644353
+name: Fjärdlångs vandrarhem
+rank: 1.5
+supercat: constructions
+subcat: lodging|logi
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2357336966
+name: Fjärdlångfjärden
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2423246440
+name: Båtsundet
+rank: 1.25
+supercat: nature
+subcat: strait
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2423246441
+name: Långholmssund
+rank: 2.25
+supercat: nature
+subcat: strait
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376942
+name: A rockyplace
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376943
+name: Badviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376944
+name: Bockholmssundet
+rank: 1.25
+supercat: nature
+subcat: strait
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376945
+name: Båtdraget
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376946
+name: Falkberget
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376947
+name: Flatorna
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376948
+name: Grotthamnen
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376949
+name: Gäddgrundet
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376950
+name: Gärdsudden
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376951
+name: Hallonkobben
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376952
+name: Horsholmen
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376953
+name: Klubban
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376954
+name: Klubbhamn
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376955
+name: Koviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376956
+name: Kuggholmen
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376957
+name: Kuggholmensedet
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376958
+name: Käringkobben
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376959
+name: Lilla Röksundet
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376960
+name: Lilla Skogsviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376961
+name: Marskärsfladen
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376962
+name: Noret
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376963
+name: Notbergen
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376964
+name: Sandviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376965
+name: Sjunkviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376966
+name: Skallasströmmen
+rank: 1.25
+supercat: nature
+subcat: strait
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376967
+name: Skrabbmaren
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376968
+name: Stenviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376969
+name: Stora Skogsviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376970
+name: Tillögorna
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376971
+name: Timmerviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376973
+name: Tärngrunden
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550376974
+name: Vedviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550378334
+name: Mellan-Rökan
+rank: 5.0
+supercat: nature
+subcat: mountain
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550378407
+name: Marskär
+rank: 3.5
+supercat: nature
+subcat: mountain
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550380437
+name: Tystaklint
+rank: 9.5
+supercat: nature
+subcat: mountain
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550381692
+name: Ängsöfladen
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550381696
+name: Ängsöfladen
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550381700
+name: Örnberget
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2550381705
+name: Österpå
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/2943473865
+name: Fiversättraö
+rank: 2.75
+supercat: transport
+subcat: public transport
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/3056945906
+name: Gjusskär
+rank: 1.25
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/3178582960
+name: Pigvarpet
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/3178585999
+name: Måskläppan
+rank: 3.75
+supercat: nature
+subcat: mountain
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/4027560233
+name: Skötbuktsviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/4027560234
+name: Ryssviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/4308897338
+name: Norra Sand
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/4308897339
+name: Åvassa
+rank: 1.25
+supercat: settlements
+subcat: settlement
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/4308897340
+name: Norra Åvassa
+rank: 1.25
+supercat: settlements
+subcat: local area
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/5031992918
+name: Pråmviken
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/5031992919
+name: Kattskallen
+rank: 1.25
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: NODE/5031992920
+name: Kitthålet
+rank: 1.25
+supercat: nature
+subcat: bay
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/24811451
+name: Furuskär
+rank: 7.0
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/24846389
+name: Fjärdlång
+rank: 22.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/24846460
+name: S. Smultronskäret
+rank: 7.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/24846472
+name: N. Smultronskäret
+rank: 7.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/25040627
+name: Valön
+rank: 6.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/25040634
+name: Brännträsk
+rank: 7.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/25040807
+name: Östra Ötterskär
+rank: 5.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/25040810
+name: Brännflåten
+rank: 4.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/33280923
+name: Prästön
+rank: 6.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/33281095
+name: Mefjärd
+rank: 8.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/33281108
+name: Krokholmen
+rank: 5.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/33281211
+name: Fiversättraön
+rank: 9.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/37337829
+name: Skötkobben
+rank: 4.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/37338131
+name: Nedergårdsö
+rank: 8.0
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/37338146
+name: Långholmen
+rank: 8.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771193
+name: Långa Kobben
+rank: 5.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771196
+name: Mossholmen
+rank: 5.5
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771197
+name: Ängsholmen
+rank: 6.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771200
+name: Havgjuskobben
+rank: 5.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771201
+name: Noreholmen
+rank: 6.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771202
+name: Dänholmen
+rank: 6.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771203
+name: Stora Sandböte
+rank: 4.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771204
+name: Lilla Sandböte
+rank: 4.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771644
+name: Hättaskär
+rank: 4.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771648
+name: Liljekonvaljkobben
+rank: 5.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771650
+name: Tallkobben
+rank: 5.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57771796
+name: Rödskär
+rank: 5.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57772114
+name: Trollkobb
+rank: 6.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/57772118
+name: Sköt Rökan
+rank: 5.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/71565279
+name: Vedviksholmen
+rank: 5.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/103224076
+name: Stora och Lilla Sandböte
+rank: 3.5
+supercat: nature
+subcat: nature reserve
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/103226471
+name: Huvudskär
+rank: 7.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/103226754
+name: Stora och Lilla Sandböte
+rank: 3.5
+supercat: nature
+subcat: nature reserve
+
+Jun 15, 2018 4:34:26 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/181272590
+name: Bredskär
+rank: 5.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/181272591
+name: Manskär
+rank: 6.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/181272592
+name: Lökskär
+rank: 6.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/181272597
+name: Björnkobben
+rank: 6.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/181272601
+name: Saltkobben
+rank: 6.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/220475944
+name: Andraskäret
+rank: 4.5
+supercat: nature
+subcat: islet
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/222182589
+name: Thielska villan
+rank: 1.25
+supercat: constructions
+subcat: building
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/222184755
+name: Långhuset
+rank: 3.75
+supercat: constructions
+subcat: lodging|logi
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/224352978
+name: Smultronskärskobbarna
+rank: 3.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/224353008
+name: Kattekobben
+rank: 4.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/224353080
+name: Stangkobben
+rank: 3.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/224353181
+name: Brännvinskuttingen
+rank: 5.75
+supercat: nature
+subcat: islet
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/226987993
+name: Jobbskär
+rank: 2.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/226987994
+name: Långskär
+rank: 2.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/226988773
+name: Stora och lilla Hansten
+rank: 1.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/229265376
+name: Lilla Krapsan
+rank: 2.5
+supercat: nature
+subcat: islet
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/233544056
+name: Idskär
+rank: 1.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/233544057
+name: Mellanskär
+rank: 2.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/233544061
+name: Ålnacken
+rank: 1.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/233544417
+name: Borgen
+rank: 2.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/233544418
+name: Utterkobben
+rank: 1.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/233744548
+name: Myggskären
+rank: 3.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/233744562
+name: Äspskär
+rank: 2.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/233744571
+name: Klovskär
+rank: 2.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/234004356
+name: Viggkobben
+rank: 2.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/234004357
+name: Svärtkobben
+rank: 3.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/234004358
+name: Hålkobben
+rank: 2.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/234008666
+name: Höga grundet
+rank: 2.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/234008670
+name: Flata grundet
+rank: 2.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/234014180
+name: Vindskär
+rank: 2.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/234993942
+name: Björkskär
+rank: 2.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/234993947
+name: Rönnkobben
+rank: 1.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/234993949
+name: Smultronskär
+rank: 1.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/234993953
+name: Tärnskärsgrunden
+rank: 1.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/234993954
+name: Utterkobben
+rank: 1.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/237581659
+name: Gula grundet
+rank: 2.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/237581660
+name: Låga Rödgrund
+rank: 2.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/237581661
+name: Höga Rödgrund
+rank: 2.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/248207877
+name: Röda Korskobben
+rank: 1.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/248207878
+name: Sillkobben
+rank: 1.25
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/290833644
+name: Familjevillan
+rank: 2.5
+supercat: constructions
+subcat: lodging|logi
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/301850848
+name: Brunskär-Ormskär
+rank: 1.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/312030743
+name: Björkkobb
+rank: 1.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/312046082
+name: Måskläppan
+rank: 1.5
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/312046084
+name: Söderholmen
+rank: 1.5
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/312060815
+name: Björkskär
+rank: 1.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+INFO: Can't build:
+AcquireGeoObjects$GeoObject$BuildException: Field not set
+[id WAY/317679948, lat_lon 58.9953578 18.4645868, lat_lon 58.9952652 18.4641813, lat_lon 58.9952377 18.4640776, lat_lon 58.9951953 18.4639770, lat_lon 58.9951395 18.4638642, lat_lon 58.9951238 18.4638398, lat_lon 58.9951136 18.4638337, lat_lon 58.9950484 18.4638307, lat_lon 58.9945561 18.4638657, lat_lon 58.9942192 18.4639237, lat_lon 58.9940936 18.4639465, lat_lon 58.9937700 18.4640776, lat_lon 58.9937166 18.4641157, lat_lon 58.9936868 18.4641523, lat_lon 58.9936758 18.4641965, lat_lon 58.9936758 18.4642148, lat_lon 58.9936892 18.4642788, lat_lon 58.9936947 18.4642910, lat_lon 58.9946126 18.4652042, lat_lon 58.9947351 18.4652331, lat_lon 58.9947830 18.4652240, lat_lon 58.9949951 18.4650929, lat_lon 58.9952550 18.4649206, lat_lon 58.9952934 18.4648856, lat_lon 58.9953021 18.4648749, lat_lon 58.9953374 18.4647133, lat_lon 58.9953586 18.4646066, lat_lon 58.9953578 18.4645868, version 1, name Fjäderkobben]
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/332211142
+name: Lässkär
+rank: 1.5
+supercat: nature
+subcat: coastline
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/41832149
+name: Åvassavägen
+rank: 7.25
+supercat: roads
+subcat: road
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/290833645
+name: Sopbryggan
+rank: 1.5
+supercat: constructions
+subcat: construction
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/301617686
+name: Ängsön-Marskär
+rank: 1.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: WAY/301617688
+name: Ängsön-Marskär
+rank: 1.75
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: REL/398625
+name: Haninge kommun
+rank: 22.75
+supercat: settlements
+subcat: regional area
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: REL/398649
+name: Värmdö kommun
+rank: 25.5
+supercat: settlements
+subcat: regional area
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: REL/1463756
+name: Sundby
+rank: 3.75
+supercat: nature
+subcat: nature reserve
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: REL/1463779
+name: Huvudskär
+rank: 3.75
+supercat: nature
+subcat: nature reserve
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: REL/1463788
+name: Fjärdlång
+rank: 3.75
+supercat: nature
+subcat: nature reserve
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+FINE: id: REL/3030279
+name: Ornö
+rank: 8.0
+supercat: nature
+subcat: island
+
+Jun 15, 2018 4:34:27 PM java.util.logging.LogManager$RootLogger log
+INFO: AcquireGeoObjects$DB@464ad334

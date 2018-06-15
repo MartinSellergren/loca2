@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -54,16 +55,16 @@ public class AcquireGeoObjects {
          LOGGER.getHandlers()[0].setLevel(LOG_LEVEL);
 
          //log to file
-         // try {
-         //     FileHandler fh = new FileHandler("log");
-         //     SimpleFormatter formatter = new SimpleFormatter();
-         //     fh.setFormatter(formatter);
-         //     LOGGER.addHandler(fh);
-         //     LOGGER.setUseParentHandlers(false);
-         // }
-         // catch (IOException e) {
-         //     System.out.println("Failed file logging");
-         // }
+         try {
+             FileHandler fh = new FileHandler("log");
+             SimpleFormatter formatter = new SimpleFormatter();
+             fh.setFormatter(formatter);
+             LOGGER.addHandler(fh);
+             LOGGER.setUseParentHandlers(false);
+         }
+         catch (IOException e) {
+             System.out.println("Failed file logging");
+         }
     }
 
 
@@ -73,7 +74,7 @@ public class AcquireGeoObjects {
         DB db = new DB();
 
         Shape area = getArea();
-        GeoObjInstructionsIter iter = new GeoObjInstructionsIter(area);
+        GeoObjInstructionsIter iter = new GeoObjInstructionsIter();
         iter.open();
         List<String> instr;
 
@@ -152,14 +153,28 @@ public class AcquireGeoObjects {
         public GeoObjInstructionsIter(Shape area) {
             try {
                 this.url = getQueryURL(area);
-                // System.out.println(url);
-                // System.exit(0);
+                LOGGER.info("Query: " + url.toString());
             }
             catch (MalformedURLException e) {
                 e.printStackTrace();
                 System.exit(1);
             }
         }
+
+        /**
+         * Constructor for offline (testing).
+         */
+        public GeoObjInstructionsIter() {
+            try {
+                this.url = new File("../response.xml").toURI().toURL();
+                LOGGER.info("Query: " + url.toString());
+            }
+            catch (MalformedURLException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+
 
         /**
          * @return URL that provides geo-objects-data.
@@ -303,22 +318,33 @@ public class AcquireGeoObjects {
     class Shape {
 
         /**
-         * [lon, lat]. */
-        private List<double[]> points;
+         * [lon lat]. */
+        private List<double[]> nodes;
 
-        public Shape(List<double[]> ps) {
-            this.points = ps;
+        public Shape(List<double[]> ns) {
+            this.nodes = ns;
         }
 
-        public List<double[]> getPoints() {
-            return this.points;
+        /**
+         * @return [lon lat]
+         */
+        public List<double[]> getNodes() {
+            return this.nodes;
         }
 
         /**
          * @return True if p[0] == p[1].
          */
         public boolean isClosed() {
+            double closeDist = distance(this.nodes.get(0), this.nodes.get(nodes.size()-1));
             return false;
+        }
+
+        /**
+         * @return Number of nodes.
+         */
+        public int size() {
+            return this.nodes.size();
         }
 
         /**
@@ -330,11 +356,11 @@ public class AcquireGeoObjects {
             double e = Double.NEGATIVE_INFINITY;
             double n = Double.NEGATIVE_INFINITY;
 
-            for (double[] p : this.points) {
-                if (p[0] < w) w = p[0];
-                if (p[0] > e) e = p[0];
-                if (p[1] < s) s = p[1];
-                if (p[1] > n) n = p[1];
+            for (double[] node : this.nodes) {
+                if (node[0] < w) w = node[0];
+                if (node[0] > e) e = node[0];
+                if (node[1] < s) s = node[1];
+                if (node[1] > n) n = node[1];
             }
             return new double[]{w, s, e, n};
         }
@@ -345,8 +371,8 @@ public class AcquireGeoObjects {
          */
         public String toRawString() {
             StringBuilder sb = new StringBuilder();
-            for (double[] p : this.points)
-                sb.append(p[1] + " " + p[0] + " ");
+            for (double[] n : this.nodes)
+                sb.append(n[1] + " " + n[0] + " ");
             String raw = sb.toString();
             return raw.substring(0, raw.length()-1);
         }
@@ -354,8 +380,8 @@ public class AcquireGeoObjects {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            for (double[] p : this.points)
-                sb.append("lon: " + p[0] + ", lat: " + p[1] + "\n");
+            for (double[] n : this.nodes)
+                sb.append("lon: " + n[0] + ", lat: " + n[1] + "\n");
             return sb.toString();
         }
     }
@@ -370,6 +396,19 @@ public class AcquireGeoObjects {
         private double rank = -1;
         private String supercat = null;
         private String subcat = null;
+
+
+        /**
+         * Default constructor.
+         */
+        public GeoObject(String id, String name, Shape shape, double rank, String supercat, String subcat) {
+            this.id = id;
+            this.name = name;
+            this.shape = shape;
+            this.rank = rank;
+            this.supercat = supercat;
+            this.subcat = subcat;
+        }
 
         /**
          * Construct the object from instructions.
@@ -450,6 +489,13 @@ public class AcquireGeoObjects {
         private double getRank(int version, List<String> tags) {
             return version + tags.size() * 0.25;
         }
+
+        private String getID() { return this.id; }
+        private String getName() { return this.name; }
+        private Shape getShape() { return this.shape; }
+        private double getRank() { return this.rank; }
+        private String getSuperCat() { return this.supercat; }
+        private String getSubCat() { return this.subcat; }
 
         /**
          * Extracts relevant category from conversion-table.
@@ -559,29 +605,138 @@ public class AcquireGeoObjects {
          * Same (similar) name + close proximity -> merge.
          */
         public void dedupe() {
-            SameNameIter iter = new SameNameIter();
+            List<GeoObject> db2 = new ArrayList<GeoObject>();
 
-            List<GeoObject> sameName;
-            while((sameName=iter.next()) != null) {
-
-
+            while (this.db.size() > 0) {
+                GeoObject go = db.remove(0);
+                List<GeoObject> sameNames = removeAll(go.getName());
+                sameNames.add(go);
+                List<GeoObject> merged = mergeMergables(sameNames);
+                db2.addAll(merged);
             }
+            this.db = db2;
         }
 
         /**
-         * Iterates over geo-object with same (or similar) name.
+         * Remove all objects with specified name (or similar) from db.
+         * @return Removed objects.
          */
-        class SameNameIter {
+        private List<GeoObject> removeAll(String name) {
+            List<GeoObject> rmvs = new ArrayList<GeoObject>();
+            ListIterator<GeoObject> iter = this.db.listIterator();
 
-            /**
-             * Returns objects with same name, AND removes all these
-             * objects from the database.
-             *
-             * @return Same name-objects.
-             */
-            public List<GeoObject> next() {
+            while (iter.hasNext()) {
+                GeoObject go = iter.next();
+                if (go.getName().equals(name)) {
+                    iter.remove();
+                    rmvs.add(go);
+                }
+            }
+            return rmvs;
+        }
+
+        /**
+         * @param sameNames All have same (or similar) name.
+         * @return List with merged (if possible) geo-objects.
+         */
+        private List<GeoObject> mergeMergables(List<GeoObject> sameNames) {
+            List<GeoObject> merged = new ArrayList<GeoObject>();
+
+            while (sameNames.size() > 0) {
+                GeoObject accum = sameNames.remove(0);
+                GeoObject temp;
+
+                while ((temp=mergeFirst(accum, sameNames)) != null) {
+                    accum = temp;
+                }
+                merged.add(accum);
+            }
+            return merged;
+        }
+
+        /**
+         * Merges geo-object with one in list (first mergable one).
+         * Also removes the merged object from the list.
+         *
+         * @param sameNames Geo-objects with same (or similar) names
+         * as go.
+         * @return Merge between go and first mergable from sameNames,
+         * or NULL if no merge possible.
+         * @pre All geo-objects has same (or similar names).
+         */
+        private GeoObject mergeFirst(GeoObject go, List<GeoObject> sameNames) {
+            for (GeoObject go2 : sameNames) {
+                GeoObject goMerge = merge(go, go2);
+                if (goMerge != null) {
+                    sameNames.remove(go2);
+                    return goMerge;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * @return Merged object, or NULL if merge not possible.
+         * @pre o1, o2 has same (or similar) name.
+         */
+        private GeoObject merge(GeoObject o1, GeoObject o2) {
+            double LIMIT = 20; //in meters
+
+            Shape s1 = o1.getShape();
+            Shape s2 = o2.getShape();
+            if (s1.size() < 2 || s1.isClosed()) return null;
+            if (s2.size() < 2 || s2.isClosed()) return null;
+            if (!o1.getSuperCat().equals(o2.getSuperCat())) return null;
+
+            List<double[]> ns1 = s1.getNodes();
+            List<double[]> ns2 = s2.getNodes();
+            List<double[]> ns3 = new ArrayList<double[]>();
+
+            if (distance(ns1.get(ns1.size()-1), ns2.get(0)) < LIMIT) {
+                ns3.addAll(ns1);
+                ns3.addAll(ns2);
+            }
+            else if (distance(ns2.get(ns2.size()-1), ns1.get(0)) < LIMIT) {
+                ns3.addAll(ns2);
+                ns3.addAll(ns1);
+            }
+            else {
                 return null;
             }
+
+            if (distance(ns3.get(0), ns3.get(ns3.size()-1)) > 0 &&
+                distance(ns3.get(0), ns3.get(ns3.size()-1)) < LIMIT) {
+
+                ns3.add(ns3.get(0));
+            }
+
+            Shape s3 = new Shape(ns3);
+            GeoObject prio = o1;
+            if (o1.getRank() < o2.getRank()) prio = o2;
+
+            return new GeoObject(prio.getID(), prio.getName(), s3, prio.getRank(), prio.getSuperCat(), prio.getSubCat());
+
         }
+    }
+
+    /**
+     * @param lon,lat
+     * @return Distance in meters between points.
+     */
+    public static double distance(double[] x, double[] y) {
+        double lng1 = x[0]; double lat1 = x[1];
+        double lng2 = y[0]; double lat2 = y[1];
+
+        double earthRadius = 6371000;
+        double dLat = Math.toRadians(lat2-lat1);
+        double dLng = Math.toRadians(lng2-lng1);
+        double sindLat = Math.sin(dLat / 2);
+        double sindLng = Math.sin(dLng / 2);
+        double a = Math.pow(sindLat, 2) + Math.pow(sindLng, 2)
+            * Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2));
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        double dist = earthRadius * c;
+
+        return dist;
     }
 }
