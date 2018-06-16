@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.Collections;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
@@ -26,6 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.SimpleFormatter;
+import java.util.logging.LogManager;
 
 public class AcquireGeoObjects {
 
@@ -48,7 +50,7 @@ public class AcquireGeoObjects {
     /**
      * Level used when logging. Ignores messages with lower level.
      * Severe, warning, info, config, fine, finer, finest. */
-    public static final Level LOG_LEVEL = Level.FINE;
+    public static final Level LOG_LEVEL = Level.INFO;
 
     static {
          LOGGER.setLevel(LOG_LEVEL);
@@ -56,11 +58,11 @@ public class AcquireGeoObjects {
 
          //log to file
          try {
+             LogManager.getLogManager().reset();
              FileHandler fh = new FileHandler("log");
              SimpleFormatter formatter = new SimpleFormatter();
              fh.setFormatter(formatter);
              LOGGER.addHandler(fh);
-             LOGGER.setUseParentHandlers(false);
          }
          catch (IOException e) {
              System.out.println("Failed file logging");
@@ -82,7 +84,6 @@ public class AcquireGeoObjects {
             try {
                 GeoObject go = new GeoObject(instr, convTable);
                 db.add(go);
-                LOGGER.fine(go.toString());
             }
             catch (GeoObject.BuildException e) {
                 LOGGER.info("Can't build:\n" + e.toString());
@@ -106,16 +107,16 @@ public class AcquireGeoObjects {
      */
     private Shape getArea() {
         //uppsala
-        // double w = 17.558212280273438;
-        // double s = 59.78301472732963;
-        // double e = 17.731246948242188;
-        // double n = 59.91097597079679;
+        double w = 17.558212280273438;
+        double s = 59.78301472732963;
+        double e = 17.731246948242188;
+        double n = 59.91097597079679;
 
         //mefjärd
-        double w = 18.460774;
-        double s = 58.958251;
-        double e = 18.619389;
-        double n = 59.080544;
+        // double w = 18.460774;
+        // double s = 58.958251;
+        // double e = 18.619389;
+        // double n = 59.080544;
 
         return new Shape(Arrays.asList(new double[][]{
                     new double[]{w, s},
@@ -166,7 +167,7 @@ public class AcquireGeoObjects {
          */
         public GeoObjInstructionsIter() {
             try {
-                this.url = new File("../response.xml").toURI().toURL();
+                this.url = new File("../resp_uppsala.xml").toURI().toURL();
                 LOGGER.info("Query: " + url.toString());
             }
             catch (MalformedURLException e) {
@@ -336,8 +337,8 @@ public class AcquireGeoObjects {
          * @return True if p[0] == p[1].
          */
         public boolean isClosed() {
-            double closeDist = distance(this.nodes.get(0), this.nodes.get(nodes.size()-1));
-            return false;
+            double endPointsDist = distance(this.nodes.get(0), this.nodes.get(nodes.size()-1));
+            return endPointsDist < 0.0001;
         }
 
         /**
@@ -381,7 +382,7 @@ public class AcquireGeoObjects {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             for (double[] n : this.nodes)
-                sb.append("lon: " + n[0] + ", lat: " + n[1] + "\n");
+                sb.append(n[1] + "," + n[0] + "\n");
             return sb.toString();
         }
     }
@@ -585,8 +586,9 @@ public class AcquireGeoObjects {
                 "name: " + this.name + "\n" +
                 "rank: " + this.rank + "\n" +
                 "supercat: " + this.supercat + "\n" +
-                "subcat: " + this.subcat + "\n";
-            //"shape:\n" + this.shape.toString() + "\n";
+                "subcat: " + this.subcat + "\n" +
+                "https://www.openstreetmap.org/" + id.toLowerCase() + "\n";
+                //"shape:\n" + this.shape.toString() + "\n";
         }
     }
 
@@ -627,7 +629,7 @@ public class AcquireGeoObjects {
 
             while (iter.hasNext()) {
                 GeoObject go = iter.next();
-                if (go.getName().equals(name)) {
+                if (go.getName().equalsIgnoreCase(name)) {
                     iter.remove();
                     rmvs.add(go);
                 }
@@ -687,6 +689,7 @@ public class AcquireGeoObjects {
             if (s1.size() < 2 || s1.isClosed()) return null;
             if (s2.size() < 2 || s2.isClosed()) return null;
             if (!o1.getSuperCat().equals(o2.getSuperCat())) return null;
+            if (!o1.getSubCat().equals(o2.getSubCat())) return null;
 
             List<double[]> ns1 = s1.getNodes();
             List<double[]> ns2 = s2.getNodes();
@@ -699,6 +702,14 @@ public class AcquireGeoObjects {
             else if (distance(ns2.get(ns2.size()-1), ns1.get(0)) < LIMIT) {
                 ns3.addAll(ns2);
                 ns3.addAll(ns1);
+            }
+            else if (distance(ns1.get(ns1.size()-1), ns2.get(ns2.size()-1)) < LIMIT) {
+                ns3.addAll(ns1);
+                ns3.addAll(reverse(ns2));
+            }
+            else if (distance(ns1.get(0), ns2.get(0)) < LIMIT) {
+                ns3.addAll(reverse(ns1));
+                ns3.addAll(ns2);
             }
             else {
                 return null;
@@ -715,7 +726,14 @@ public class AcquireGeoObjects {
             if (o1.getRank() < o2.getRank()) prio = o2;
 
             return new GeoObject(prio.getID(), prio.getName(), s3, prio.getRank(), prio.getSuperCat(), prio.getSubCat());
+        }
 
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for (GeoObject go : this.db)
+                sb.append(go.toString() + "\n");
+            return sb.toString();
         }
     }
 
@@ -738,5 +756,17 @@ public class AcquireGeoObjects {
         double dist = earthRadius * c;
 
         return dist;
+    }
+
+    /**
+     * @return xs reversed.
+     */
+    public static <T> List<T> reverse(List<T> xs) {
+        List<T> rev = new ArrayList<T>();
+
+        for (int i = xs.size()-1; i >= 0; i--) {
+            rev.add(xs.get(i));
+        }
+        return rev;
     }
 }
