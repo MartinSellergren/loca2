@@ -16,6 +16,7 @@ import java.util.ListIterator;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Collections;
+import java.util.Comparator;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
@@ -45,29 +46,17 @@ public class AcquireGeoObjects {
      * 	fine(String msg)
      *  finer(String msg)
      * 	finest(String msg) */
-    public static final Logger LOGGER = Logger.getLogger("");
+    public static final Logger TLOG = Logger.getLogger("tlog");
+    public static final Logger FLOG = Logger.getLogger("flog");
+    public static final Level TLOG_LEVEL = Level.INFO;
+    public static final Level FLOG_LEVEL = Level.FINE;
+
 
     /**
-     * Level used when logging. Ignores messages with lower level.
-     * Severe, warning, info, config, fine, finer, finest. */
-    public static final Level LOG_LEVEL = Level.INFO;
-
-    static {
-         LOGGER.setLevel(LOG_LEVEL);
-         LOGGER.getHandlers()[0].setLevel(LOG_LEVEL);
-
-         //log to file
-         try {
-             LogManager.getLogManager().reset();
-             FileHandler fh = new FileHandler("log");
-             SimpleFormatter formatter = new SimpleFormatter();
-             fh.setFormatter(formatter);
-             LOGGER.addHandler(fh);
-         }
-         catch (IOException e) {
-             System.out.println("Failed file logging");
-         }
-    }
+     * Max allowed distance in meters between endpoints of two
+     * geo-objects for a merge.
+     */
+    public static final double MERGE_LIMIT = 25;
 
 
     @Test
@@ -86,12 +75,12 @@ public class AcquireGeoObjects {
                 db.add(go);
             }
             catch (GeoObject.BuildException e) {
-                LOGGER.info("Can't build:\n" + e.toString());
+                TLOG.fine("Can't build:\n" + e.toString());
             }
         }
 
         db.dedupe();
-        LOGGER.info(db.toString());
+        FLOG.info(db.toString());
     }
 
     /**
@@ -154,7 +143,7 @@ public class AcquireGeoObjects {
         public GeoObjInstructionsIter(Shape area) {
             try {
                 this.url = getQueryURL(area);
-                LOGGER.info("Query: " + url.toString());
+                TLOG.fine("Query: " + url.toString());
             }
             catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -168,7 +157,7 @@ public class AcquireGeoObjects {
         public GeoObjInstructionsIter() {
             try {
                 this.url = new File("../resp_uppsala.xml").toURI().toURL();
-                LOGGER.info("Query: " + url.toString());
+                TLOG.fine("Query: " + url.toString());
             }
             catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -322,8 +311,25 @@ public class AcquireGeoObjects {
          * [lon lat]. */
         private List<double[]> nodes;
 
+        /**
+         * New shape from well-formed list of nodes.
+         */
         public Shape(List<double[]> ns) {
             this.nodes = ns;
+        }
+
+        /**
+         * New shape from two segments. No empty segs.
+         */
+        public Shape(Shape s1, Shape s2) {
+            List<double[]> nodes = new ArrayList<double[]>();
+            nodes.addAll(s1.getNodes());
+
+            if (distance(s1.getLast(), s2.getFirst()) < 0.01)
+                nodes.remove( nodes.size()-1 );
+
+            nodes.addAll(s2.getNodes());
+            this.nodes = nodes;
         }
 
         /**
@@ -334,10 +340,24 @@ public class AcquireGeoObjects {
         }
 
         /**
+         * [lon lat] of first node.
+         */
+        public double[] getFirst() {
+            return this.nodes.get(0);
+        }
+
+        /**
+         * [lon lat] of last node.
+         */
+        public double[] getLast() {
+            return this.nodes.get(size()-1);
+        }
+
+        /**
          * @return True if p[0] == p[1].
          */
         public boolean isClosed() {
-            double endPointsDist = distance(this.nodes.get(0), this.nodes.get(nodes.size()-1));
+            double endPointsDist = distance(getFirst(), getLast());
             return endPointsDist < 0.0001;
         }
 
@@ -346,6 +366,13 @@ public class AcquireGeoObjects {
          */
         public int size() {
             return this.nodes.size();
+        }
+
+        /**
+         * Reverse order of nodes.
+         */
+        public void reverse() {
+            this.nodes = AcquireGeoObjects.reverse(this.nodes);
         }
 
         /**
@@ -579,6 +606,25 @@ public class AcquireGeoObjects {
             return false;
         }
 
+        /**
+         * @return Link to this osm-object.
+         */
+        private String getLink() {
+            return "https://www.openstreetmap.org/" + id.toLowerCase();
+        }
+
+        /**
+         * @return Compact representation.
+         */
+        public String toCompactString() {
+            return String.format("%s (%s, %s, %s)\n%s",
+                                 this.name,
+                                 this.supercat,
+                                 this.subcat,
+                                 this.rank,
+                                 getLink());
+        }
+
         @Override
         public String toString() {
             return
@@ -587,8 +633,8 @@ public class AcquireGeoObjects {
                 "rank: " + this.rank + "\n" +
                 "supercat: " + this.supercat + "\n" +
                 "subcat: " + this.subcat + "\n" +
-                "https://www.openstreetmap.org/" + id.toLowerCase() + "\n";
-                //"shape:\n" + this.shape.toString() + "\n";
+                "url: " + getLink() + "\n" +
+                "shape:\n" + this.shape.toString();
         }
     }
 
@@ -648,7 +694,7 @@ public class AcquireGeoObjects {
                 GeoObject accum = sameNames.remove(0);
                 GeoObject temp;
 
-                while ((temp=mergeFirst(accum, sameNames)) != null) {
+                while ((temp=mergeClosest(accum, sameNames)) != null) {
                     accum = temp;
                 }
                 merged.add(accum);
@@ -657,20 +703,29 @@ public class AcquireGeoObjects {
         }
 
         /**
-         * Merges geo-object with one in list (first mergable one).
+         * Merges geo-object with one in list (closest mergable one).
          * Also removes the merged object from the list.
          *
          * @param sameNames Geo-objects with same (or similar) names
          * as go.
-         * @return Merge between go and first mergable from sameNames,
+         * @return Merge between go and closest mergable from sameNames,
          * or NULL if no merge possible.
          * @pre All geo-objects has same (or similar names).
          */
-        private GeoObject mergeFirst(GeoObject go, List<GeoObject> sameNames) {
-            for (GeoObject go2 : sameNames) {
+        private GeoObject mergeClosest(GeoObject go, List<GeoObject> sameNames) {
+            List<GeoObject> sorted = sortByEndpointDistance(go, sameNames);
+
+            for (GeoObject go2 : sorted) {
                 GeoObject goMerge = merge(go, go2);
                 if (goMerge != null) {
                     sameNames.remove(go2);
+
+                    if (sameNames.size() > 2)
+                        TLOG.info(String.format("-%s\n-%s\n-%s",
+                                                go.toCompactString(),
+                                                go2.toCompactString(),
+                                                goMerge.toCompactString()));
+
                     return goMerge;
                 }
             }
@@ -678,54 +733,113 @@ public class AcquireGeoObjects {
         }
 
         /**
+         * Sort geo-objects in list by min-edgepoint-distance to g,
+         * ascending.
+         */
+        private List<GeoObject> sortByEndpointDistance(GeoObject g, List<GeoObject> l) {
+            List<GeoObject> cpy = copy(l);
+
+            Collections.sort(cpy, new Comparator<GeoObject>() {
+                    public int compare(GeoObject g1, GeoObject g2) {
+                        double d1 = minEndpointDistance(g, g1);
+                        double d2 = minEndpointDistance(g, g2);
+
+                        if (Math.abs(d1-d2) < 0.00001) return 0;
+                        return d1 < d2 ? -1 : 1;
+                    }
+                });
+
+            return cpy;
+        }
+
+        /**
+         * @return Distance between closest endpoints.
+         */
+        private double minEndpointDistance(GeoObject g1, GeoObject g2) {
+            double[] ep11 = g1.getShape().getFirst();
+            double[] ep12 = g1.getShape().getLast();
+            double[] ep21 = g2.getShape().getFirst();
+            double[] ep22 = g2.getShape().getLast();
+
+            return Math.min(
+                            Math.min(distance(ep11, ep21),
+                                     distance(ep11, ep22)),
+                            Math.min(distance(ep12, ep21),
+                                     distance(ep12, ep22)));
+        }
+
+        /**
          * @return Merged object, or NULL if merge not possible.
          * @pre o1, o2 has same (or similar) name.
          */
-        private GeoObject merge(GeoObject o1, GeoObject o2) {
-            double LIMIT = 20; //in meters
+        private GeoObject merge(GeoObject g1, GeoObject g2) {
+            if (!isMergable(g1, g2)) return null;
 
-            Shape s1 = o1.getShape();
-            Shape s2 = o2.getShape();
-            if (s1.size() < 2 || s1.isClosed()) return null;
-            if (s2.size() < 2 || s2.isClosed()) return null;
-            if (!o1.getSuperCat().equals(o2.getSuperCat())) return null;
-            if (!o1.getSubCat().equals(o2.getSubCat())) return null;
+            Shape seg1 = g1.getShape();
+            Shape seg2 = g2.getShape();
 
-            List<double[]> ns1 = s1.getNodes();
-            List<double[]> ns2 = s2.getNodes();
-            List<double[]> ns3 = new ArrayList<double[]>();
-
-            if (distance(ns1.get(ns1.size()-1), ns2.get(0)) < LIMIT) {
-                ns3.addAll(ns1);
-                ns3.addAll(ns2);
+            int mergeType = getMergeType(seg1, seg2);
+            if (mergeType == 1) {
+                //pass
             }
-            else if (distance(ns2.get(ns2.size()-1), ns1.get(0)) < LIMIT) {
-                ns3.addAll(ns2);
-                ns3.addAll(ns1);
+            else if (mergeType == 2) {
+                Shape temp = seg2;
+                seg2 = seg1;
+                seg1 = temp;
             }
-            else if (distance(ns1.get(ns1.size()-1), ns2.get(ns2.size()-1)) < LIMIT) {
-                ns3.addAll(ns1);
-                ns3.addAll(reverse(ns2));
+            else if (mergeType == 3) {
+                seg2.reverse();
             }
-            else if (distance(ns1.get(0), ns2.get(0)) < LIMIT) {
-                ns3.addAll(reverse(ns1));
-                ns3.addAll(ns2);
+            else if (mergeType == 4) {
+                seg1.reverse();
             }
             else {
-                return null;
+                throw new RuntimeException("Bad merge type");
             }
 
-            if (distance(ns3.get(0), ns3.get(ns3.size()-1)) > 0 &&
-                distance(ns3.get(0), ns3.get(ns3.size()-1)) < LIMIT) {
+            Shape sh = new Shape(seg1, seg2);
+            GeoObject prio = g1;
+            if (g1.getRank() < g2.getRank()) prio = g2;
 
-                ns3.add(ns3.get(0));
-            }
+            return new GeoObject(prio.getID(), prio.getName(), sh, prio.getRank(), prio.getSuperCat(), prio.getSubCat());
+        }
 
-            Shape s3 = new Shape(ns3);
-            GeoObject prio = o1;
-            if (o1.getRank() < o2.getRank()) prio = o2;
+        /**
+         * @return True if g1 and g2 can be merged.
+         */
+        private boolean isMergable(GeoObject g1, GeoObject g2) {
+            Shape s1 = g1.getShape();
+            Shape s2 = g2.getShape();
+            return
+                s1.size() >= 2 && s2.size() >= 2 &&
+                !s1.isClosed() && !s2.isClosed() &&
+                g1.getSuperCat().equals(g2.getSuperCat()) &&
+                g1.getSubCat().equals(g2.getSubCat()) &&
+                minEndpointDistance(g1, g2) < MERGE_LIMIT;
+        }
 
-            return new GeoObject(prio.getID(), prio.getName(), s3, prio.getRank(), prio.getSuperCat(), prio.getSubCat());
+        /**
+         * @return Type of merge between segments.
+         *  1: -> ->
+         *  2: <- <-
+         *  3: -> <-
+         *  4: <- ->
+         */
+        private int getMergeType(Shape s1, Shape s2) {
+            Double minD = Double.POSITIVE_INFINITY;
+            int t = 0;
+
+            double d1 = distance(s1.getLast(), s2.getFirst());
+            double d2 = distance(s1.getFirst(), s2.getLast());
+            double d3 = distance(s1.getLast(), s2.getLast());
+            double d4 = distance(s1.getFirst(), s2.getFirst());
+
+            if (d1 < minD) { minD = d1; t = 1; }
+            if (d2 < minD) { minD = d2; t = 2; }
+            if (d3 < minD) { minD = d3; t = 3; }
+            if (d4 < minD) { t = 4; }
+
+            return t;
         }
 
         @Override
@@ -768,5 +882,41 @@ public class AcquireGeoObjects {
             rev.add(xs.get(i));
         }
         return rev;
+    }
+
+    /**
+     * @return A shallow copy of xs.
+     */
+    public static <T> List<T> copy(List<T> xs) {
+        List<T> cpy = new ArrayList<T>();
+        for (T x : xs) cpy.add(x);
+        return cpy;
+    }
+
+
+
+
+
+
+    static {
+        LogManager.getLogManager().reset();
+        TLOG.setLevel(TLOG_LEVEL);
+        FLOG.setLevel(FLOG_LEVEL);
+
+        ConsoleHandler th = new ConsoleHandler();
+        th.setFormatter(new MyFormatter());
+        th.setLevel(TLOG_LEVEL);
+        TLOG.addHandler(th);
+
+         //log to file
+         try {
+             FileHandler fh = new FileHandler("log.out");
+             fh.setFormatter(new MyFormatter());
+             fh.setLevel(FLOG_LEVEL);
+             FLOG.addHandler(fh);
+         }
+         catch (IOException e) {
+             System.out.println("Failed file logging");
+         }
     }
 }
