@@ -15,3 +15,7 @@ test {
         exceptionFormat = 'full'
     }
 }
+
+task t(type: GradleBuild) {
+     tasks = ['clean', 'test']
+}

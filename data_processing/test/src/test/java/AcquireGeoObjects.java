@@ -56,7 +56,7 @@ public class AcquireGeoObjects {
      * Max allowed distance in meters between endpoints of two
      * geo-objects for a merge.
      */
-    public static final double MERGE_LIMIT = 0.5;
+    public static final double MERGE_LIMIT = 15;
 
 
     @Test
@@ -543,6 +543,15 @@ public class AcquireGeoObjects {
         }
 
         /**
+         * @return 1d-list of nodes, without particaular order.
+         */
+        public List<double[]> getNodes() {
+            List<double[]> l = new ArrayList<double[]>();
+            for (Shape sh : this.shapes) l.addAll(sh.getNodes());
+            return l;
+        }
+
+        /**
          * Extracts relevant category from conversion-table.
          *
          * @param tags ["key=value"]
@@ -781,7 +790,15 @@ public class AcquireGeoObjects {
          * @return Distance in meters between g1 and g2's closest nodes.
          */
         private double minDistance(GeoObject g1, GeoObject g2) {
-            return 0;
+            double min = Double.POSITIVE_INFINITY;
+
+            for (double[] n1 : g1.getNodes()) {
+                for (double[] n2 : g2.getNodes()) {
+                    double d = distance(n1, n2);
+                    if (d < min) min = d;
+                }
+            }
+            return min;
         }
         //     if (!isMergable(g1, g2)) return null;
 
