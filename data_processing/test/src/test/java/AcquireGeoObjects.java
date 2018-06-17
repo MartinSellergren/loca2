@@ -56,7 +56,7 @@ public class AcquireGeoObjects {
      * Max allowed distance in meters between endpoints of two
      * geo-objects for a merge.
      */
-    public static final double MERGE_LIMIT = 25;
+    public static final double MERGE_LIMIT = 0.5;
 
 
     @Test
@@ -299,7 +299,7 @@ public class AcquireGeoObjects {
     }
 
     /**
-     * Representation of a shape.
+     * Representation of a shape as an order list of nodes.
      *
      * @inv No segment crossings.
      * @inv No lon=180-crossings.
@@ -316,20 +316,6 @@ public class AcquireGeoObjects {
          */
         public Shape(List<double[]> ns) {
             this.nodes = ns;
-        }
-
-        /**
-         * New shape from two segments. No empty segs.
-         */
-        public Shape(Shape s1, Shape s2) {
-            List<double[]> nodes = new ArrayList<double[]>();
-            nodes.addAll(s1.getNodes());
-
-            if (distance(s1.getLast(), s2.getFirst()) < 0.01)
-                nodes.remove( nodes.size()-1 );
-
-            nodes.addAll(s2.getNodes());
-            this.nodes = nodes;
         }
 
         /**
@@ -368,12 +354,12 @@ public class AcquireGeoObjects {
             return this.nodes.size();
         }
 
-        /**
-         * Reverse order of nodes.
-         */
-        public void reverse() {
-            this.nodes = AcquireGeoObjects.reverse(this.nodes);
-        }
+        // /**
+        //  * Reverse order of nodes.
+        //  */
+        // public void reverse() {
+        //     this.nodes = AcquireGeoObjects.reverse(this.nodes);
+        // }
 
         /**
          * @return [wsen]
@@ -415,31 +401,34 @@ public class AcquireGeoObjects {
     }
 
     /**
-     * Class representing a geo-object.
+     * Class representing geo-object.
+     *
+     * @inv Minimum one shape.
      */
     class GeoObject {
         private String id = null;
         private String name = null;
-        private Shape shape = null;
+        private List<Shape> shapes = null;
         private double rank = -1;
         private String supercat = null;
         private String subcat = null;
 
 
-        /**
-         * Default constructor.
-         */
-        public GeoObject(String id, String name, Shape shape, double rank, String supercat, String subcat) {
-            this.id = id;
-            this.name = name;
-            this.shape = shape;
-            this.rank = rank;
-            this.supercat = supercat;
-            this.subcat = subcat;
-        }
+        // /**
+        //  * Default constructor.
+        //  */
+        // public GeoObject(String id, String name, List<Shape> ms, double rank, String supercat, String subcat) {
+        //     this.id = id;
+        //     this.name = name;
+        //     this.shapes = ms;
+        //     this.rank = rank;
+        //     this.supercat = supercat;
+        //     this.subcat = subcat;
+        // }
 
         /**
          * Construct the object from instructions.
+         * Constructs geo-object with one shape (not multiple).
          */
         public GeoObject(List<String> instr, JsonObject convTable) throws BuildException {
             try {
@@ -490,7 +479,10 @@ public class AcquireGeoObjects {
                 }
             }
 
-            if (ps.size() > 0) this.shape = new Shape(ps);
+            if (ps.size() > 0) {
+                this.shapes = new ArrayList<Shape>();
+                this.shapes.add(new Shape(ps));
+            }
             if (version != -1) this.rank = getRank(version, tags);
 
             String cat = findCategory(tags, convTable);
@@ -505,25 +497,50 @@ public class AcquireGeoObjects {
          * a proper value.
          */
         private void testFields() throws Exception {
-            if (this.id == null || this.name == null || this.shape == null || this.rank == -1 || this.supercat == null || this.subcat == null)
+            if (this.id == null ||
+                this.name == null ||
+                this.shapes == null ||
+                this.rank == -1 ||
+                this.supercat == null ||
+                this.subcat == null)
                 throw new Exception("Field not set");
 
             if (name.length() < 2) throw new Exception("Name too short");
         }
 
         /**
+         * @pre sh should be close in proximity.
+         */
+        public void addShape(Shape sh) {
+            this.shapes.add(sh);
+        }
+        public void addShapes(List<Shape> shs) {
+            for (Shape sh : shs) addShape(sh);
+        }
+
+        /**
          * @return Some kind of importance-ranking.
          */
-        private double getRank(int version, List<String> tags) {
+        public double getRank(int version, List<String> tags) {
             return version + tags.size() * 0.25;
         }
 
-        private String getID() { return this.id; }
-        private String getName() { return this.name; }
-        private Shape getShape() { return this.shape; }
-        private double getRank() { return this.rank; }
-        private String getSuperCat() { return this.supercat; }
-        private String getSubCat() { return this.subcat; }
+        //private String getID() { return this.id; }
+        public String getName() { return this.name; }
+        public List<Shape> getShapes() { return this.shapes; }
+        public double getRank() { return this.rank; }
+        public String getSuperCat() { return this.supercat; }
+        public String getSubCat() { return this.subcat; }
+        public String getGeoJson() { return null; }
+
+        /**
+         * @return True if this object is a single node.
+         */
+        public boolean isNode() {
+            return
+                this.shapes.size() == 1 &&
+                this.shapes.get(0).size() == 1;
+        }
 
         /**
          * Extracts relevant category from conversion-table.
@@ -627,6 +644,13 @@ public class AcquireGeoObjects {
 
         @Override
         public String toString() {
+            StringBuilder sStr = new StringBuilder();
+            for (Shape sh : this.shapes) {
+                sStr.append(sh.toString());
+                if (sh != shapes.get(shapes.size()-1))
+                    sStr.append("-\n");
+            }
+
             return
                 "id: " + this.id + "\n" +
                 "name: " + this.name + "\n" +
@@ -634,7 +658,7 @@ public class AcquireGeoObjects {
                 "supercat: " + this.supercat + "\n" +
                 "subcat: " + this.subcat + "\n" +
                 "url: " + getLink() + "\n" +
-                "shape:\n" + this.shape.toString();
+                "shape:\n" + sStr.toString();
         }
     }
 
@@ -694,7 +718,7 @@ public class AcquireGeoObjects {
                 GeoObject accum = sameNames.remove(0);
                 GeoObject temp;
 
-                while ((temp=mergeClosest(accum, sameNames)) != null) {
+                while ((temp=mergeFirst(accum, sameNames)) != null) {
                     accum = temp;
                 }
                 merged.add(accum);
@@ -703,24 +727,22 @@ public class AcquireGeoObjects {
         }
 
         /**
-         * Merges geo-object with one in list (closest mergable one).
+         * Merges geo-object with one in list (first mergable one).
          * Also removes the merged object from the list.
          *
          * @param sameNames Geo-objects with same (or similar) names
          * as go.
-         * @return Merge between go and closest mergable from sameNames,
+         * @return Merge between go and first mergable from sameNames,
          * or NULL if no merge possible.
          * @pre All geo-objects has same (or similar names).
          */
-        private GeoObject mergeClosest(GeoObject go, List<GeoObject> sameNames) {
-            List<GeoObject> sorted = sortByEndpointDistance(go, sameNames);
-
-            for (GeoObject go2 : sorted) {
+        private GeoObject mergeFirst(GeoObject go, List<GeoObject> sameNames) {
+            for (GeoObject go2 : sameNames) {
                 GeoObject goMerge = merge(go, go2);
                 if (goMerge != null) {
                     sameNames.remove(go2);
 
-                    if (sameNames.size() > 2)
+                    if (sameNames.size() >= 2)
                         TLOG.info(String.format("-%s\n-%s\n-%s",
                                                 go.toCompactString(),
                                                 go2.toCompactString(),
@@ -733,114 +755,79 @@ public class AcquireGeoObjects {
         }
 
         /**
-         * Sort geo-objects in list by min-edgepoint-distance to g,
-         * ascending.
-         */
-        private List<GeoObject> sortByEndpointDistance(GeoObject g, List<GeoObject> l) {
-            List<GeoObject> cpy = copy(l);
-
-            Collections.sort(cpy, new Comparator<GeoObject>() {
-                    public int compare(GeoObject g1, GeoObject g2) {
-                        double d1 = minEndpointDistance(g, g1);
-                        double d2 = minEndpointDistance(g, g2);
-
-                        if (Math.abs(d1-d2) < 0.00001) return 0;
-                        return d1 < d2 ? -1 : 1;
-                    }
-                });
-
-            return cpy;
-        }
-
-        /**
-         * @return Distance between closest endpoints.
-         */
-        private double minEndpointDistance(GeoObject g1, GeoObject g2) {
-            double[] ep11 = g1.getShape().getFirst();
-            double[] ep12 = g1.getShape().getLast();
-            double[] ep21 = g2.getShape().getFirst();
-            double[] ep22 = g2.getShape().getLast();
-
-            return Math.min(
-                            Math.min(distance(ep11, ep21),
-                                     distance(ep11, ep22)),
-                            Math.min(distance(ep12, ep21),
-                                     distance(ep12, ep22)));
-        }
-
-        /**
          * @return Merged object, or NULL if merge not possible.
          * @pre o1, o2 has same (or similar) name.
          */
         private GeoObject merge(GeoObject g1, GeoObject g2) {
-            if (!isMergable(g1, g2)) return null;
+            if (!g1.getSuperCat().equals(g2.getSuperCat()) ||
+                !g1.getSubCat().equals(g2.getSubCat()) ||
+                g1.isNode() || g2.isNode())
+                return null;
 
-            Shape seg1 = g1.getShape();
-            Shape seg2 = g2.getShape();
+            double d = minDistance(g1, g2);
+            if (d > MERGE_LIMIT) return null;
 
-            int mergeType = getMergeType(seg1, seg2);
-            if (mergeType == 1) {
-                //pass
-            }
-            else if (mergeType == 2) {
-                Shape temp = seg2;
-                seg2 = seg1;
-                seg1 = temp;
-            }
-            else if (mergeType == 3) {
-                seg2.reverse();
-            }
-            else if (mergeType == 4) {
-                seg1.reverse();
+            if (g1.getRank() > g2.getRank()) {
+                g1.addShapes(g2.getShapes());
+                return g1;
             }
             else {
-                throw new RuntimeException("Bad merge type");
+                g2.addShapes(g1.getShapes());
+                return g2;
             }
-
-            Shape sh = new Shape(seg1, seg2);
-            GeoObject prio = g1;
-            if (g1.getRank() < g2.getRank()) prio = g2;
-
-            return new GeoObject(prio.getID(), prio.getName(), sh, prio.getRank(), prio.getSuperCat(), prio.getSubCat());
         }
 
         /**
-         * @return True if g1 and g2 can be merged.
+         * @return Distance in meters between g1 and g2's closest nodes.
          */
-        private boolean isMergable(GeoObject g1, GeoObject g2) {
-            Shape s1 = g1.getShape();
-            Shape s2 = g2.getShape();
-            return
-                s1.size() >= 2 && s2.size() >= 2 &&
-                !s1.isClosed() && !s2.isClosed() &&
-                g1.getSuperCat().equals(g2.getSuperCat()) &&
-                g1.getSubCat().equals(g2.getSubCat()) &&
-                minEndpointDistance(g1, g2) < MERGE_LIMIT;
+        private double minDistance(GeoObject g1, GeoObject g2) {
+            return 0;
         }
+        //     if (!isMergable(g1, g2)) return null;
 
-        /**
-         * @return Type of merge between segments.
-         *  1: -> ->
-         *  2: <- <-
-         *  3: -> <-
-         *  4: <- ->
-         */
-        private int getMergeType(Shape s1, Shape s2) {
-            Double minD = Double.POSITIVE_INFINITY;
-            int t = 0;
+        //     Shape seg1 = g1.getShape();
+        //     Shape seg2 = g2.getShape();
 
-            double d1 = distance(s1.getLast(), s2.getFirst());
-            double d2 = distance(s1.getFirst(), s2.getLast());
-            double d3 = distance(s1.getLast(), s2.getLast());
-            double d4 = distance(s1.getFirst(), s2.getFirst());
+        //     int mergeType = getMergeType(seg1, seg2);
+        //     if (mergeType == 1) {
+        //         //pass
+        //     }
+        //     else if (mergeType == 2) {
+        //         Shape temp = seg2;
+        //         seg2 = seg1;
+        //         seg1 = temp;
+        //     }
+        //     else if (mergeType == 3) {
+        //         seg2.reverse();
+        //     }
+        //     else if (mergeType == 4) {
+        //         seg1.reverse();
+        //     }
+        //     else {
+        //         throw new RuntimeException("Bad merge type");
+        //     }
 
-            if (d1 < minD) { minD = d1; t = 1; }
-            if (d2 < minD) { minD = d2; t = 2; }
-            if (d3 < minD) { minD = d3; t = 3; }
-            if (d4 < minD) { t = 4; }
+        //     Shape sh = new Shape(seg1, seg2);
 
-            return t;
-        }
+        //     GeoObject prio = g1;
+        //     if (g1.getRank() < g2.getRank()) prio = g2;
+
+        //     return new GeoObject(prio.getID(), prio.getName(), sh, prio.getRank(), prio.getSuperCat(), prio.getSubCat());
+        // }
+
+        // /**
+        //  * @return True if g1 and g2 can be merged.
+        //  */
+        // private boolean isMergable(GeoObject g1, GeoObject g2) {
+        //     Shape s1 = g1.getShape();
+        //     Shape s2 = g2.getShape();
+        //     return
+        //         s1.size() >= 2 && s2.size() >= 2 &&
+        //         !s1.isClosed() && !s2.isClosed() &&
+        //         g1.getSuperCat().equals(g2.getSuperCat()) &&
+        //         g1.getSubCat().equals(g2.getSubCat()) &&
+        //         minEndpointDistance(g1, g2) < MERGE_LIMIT;
+        // }
 
         @Override
         public String toString() {
@@ -872,26 +859,26 @@ public class AcquireGeoObjects {
         return dist;
     }
 
-    /**
-     * @return xs reversed.
-     */
-    public static <T> List<T> reverse(List<T> xs) {
-        List<T> rev = new ArrayList<T>();
+    // /**
+    //  * @return xs reversed.
+    //  */
+    // public static <T> List<T> reverse(List<T> xs) {
+    //     List<T> rev = new ArrayList<T>();
 
-        for (int i = xs.size()-1; i >= 0; i--) {
-            rev.add(xs.get(i));
-        }
-        return rev;
-    }
+    //     for (int i = xs.size()-1; i >= 0; i--) {
+    //         rev.add(xs.get(i));
+    //     }
+    //     return rev;
+    // }
 
-    /**
-     * @return A shallow copy of xs.
-     */
-    public static <T> List<T> copy(List<T> xs) {
-        List<T> cpy = new ArrayList<T>();
-        for (T x : xs) cpy.add(x);
-        return cpy;
-    }
+    // /**
+    //  * @return A shallow copy of xs.
+    //  */
+    // public static <T> List<T> copy(List<T> xs) {
+    //     List<T> cpy = new ArrayList<T>();
+    //     for (T x : xs) cpy.add(x);
+    //     return cpy;
+    // }
 
 
 
