@@ -48,15 +48,23 @@ public class AcquireGeoObjects {
      * 	finest(String msg) */
     public static final Logger TLOG = Logger.getLogger("tlog");
     public static final Logger FLOG = Logger.getLogger("flog");
-    public static final Level TLOG_LEVEL = Level.INFO;
+    public static final Level TLOG_LEVEL = Level.SEVERE;
     public static final Level FLOG_LEVEL = Level.FINE;
 
 
     /**
      * Max allowed distance in meters between endpoints of two
-     * geo-objects for a merge.
-     */
+     * geo-objects for a merge. */
     public static final double MERGE_LIMIT = 15;
+
+    /**
+     * in=number of nodes outside bounds of working-area.
+     * No interest in objects with in/tot_nodes < this. */
+    public static final double MIN_IN_NODE_RATIO = 0.7;
+
+    /**
+     * Length based rank boost by multiplying rank with [1, this]. */
+    public static final double RANK_BOOST_FACTOR = 0.1;
 
 
     @Test
@@ -64,7 +72,7 @@ public class AcquireGeoObjects {
         JsonObject convTable = getConversionTable();
         DB db = new DB();
 
-        Shape area = getArea();
+        Shape workingArea = getArea();
         GeoObjInstructionsIter iter = new GeoObjInstructionsIter();
         iter.open();
         List<String> instr;
@@ -80,6 +88,8 @@ public class AcquireGeoObjects {
         }
 
         db.dedupe();
+        //db.filterByArea(workingArea);
+        db.boostRankByLength();
         FLOG.info(db.toString());
     }
 
@@ -354,12 +364,15 @@ public class AcquireGeoObjects {
             return this.nodes.size();
         }
 
-        // /**
-        //  * Reverse order of nodes.
-        //  */
-        // public void reverse() {
-        //     this.nodes = AcquireGeoObjects.reverse(this.nodes);
-        // }
+        /**
+         * @return Sum of all segment-lengths.
+         */
+        public double getLength() {
+            double sum = 0;
+            for (int i = 0; i < this.nodes.size()-1; i++)
+                sum += distance(nodes.get(i), nodes.get(i+1));
+            return sum;
+        }
 
         /**
          * @return [wsen]
@@ -531,7 +544,17 @@ public class AcquireGeoObjects {
         public double getRank() { return this.rank; }
         public String getSuperCat() { return this.supercat; }
         public String getSubCat() { return this.subcat; }
-        public String getGeoJson() { return null; }
+
+        public void setRank(double r) { this.rank = r; }
+
+        /**
+         * @return Sum of all segment-lengths.
+         */
+        public double getLength() {
+            double sum = 0;
+            for (Shape sh : this.shapes) sum += sh.getLength();
+            return sum;
+        }
 
         /**
          * @return True if this object is a single node.
@@ -633,6 +656,28 @@ public class AcquireGeoObjects {
         }
 
         /**
+         * @param bs [wsen]
+         * @return Number of nodes inside bs.
+         */
+        public int inNodeCount(double[] bs) {
+            int count = 0;
+            for (double[] n : this.getNodes())
+                if (isInside(n, bs)) count++;
+            return count;
+        }
+
+        /**
+         * @return True if n[lon lat] is inside bs[wsen].
+         */
+        private boolean isInside(double[] n, double[] bs) {
+            return
+                n[0] > bs[0] &&
+                n[0] < bs[2] &&
+                n[1] > bs[1] &&
+                n[1] < bs[3];
+        }
+
+        /**
          * @return Link to this osm-object.
          */
         private String getLink() {
@@ -677,8 +722,51 @@ public class AcquireGeoObjects {
     class DB {
         List<GeoObject> db = new ArrayList<GeoObject>();
 
+        /**
+         * Add geo-object to db.
+         */
         public void add(GeoObject go) {
             db.add(go);
+        }
+
+
+        /**
+         * @return Super-categories in db.
+         */
+        public List<String> getSuperCats() {
+            List<String> cs = new ArrayList<String>();
+            for (GeoObject g : this.db) addUnique(cs, g.getSuperCat());
+            return cs;
+        }
+
+        /**
+         * Add string if it's not in list already.
+         */
+        private void addUnique(List<String> xs, String str) {
+            for (String x : xs) if (x.equals(str)) return;
+            xs.add(str);
+        }
+
+        /**
+         * @return All objects with superCat as super-category,
+         * sorted by rank.
+         */
+        public List<GeoObject> getCatObjects(String superCat) {
+            List<GeoObject> gs = new ArrayList<GeoObject>();
+            for (GeoObject g : this.db) {
+                if (g.getSuperCat().equals(superCat))
+                    gs.add(g);
+            }
+
+            Collections.sort(gs, new Comparator<GeoObject>() {
+                    public int compare(GeoObject g1, GeoObject g2) {
+                        double diff = g1.getRank() - g2.getRank();
+                        if (Math.abs(diff) < 0.000001) return 0;
+                        else if (diff < 0) return 1;
+                        else return -1;
+                    }
+                });
+            return gs;
         }
 
         /**
@@ -751,11 +839,11 @@ public class AcquireGeoObjects {
                 if (goMerge != null) {
                     sameNames.remove(go2);
 
-                    if (sameNames.size() >= 2)
-                        TLOG.info(String.format("-%s\n-%s\n-%s",
-                                                go.toCompactString(),
-                                                go2.toCompactString(),
-                                                goMerge.toCompactString()));
+                    // if (sameNames.size() >= 2)
+                    //     TLOG.info(String.format("-%s\n-%s\n-%s",
+                    //                             go.toCompactString(),
+                    //                             go2.toCompactString(),
+                    //                             goMerge.toCompactString()));
 
                     return goMerge;
                 }
@@ -774,7 +862,8 @@ public class AcquireGeoObjects {
                 return null;
 
             double d = minDistance(g1, g2);
-            if (d > MERGE_LIMIT) return null;
+            if (d > MERGE_LIMIT)
+                return null;
 
             if (g1.getRank() > g2.getRank()) {
                 g1.addShapes(g2.getShapes());
@@ -791,7 +880,6 @@ public class AcquireGeoObjects {
          */
         private double minDistance(GeoObject g1, GeoObject g2) {
             double min = Double.POSITIVE_INFINITY;
-
             for (double[] n1 : g1.getNodes()) {
                 for (double[] n2 : g2.getNodes()) {
                     double d = distance(n1, n2);
@@ -800,58 +888,58 @@ public class AcquireGeoObjects {
             }
             return min;
         }
-        //     if (!isMergable(g1, g2)) return null;
 
-        //     Shape seg1 = g1.getShape();
-        //     Shape seg2 = g2.getShape();
+        /**
+         * Remove geo-objects that have too many nodes outside
+         * working-area.
+         */
+        public void filterByArea(Shape workingArea) {
+            double[] bs = workingArea.getBounds();
 
-        //     int mergeType = getMergeType(seg1, seg2);
-        //     if (mergeType == 1) {
-        //         //pass
-        //     }
-        //     else if (mergeType == 2) {
-        //         Shape temp = seg2;
-        //         seg2 = seg1;
-        //         seg1 = temp;
-        //     }
-        //     else if (mergeType == 3) {
-        //         seg2.reverse();
-        //     }
-        //     else if (mergeType == 4) {
-        //         seg1.reverse();
-        //     }
-        //     else {
-        //         throw new RuntimeException("Bad merge type");
-        //     }
+            ListIterator<GeoObject> iter = this.db.listIterator();
+            while (iter.hasNext()) {
+                GeoObject g = iter.next();
+                double ratio = (double) g.inNodeCount(bs) / g.getNodes().size();
+                if (ratio < MIN_IN_NODE_RATIO) iter.remove();
+            }
+        }
 
-        //     Shape sh = new Shape(seg1, seg2);
+        /**
+         * Increase rank of long(/big) objects.
+         */
+        public void boostRankByLength() {
+            double meanLength = meanGeoObjectLength();
 
-        //     GeoObject prio = g1;
-        //     if (g1.getRank() < g2.getRank()) prio = g2;
+            for (GeoObject g : this.db) {
+                double ratio = g.getLength() / meanLength * RANK_BOOST_FACTOR;
+                g.setRank( g.getRank() * (1+ratio) );
+            }
+        }
 
-        //     return new GeoObject(prio.getID(), prio.getName(), sh, prio.getRank(), prio.getSuperCat(), prio.getSubCat());
-        // }
-
-        // /**
-        //  * @return True if g1 and g2 can be merged.
-        //  */
-        // private boolean isMergable(GeoObject g1, GeoObject g2) {
-        //     Shape s1 = g1.getShape();
-        //     Shape s2 = g2.getShape();
-        //     return
-        //         s1.size() >= 2 && s2.size() >= 2 &&
-        //         !s1.isClosed() && !s2.isClosed() &&
-        //         g1.getSuperCat().equals(g2.getSuperCat()) &&
-        //         g1.getSubCat().equals(g2.getSubCat()) &&
-        //         minEndpointDistance(g1, g2) < MERGE_LIMIT;
-        // }
+        /**
+         * @return Mean length of geo-objects.
+         */
+        public double meanGeoObjectLength() {
+            double sum = 0;
+            for (GeoObject g : this.db) sum += g.getLength();
+            return sum / this.db.size();
+        }
 
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            for (GeoObject go : this.db)
-                sb.append(go.toString() + "\n");
-            return sb.toString();
+            String lastLine = "";
+
+            for (String c : getSuperCats()) {
+                List<GeoObject> gs = getCatObjects(c);
+                sb.append(String.format("\n-----%s-----\n", c));
+                lastLine += c + ":" + gs.size() + " ";
+
+                for (GeoObject g : gs)
+                    sb.append(g.toString() + "\n");
+            }
+
+            return sb.toString() + lastLine;
         }
     }
 
