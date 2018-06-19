@@ -48,7 +48,7 @@ public class AcquireGeoObjects {
      * 	finest(String msg) */
     public static final Logger TLOG = Logger.getLogger("tlog");
     public static final Logger FLOG = Logger.getLogger("flog");
-    public static final Level TLOG_LEVEL = Level.SEVERE;
+    public static final Level TLOG_LEVEL = Level.FINE;
     public static final Level FLOG_LEVEL = Level.FINE;
 
 
@@ -73,7 +73,7 @@ public class AcquireGeoObjects {
         DB db = new DB();
 
         Shape workingArea = getArea();
-        GeoObjInstructionsIter iter = new GeoObjInstructionsIter();
+        GeoObjInstructionsIter iter = new GeoObjInstructionsIter(workingArea);
         iter.open();
         List<String> instr;
 
@@ -106,16 +106,35 @@ public class AcquireGeoObjects {
      */
     private Shape getArea() {
         //uppsala
-        double w = 17.558212280273438;
-        double s = 59.78301472732963;
-        double e = 17.731246948242188;
-        double n = 59.91097597079679;
+        // double w = 17.558212280273438;
+        // double s = 59.78301472732963;
+        // double e = 17.731246948242188;
+        // double n = 59.91097597079679;
 
         //mefjärd
-        // double w = 18.460774;
-        // double s = 58.958251;
-        // double e = 18.619389;
-        // double n = 59.080544;
+        double w = 18.460774;
+        double s = 58.958251;
+        double e = 18.619389;
+        double n = 59.080544;
+
+        //lidingö
+        // double w = 18.08246612548828;
+        // double s = 59.33564087770051;
+        // double e = 18.27404022216797;
+        // double n = 59.39407306645033;
+
+        //rudboda
+        // double w = 18.15;
+        // double s = 59.372;
+        // double e = 18.19;
+        // double n = 59.383;
+
+        //new york
+        // double w = -74.016259;
+        // double s = 40.717569;
+        // double e = -73.972399;
+        // double n = 40.737473;
+
 
         return new Shape(Arrays.asList(new double[][]{
                     new double[]{w, s},
@@ -932,7 +951,7 @@ public class AcquireGeoObjects {
 
             for (String c : getSuperCats()) {
                 List<GeoObject> gs = getCatObjects(c);
-                sb.append(String.format("\n-----%s-----\n", c));
+                sb.append(String.format("\n-----%s-----\n\n", c));
                 lastLine += c + ":" + gs.size() + " ";
 
                 for (GeoObject g : gs)
