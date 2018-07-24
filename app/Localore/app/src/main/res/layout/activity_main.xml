@@ -10,7 +10,7 @@
         android:id="@+id/doIt_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="onCreateDB"
+        android:onClick="onCreateExercise"
         android:text="Create DB"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

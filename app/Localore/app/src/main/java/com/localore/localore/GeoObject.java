@@ -15,12 +15,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.reflect.TypeToken;
 //import com.google.gson.JsonParser;
 
-@Entity
 /**
  * Class representing geo-object.
  *
  * @inv Minimum one shape.
  */
+@Entity
 public class GeoObject {
     @PrimaryKey(autoGenerate = true)
     private int id;
@@ -40,10 +40,10 @@ public class GeoObject {
      /**
       * Default constructor.
       */
-     public GeoObject(String osmId, String name, List<NodeShape> ms, double rank, String supercat, String subcat) {
+     public GeoObject(String osmId, String name, List<NodeShape> nss, double rank, String supercat, String subcat) {
          this.osmId = osmId;
          this.name = name;
-         this.shapes = ms;
+         this.shapes = nss;
          this.rank = rank;
          this.supercat = supercat;
          this.subcat = subcat;
@@ -394,7 +394,7 @@ public class GeoObject {
     }
 }
 
-class Converters {
+class GeoObjectConverter {
     @TypeConverter
     public static List<NodeShape> fromString(String gosJson) {
         Type listType = new TypeToken<List<NodeShape>>(){}.getType();

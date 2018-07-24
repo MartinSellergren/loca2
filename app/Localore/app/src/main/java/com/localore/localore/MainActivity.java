@@ -21,37 +21,50 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // For now!
+        AppDatabase.getInstance(this).clearAllTables();
+
         // listen to broadcasts from CreateExerciseService
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        onDBCreated();
+                        String status = intent.getStringExtra(CreateExerciseService.REPORT_KEY);
+                        onCreateExerciseServiceDone(status);
                     }
                 },
                 new IntentFilter(CreateExerciseService.BROADCAST_ACTION));
     }
 
-    public void onCreateDB(View v) {
-        Button b = (Button) v;
+    /**
+     * Listener to create-exercise-action.
+     * @param view
+     */
+    public void onCreateExercise(View view) {
+        Button b = (Button) view;
         b.setText("Loading");
         b.setEnabled(false);
 
-        AppDatabase.getInstance(this).clearAllTables();
-        CreateExerciseService.start(this, getWorkingArea());
+        NodeShape workingArea = getWorkingArea();
+        Exercise e = new Exercise("Mefjärd", workingArea);
+        long exerciseId = AppDatabase.getInstance(this).exerciseDao().insert(e);
+
+        CreateExerciseService.start(this, exerciseId);
     }
 
-    public void onDBCreated() {
+    /**
+     * Called with the CreateExerciseService is done.
+     * @param report Network-error?
+     */
+    public void onCreateExerciseServiceDone(String report) {
         Button b = findViewById(R.id.doIt_button);
-        b.setText("Done");
+        b.setText(report);
 
-//        List<GeoObject> gos = AppDatabase.getInstance(this).geoDao().loadAllGeoObjects();
-//
-//        for (GeoObject go : gos) {
-//            Log.i("_ME_", go.toString());
-//        }
+        logGeoObjects(this);
+    }
 
-        AppDatabase db = AppDatabase.getInstance(this);
+    public static void logGeoObjects(Context c) {
+        AppDatabase db = AppDatabase.getInstance(c);
         List<Integer> ids = db.geoDao().loadAllGeoObjectIDs();
 
         for (int id : ids) {

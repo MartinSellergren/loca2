@@ -1,25 +1,38 @@
 package com.localore.localore;
 
 import android.app.IntentService;
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.Context;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-
+/**
+ * Service for completing exercise-construction by updating the database.
+ * Fetches OSM-geo-elements using Overpass service, processes these into GeoObjects and
+ * constructs quizzes.
+ *
+ * In: An exercise with name and working area.
+ * - Adds geo-objects of this exercise to the database.
+ * - Completes exercise with predefined quizzes.
+ */
 public class CreateExerciseService extends IntentService {
-    private static final String AREA_PARAM = "com.localore.localore.extra.AREA_PARAM";
-    public static final String BROADCAST_ACTION = "com.localore.localore.broadcast.CreateExerciseService";
+    private static final String EXERCISE_ID_PARAM_KEY = "com.localore.localore.CreateExerciseService.EXERCISE_PARAM_KEY";
+    public static final String BROADCAST_ACTION = "com.localore.localore.CreateExerciseService.BROADCAST_ACTION";
+    public static final String REPORT_KEY = "com.localore.localore.CreateExerciseService.REPORT_KEY";
 
     public CreateExerciseService() {
         super("CreateExerciseService");
     }
 
-    public static void start(Context context, NodeShape workingArea) {
+    /**
+     * Starts the service and passes parameter exercise-id.
+     *
+     * @param context
+     * @param exerciseId Id of exercise (currently in AppDatabase!) to be created completely.
+     */
+    public static void start(Context context, long exerciseId) {
         Intent intent = new Intent(context, CreateExerciseService.class);
-        intent.putExtra(AREA_PARAM, workingArea);
+        intent.putExtra(EXERCISE_ID_PARAM_KEY, exerciseId);
         context.startService(intent);
     }
 
@@ -32,22 +45,48 @@ public class CreateExerciseService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        if (intent != null) {
-            NodeShape workingArea = (NodeShape)intent.getSerializableExtra(AREA_PARAM);
-            Log.i("_ME_", "Create-exercise started");
-            Log.i("_ME_", "Area: " + workingArea.toString());
+        Log.i("_ME_", "CreateExerciseService started");
 
-            AppDatabase db = AppDatabase.getInstance(this);
-            db.geoDao().insert(new GeoObject("0", "lidingö", null, 0, "bla", "bla"));
-            db.geoDao().insert(new GeoObject("1", "mefjärd", null, 0, "bla", "bla"));
+        if (intent == null) return;
+        long exerciseId = intent.getLongExtra(EXERCISE_ID_PARAM_KEY, -1);
+        AppDatabase db = AppDatabase.getInstance(this);
+
+        Log.d("_ME_", ""+exerciseId);
+
+        Exercise exercise = db.exerciseDao().loadExercise(exerciseId);
+        if (exercise == null) throw new RuntimeException("Exercise not in db");
+        NodeShape workingArea = exercise.getWorkingArea();
+
+        boolean ok = acquireGeoObjects(exerciseId, workingArea, db);
+        if (!ok) {
+            report("Failed");
+            return;
         }
 
-        reportDone();
+        report("Done!");
     }
 
-    private void reportDone() {
+    /**
+     * Fetches geo-objects in the working-area. Process raw OSM. Updates database with geo-objects.
+     *
+     * @param exerciseId Exercise of objects.
+     * @param workingArea Area containing objects.
+     * @param db Database to be updated.
+     * @return True if database updated as planned. False means network error (etc?).
+     */
+    private boolean acquireGeoObjects(long exerciseId, NodeShape workingArea, AppDatabase db) {
+        db.geoDao().insert(new GeoObject("0", "lidingö", null, 0, "bla", "bla"));
+        db.geoDao().insert(new GeoObject("1", "mefjärd", null, 0, "bla", "bla"));
+        return true;
+    }
+
+    /**
+     * Broadcast status-report.
+     * @param report
+     */
+    private void report(String report) {
         Intent localIntent = new Intent(BROADCAST_ACTION);
-        // Broadcasts the Intent to receivers in this app.
+        localIntent.putExtra(REPORT_KEY, report);
         LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
     }
 }

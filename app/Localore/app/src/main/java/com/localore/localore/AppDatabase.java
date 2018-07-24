@@ -6,8 +6,8 @@ import android.arch.persistence.room.RoomDatabase;
 import android.arch.persistence.room.TypeConverters;
 import android.content.Context;
 
-@Database(entities = {GeoObject.class}, version = 1)
-@TypeConverters({Converters.class})
+@Database(entities = {GeoObject.class, Exercise.class}, version = 1)
+@TypeConverters({GeoObjectConverter.class, ExerciseConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
     private static AppDatabase INSTANCE;
@@ -21,4 +21,5 @@ public abstract class AppDatabase extends RoomDatabase {
     }
 
     public abstract GeoObjectDao geoDao();
+    public abstract ExerciseDao exerciseDao();
 }
