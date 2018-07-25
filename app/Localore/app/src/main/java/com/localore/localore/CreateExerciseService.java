@@ -1,18 +1,20 @@
 package com.localore.localore;
 
 import android.app.IntentService;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.Context;
+import android.os.Build;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.List;
 
 
@@ -49,8 +51,38 @@ public class CreateExerciseService extends IntentService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // request foreground
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+        createNotificationChannel();
+        Notification notification = new NotificationCompat.Builder(this, "default_channel_id")
+                .setSmallIcon(R.drawable.loca_notification_icon)
+                .setContentTitle("Creating new exercise...")
+                //.setContentText(textContent)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(pendingIntent)
+                .build();
+
+        int NOTIFICATION_ID = 1;
+        startForeground(NOTIFICATION_ID, notification);
 
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    // required for Android 8.0 and higher
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "whatever";
+            String description = "whatever";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel("default_channel_id", name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
     }
 
     @Override
@@ -61,7 +93,7 @@ public class CreateExerciseService extends IntentService {
         long exerciseId = intent.getLongExtra(EXERCISE_ID_PARAM_KEY, -1);
         AppDatabase db = AppDatabase.getInstance(this);
 
-        Exercise exercise = db.exerciseDao().loadExercise(exerciseId);
+        Exercise exercise = db.exerciseDao().load(exerciseId);
         if (exercise == null) throw new RuntimeException("Exercise not in db");
         NodeShape workingArea = exercise.getWorkingArea();
 
@@ -72,6 +104,12 @@ public class CreateExerciseService extends IntentService {
         }
 
         report("Done!");
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d("_ME_", "CreateExerciseService destroyed");
+        super.onDestroy();
     }
 
     /**
@@ -93,13 +131,18 @@ public class CreateExerciseService extends IntentService {
 
         while ((instr=iter.next()) != null) {
             try {
-                GeoObject go = new GeoObject(instr, convTable);
+                GeoObject go = new GeoObject(instr, convTable, exerciseId);
                 db.geoDao().insert(go);
             }
             catch (GeoObject.BuildException e) {
                 Log.i("_ME_", "Can't build: " + e.toString());
             }
         }
+
+        Log.d("_ME_", "Dedupe database");
+        AppDatabase.dedupeGeoObjects(exerciseId, this);
+        AppDatabase.boostGeoObjectRanksByLength(exerciseId);
+
 
         return true;
     }

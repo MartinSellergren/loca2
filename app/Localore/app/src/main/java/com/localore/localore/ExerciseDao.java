@@ -13,8 +13,8 @@ public interface ExerciseDao {
     public long insert(Exercise e);
 
     @Query("SELECT * FROM Exercise WHERE id LIKE :id")
-    public Exercise loadExercise(long id);
+    public Exercise load(long id);
 
     @Query ("SELECT * FROM Exercise")
-    public List<Exercise> loadAllExercises();
+    public List<Exercise> loadAll();
 }

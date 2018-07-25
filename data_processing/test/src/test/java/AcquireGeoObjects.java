@@ -594,6 +594,34 @@ public class AcquireGeoObjects {
         }
 
         /**
+         * @return [wsen]
+         */
+        public double[] getBounds() {
+            double w = Double.POSITIVE_INFINITY;
+            double s = Double.POSITIVE_INFINITY;
+            double e = Double.NEGATIVE_INFINITY;
+            double n = Double.NEGATIVE_INFINITY;
+
+            for (Shape sh : this.shapes) {
+                double[] bs = sh.getBounds();
+
+                if (bs[0] < w) w = bs[0];
+                if (bs[1] < s) s = bs[1];
+                if (bs[2] > e) e = bs[2];
+                if (bs[3] > n) n = bs[3];
+            }
+            return new double[]{w, s, e, n};
+        }
+
+        /**
+         * @return (lon lat) of center-point.
+         */
+        public double[] getCenter() {
+            double[] bs = getBounds();
+            return new double[]{ (bs[0] + bs[2]) / 2, (bs[1] + bs[3]) / 2 };
+        }
+
+        /**
          * Extracts relevant category from conversion-table.
          *
          * @param tags ["key=value"]

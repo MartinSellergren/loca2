@@ -38,31 +38,33 @@ public class GeoObject {
     private String subcat = null;
     private List<NodeShape> shapes = null;
 
-    private int exerciseId;
-    private int quizId;
+    private long exerciseId;
+
+
 
     public GeoObject() {}
-
-     /**
-      * Default constructor.
-      */
-     public GeoObject(String osmId, String name, List<NodeShape> nss, double rank, String supercat, String subcat) {
-         this.osmId = osmId;
-         this.name = name;
-         this.shapes = nss;
-         this.rank = rank;
-         this.supercat = supercat;
-         this.subcat = subcat;
-     }
+//     /**
+//      * Default constructor.
+//      */
+//     public GeoObject(String osmId, String name, List<NodeShape> nss, double rank, String supercat, String subcat) {
+//         this.osmId = osmId;
+//         this.name = name;
+//         this.shapes = nss;
+//         this.rank = rank;
+//         this.supercat = supercat;
+//         this.subcat = subcat;
+//     }
 
     /**
      * Construct the object from instructions.
      * Constructs geo-object with one shape (not multiple).
+     * Set exerciseId through setter
      */
-    public GeoObject(List<String> instr, JsonObject convTable) throws BuildException {
+    public GeoObject(List<String> instr, JsonObject convTable, long exerciseId) throws BuildException {
         try {
             setFields(instr, convTable);
             testFields();
+            this.exerciseId = exerciseId;
         }
         catch (Exception e) {
             throw new BuildException(e.getMessage(), instr);
@@ -237,20 +239,41 @@ public class GeoObject {
         this.shapes = shapes;
     }
 
-    public int getExerciseId() {
+    public long getExerciseId() {
         return exerciseId;
     }
 
-    public void setExerciseId(int exerciseId) {
+    public void setExerciseId(long exerciseId) {
         this.exerciseId = exerciseId;
     }
 
-    public int getQuizId() {
-        return quizId;
+
+    /**
+     * @return [wsen]
+     */
+    public double[] getBounds() {
+        double w = Double.POSITIVE_INFINITY;
+        double s = Double.POSITIVE_INFINITY;
+        double e = Double.NEGATIVE_INFINITY;
+        double n = Double.NEGATIVE_INFINITY;
+
+        for (NodeShape sh : this.shapes) {
+            double[] bs = sh.getBounds();
+
+            if (bs[0] < w) w = bs[0];
+            if (bs[1] < s) s = bs[1];
+            if (bs[2] > e) e = bs[2];
+            if (bs[3] > n) n = bs[3];
+        }
+        return new double[]{w, s, e, n};
     }
 
-    public void setQuizId(int quizId) {
-        this.quizId = quizId;
+    /**
+     * @return (lon lat) of center-point.
+     */
+    public double[] getCenter() {
+        double[] bs = getBounds();
+        return new double[]{ (bs[0] + bs[2]) / 2, (bs[1] + bs[3]) / 2 };
     }
 
     /**
@@ -334,27 +357,6 @@ public class GeoObject {
         return false;
     }
 
-    /**
-     * @param bs [wsen]
-     * @return Number of nodes inside bs.
-     */
-    public int inNodeCount(double[] bs) {
-        int count = 0;
-        for (double[] n : this.getNodes())
-            if (isInside(n, bs)) count++;
-        return count;
-    }
-
-    /**
-     * @return True if n[lon lat] is inside bs[wsen].
-     */
-    private boolean isInside(double[] n, double[] bs) {
-        return
-                n[0] > bs[0] &&
-                        n[0] < bs[2] &&
-                        n[1] > bs[1] &&
-                        n[1] < bs[3];
-    }
 
     /**
      * @return Link to this osm-object.

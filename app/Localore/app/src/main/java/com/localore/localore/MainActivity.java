@@ -21,9 +21,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // For now!
-        AppDatabase.getInstance(this).clearAllTables();
-
         // listen to broadcasts from CreateExerciseService
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 new BroadcastReceiver() {
@@ -65,13 +62,15 @@ public class MainActivity extends AppCompatActivity {
 
     public static void logGeoObjects(Context c) {
         AppDatabase db = AppDatabase.getInstance(c);
-        List<Long> ids = db.geoDao().loadAllGeoObjectIDs();
+        List<Long> ids = db.geoDao().loadAllIds();
         Log.i("_ME_", "log geo objects, count: " + ids.size());
 
         for (long id : ids) {
-            GeoObject go = db.geoDao().loadGeoObject(id);
+            GeoObject go = db.geoDao().load(id);
             Log.i("_ME_", go.toString() + "\n");
         }
+
+        Log.i("_ME_", "COUNT: " + db.geoDao().size());
     }
 
     /**
@@ -97,10 +96,10 @@ public class MainActivity extends AppCompatActivity {
         // double n = 59.39407306645033;
 
         //rudboda
-        // double w = 18.15;
-        // double s = 59.372;
-        // double e = 18.19;
-        // double n = 59.383;
+//         double w = 18.15;
+//         double s = 59.372;
+//         double e = 18.19;
+//         double n = 59.383;
 
         //new york
         // double w = -74.016259;
