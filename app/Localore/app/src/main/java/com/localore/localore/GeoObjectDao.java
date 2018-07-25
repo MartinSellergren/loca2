@@ -17,8 +17,8 @@ public interface GeoObjectDao {
     public List<GeoObject> loadAllGeoObjects();
 
     @Query("SELECT id FROM GeoObject")
-    public List<Integer> loadAllGeoObjectIDs();
+    public List<Long> loadAllGeoObjectIDs();
 
     @Query("SELECT * FROM GeoObject WHERE id LIKE :id")
-    public GeoObject loadGeoObject(int id);
+    public GeoObject loadGeoObject(long id);
 }

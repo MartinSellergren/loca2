@@ -6,6 +6,16 @@ import android.content.Context;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.List;
+
+
 /**
  * Service for completing exercise-construction by updating the database.
  * Fetches OSM-geo-elements using Overpass service, processes these into GeoObjects and
@@ -51,8 +61,6 @@ public class CreateExerciseService extends IntentService {
         long exerciseId = intent.getLongExtra(EXERCISE_ID_PARAM_KEY, -1);
         AppDatabase db = AppDatabase.getInstance(this);
 
-        Log.d("_ME_", ""+exerciseId);
-
         Exercise exercise = db.exerciseDao().loadExercise(exerciseId);
         if (exercise == null) throw new RuntimeException("Exercise not in db");
         NodeShape workingArea = exercise.getWorkingArea();
@@ -75,9 +83,33 @@ public class CreateExerciseService extends IntentService {
      * @return True if database updated as planned. False means network error (etc?).
      */
     private boolean acquireGeoObjects(long exerciseId, NodeShape workingArea, AppDatabase db) {
-        db.geoDao().insert(new GeoObject("0", "lidingö", null, 0, "bla", "bla"));
-        db.geoDao().insert(new GeoObject("1", "mefjärd", null, 0, "bla", "bla"));
+//        db.geoDao().insert(new GeoObject("0", "lidingö", null, 0, "bla", "bla"));
+//        db.geoDao().insert(new GeoObject("1", "mefjärd", null, 0, "bla", "bla"));
+
+        JsonObject convTable = openConversionTable();
+        GeoObjInstructionsIter iter = new GeoObjInstructionsIter(workingArea, this);
+        iter.open();
+        List<String> instr;
+
+        while ((instr=iter.next()) != null) {
+            try {
+                GeoObject go = new GeoObject(instr, convTable);
+                db.geoDao().insert(go);
+            }
+            catch (GeoObject.BuildException e) {
+                Log.i("_ME_", "Can't build: " + e.toString());
+            }
+        }
+
         return true;
+    }
+
+    /**
+     * Open table for conversion from tags to category.
+     */
+    private JsonObject openConversionTable() {
+        String json = LocaUtils.readTextFile(R.raw.tag_categories, this);
+        return new JsonParser().parse(json).getAsJsonObject();
     }
 
     /**

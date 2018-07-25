@@ -3,11 +3,17 @@ package com.localore.localore;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 import android.arch.persistence.room.TypeConverter;
+import android.content.Context;
 
+import java.io.File;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -23,7 +29,7 @@ import com.google.gson.reflect.TypeToken;
 @Entity
 public class GeoObject {
     @PrimaryKey(autoGenerate = true)
-    private int id;
+    private long id;
 
     private String osmId = null;
     private String name = null;
@@ -80,7 +86,7 @@ public class GeoObject {
         for (String ins : instr) {
             String[] parts = ins.split(" ");
 
-            if (parts[0].equals("osmId")) {
+            if (parts[0].equals("id")) {
                 this.osmId = ins.substring(3, ins.length());
             }
             else if (parts[0].equals("name")) {
@@ -175,11 +181,11 @@ public class GeoObject {
         return l;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 

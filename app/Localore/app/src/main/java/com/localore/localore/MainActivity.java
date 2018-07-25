@@ -65,11 +65,12 @@ public class MainActivity extends AppCompatActivity {
 
     public static void logGeoObjects(Context c) {
         AppDatabase db = AppDatabase.getInstance(c);
-        List<Integer> ids = db.geoDao().loadAllGeoObjectIDs();
+        List<Long> ids = db.geoDao().loadAllGeoObjectIDs();
+        Log.i("_ME_", "log geo objects, count: " + ids.size());
 
-        for (int id : ids) {
+        for (long id : ids) {
             GeoObject go = db.geoDao().loadGeoObject(id);
-            Log.i("_ME_", go.toString());
+            Log.i("_ME_", go.toString() + "\n");
         }
     }
 
@@ -78,16 +79,16 @@ public class MainActivity extends AppCompatActivity {
      */
     private NodeShape getWorkingArea() {
         //uppsala
-        // double w = 17.558212280273438;
-        // double s = 59.78301472732963;
-        // double e = 17.731246948242188;
-        // double n = 59.91097597079679;
+         double w = 17.558212280273438;
+         double s = 59.78301472732963;
+         double e = 17.731246948242188;
+         double n = 59.91097597079679;
 
         //mefjärd
-        double w = 18.460774;
-        double s = 58.958251;
-        double e = 18.619389;
-        double n = 59.080544;
+//        double w = 18.460774;
+//        double s = 58.958251;
+//        double e = 18.619389;
+//        double n = 59.080544;
 
         //lidingö
         // double w = 18.08246612548828;
