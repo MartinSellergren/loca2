@@ -11,6 +11,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import com.localore.localore.model.AppDatabase;
+import com.localore.localore.model.Exercise;
+import com.localore.localore.model.GeoObject;
+import com.localore.localore.model.NodeShape;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -78,16 +83,16 @@ public class MainActivity extends AppCompatActivity {
      */
     private NodeShape getWorkingArea() {
         //uppsala
-         double w = 17.558212280273438;
-         double s = 59.78301472732963;
-         double e = 17.731246948242188;
-         double n = 59.91097597079679;
+//         double w = 17.558212280273438;
+//         double s = 59.78301472732963;
+//         double e = 17.731246948242188;
+//         double n = 59.91097597079679;
 
         //mefjärd
-//        double w = 18.460774;
-//        double s = 58.958251;
-//        double e = 18.619389;
-//        double n = 59.080544;
+        double w = 18.460774;
+        double s = 58.958251;
+        double e = 18.619389;
+        double n = 59.080544;
 
         //lidingö
         // double w = 18.08246612548828;

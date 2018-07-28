@@ -8,6 +8,13 @@ import java.util.Scanner;
 
 public class LocaUtils {
 
+    public static final String[] quizCategories = new String[]{
+            "Settlements",
+            "Roads",
+            "Nature",
+            "Transport",
+            "Constructions"};
+
     /**
      * @param res Resource id of text-file.
      * @return Whole content of file.

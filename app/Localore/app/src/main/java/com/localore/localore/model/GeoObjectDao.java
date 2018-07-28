@@ -1,4 +1,4 @@
-package com.localore.localore;
+package com.localore.localore.model;
 
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Delete;
@@ -13,10 +13,10 @@ import java.util.List;
 public interface GeoObjectDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    public void insert(GeoObject... go);
+    public long insert(GeoObject go);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    public void insert(List<GeoObject> gos);
+    public List<Long> insert(List<GeoObject> gos);
 
     @Update
     public void update(GeoObject geoObject);
@@ -41,9 +41,6 @@ public interface GeoObjectDao {
 
     @Query("SELECT * FROM GeoObject WHERE name = :name COLLATE NOCASE")
     public List<GeoObject> loadWithSimilarName(String name);
-
-    @Query("SELECT id FROM GeoObject where exerciseId LIKE :exerciseId")
-    public List<Long> loadIds(long exerciseId);
 
     @Query("SELECT id FROM GeoObject")
     public List<Long> loadIds();

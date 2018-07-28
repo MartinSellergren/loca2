@@ -12,10 +12,10 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import java.util.List;
+import com.localore.localore.model.AppDatabase;
+import com.localore.localore.model.Exercise;
+import com.localore.localore.model.ExerciseCreation;
+import com.localore.localore.model.NodeShape;
 
 
 /**
@@ -60,7 +60,7 @@ public class CreateExerciseService extends IntentService {
                 .setSmallIcon(R.drawable.loca_notification_icon)
                 .setContentTitle("Creating new exercise...")
                 //.setContentText(textContent)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setContentIntent(pendingIntent)
                 .build();
 
@@ -77,7 +77,7 @@ public class CreateExerciseService extends IntentService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = "whatever";
             String description = "whatever";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            int importance = NotificationManager.IMPORTANCE_LOW;
             NotificationChannel channel = new NotificationChannel("default_channel_id", name, importance);
             channel.setDescription(description);
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
@@ -95,13 +95,16 @@ public class CreateExerciseService extends IntentService {
 
         Exercise exercise = db.exerciseDao().load(exerciseId);
         if (exercise == null) throw new RuntimeException("Exercise not in db");
-        NodeShape workingArea = exercise.getWorkingArea();
 
-        boolean ok = acquireGeoObjects(exerciseId, workingArea, db);
+        NodeShape workingArea = exercise.getWorkingArea();
+        boolean ok = ExerciseCreation.acquireGeoObjects(workingArea, this);
         if (!ok) {
             report("Failed");
             return;
         }
+
+        Log.d("_ME_", "Post processing");
+        ExerciseCreation.postProcessing(exercise, this);
 
         report("Done!");
     }
@@ -110,49 +113,6 @@ public class CreateExerciseService extends IntentService {
     public void onDestroy() {
         Log.d("_ME_", "CreateExerciseService destroyed");
         super.onDestroy();
-    }
-
-    /**
-     * Fetches geo-objects in the working-area. Process raw OSM. Updates database with geo-objects.
-     *
-     * @param exerciseId Exercise of objects.
-     * @param workingArea Area containing objects.
-     * @param db Database to be updated.
-     * @return True if database updated as planned. False means network error (etc?).
-     */
-    private boolean acquireGeoObjects(long exerciseId, NodeShape workingArea, AppDatabase db) {
-//        db.geoDao().insert(new GeoObject("0", "lidingö", null, 0, "bla", "bla"));
-//        db.geoDao().insert(new GeoObject("1", "mefjärd", null, 0, "bla", "bla"));
-
-        JsonObject convTable = openConversionTable();
-        GeoObjInstructionsIter iter = new GeoObjInstructionsIter(workingArea, this);
-        iter.open();
-        List<String> instr;
-
-        while ((instr=iter.next()) != null) {
-            try {
-                GeoObject go = new GeoObject(instr, convTable, exerciseId);
-                db.geoDao().insert(go);
-            }
-            catch (GeoObject.BuildException e) {
-                Log.i("_ME_", "Can't build: " + e.toString());
-            }
-        }
-
-        Log.d("_ME_", "Dedupe database");
-        AppDatabase.dedupeGeoObjects(exerciseId, this);
-        AppDatabase.boostGeoObjectRanksByLength(exerciseId);
-
-
-        return true;
-    }
-
-    /**
-     * Open table for conversion from tags to category.
-     */
-    private JsonObject openConversionTable() {
-        String json = LocaUtils.readTextFile(R.raw.tag_categories, this);
-        return new JsonParser().parse(json).getAsJsonObject();
     }
 
     /**

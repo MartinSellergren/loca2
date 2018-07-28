@@ -1,4 +1,4 @@
-package com.localore.localore;
+package com.localore.localore.model;
 
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Insert;
@@ -9,6 +9,7 @@ import java.util.List;
 
 @Dao
 public interface ExerciseDao {
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     public long insert(Exercise e);
 

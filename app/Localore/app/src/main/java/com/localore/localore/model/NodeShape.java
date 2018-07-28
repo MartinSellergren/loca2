@@ -1,4 +1,4 @@
-package com.localore.localore;
+package com.localore.localore.model;
 
 
 import java.io.Serializable;

@@ -1,7 +1,10 @@
-package com.localore.localore;
+package com.localore.localore.model;
 
 import android.content.Context;
 import android.util.Log;
+
+import com.localore.localore.LocaUtils;
+import com.localore.localore.R;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -14,11 +17,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Helper for building geo-objects.
  * Iterator that fetches geo-object data and iterates over
  * instructions for building the geo-objects.
  */
 public class GeoObjInstructionsIter {
-    private URL url = null;
+    private URL url;
     private Scanner scanner = null;
 
     public GeoObjInstructionsIter(NodeShape area, Context context) {
@@ -90,7 +94,7 @@ public class GeoObjInstructionsIter {
      * @return Next instruction, or NULL if no more.
      */
     public List<String> next() {
-        List<String> instr = new ArrayList<String>();
+        List<String> instr = new ArrayList<>();
 
         while (this.scanner.hasNextLine()) {
             String line = scanner.nextLine().trim();

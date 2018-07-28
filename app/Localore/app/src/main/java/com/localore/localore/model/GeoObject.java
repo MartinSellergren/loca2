@@ -1,76 +1,102 @@
-package com.localore.localore;
+package com.localore.localore.model;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 import android.arch.persistence.room.TypeConverter;
-import android.content.Context;
 
-import java.io.File;
 import java.lang.reflect.Type;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
 import com.google.gson.reflect.TypeToken;
-//import com.google.gson.JsonParser;
 
 /**
- * Class representing geo-object.
- *
+ * Class representing a geo-object. Lives inside a quiz.
  * @inv Minimum one shape.
  */
 @Entity
 public class GeoObject {
+
     @PrimaryKey(autoGenerate = true)
     private long id;
 
+    /**
+     * Quiz of geo-object.
+     */
+    private long quizId;
+
+    /**
+     * Open streat map id (of one of the shapes, highest ranked).
+     */
     private String osmId = null;
+
+    /**
+     * Name of geo-object.
+     */
     private String name = null;
+
+    /**
+     * Rank indicating importance. High for a city, low for a statue.
+     */
     private double rank = -1;
-    private String supercat = null;
-    private String subcat = null;
+
+    /**
+     * Shapes determining area in world.
+     */
     private List<NodeShape> shapes = null;
 
-    private long exerciseId;
+    /**
+     * Used during creation. After that redundant. (It's the quiz-category).
+     */
+    private String supercat = null;
+
+    /**
+     * Category of geo-object. More precise than quiz-category.
+     */
+    private String subcat = null;
 
 
+    /**
+     * True if question asked about geo-object.
+     */
+    private boolean isSeen = false;
+
+    /**
+     * Time in ms since question about geo-object was asked.
+     */
+    private long timeSinceQuestioned = Long.MAX_VALUE;
+
+    /**
+     * Number of asks. +1 for Name-it, place-it. +0.5 for Pair-it, follow-up.
+     */
+    private double timesAsked = 0;
+
+    /**
+     * Number of correct answers. +1 for Name-it, place-it. +0.5 for Pair-it, follow-up.
+     */
+    private double correctAnswers = 0;
 
     public GeoObject() {}
-//     /**
-//      * Default constructor.
-//      */
-//     public GeoObject(String osmId, String name, List<NodeShape> nss, double rank, String supercat, String subcat) {
-//         this.osmId = osmId;
-//         this.name = name;
-//         this.shapes = nss;
-//         this.rank = rank;
-//         this.supercat = supercat;
-//         this.subcat = subcat;
-//     }
 
     /**
      * Construct the object from instructions.
      * Constructs geo-object with one shape (not multiple).
-     * Set exerciseId through setter
+     * QuizId of geo-objects set to -1.
      */
-    public GeoObject(List<String> instr, JsonObject convTable, long exerciseId) throws BuildException {
+    public GeoObject(List<String> instr, JsonObject convTable) throws BuildException {
         try {
             setFields(instr, convTable);
             testFields();
-            this.exerciseId = exerciseId;
         }
         catch (Exception e) {
             throw new BuildException(e.getMessage(), instr);
         }
     }
-    class BuildException extends Exception {
+    public class BuildException extends Exception {
         public BuildException(String msg, List<String> instr) {
             super(msg + "\n" + Arrays.toString(instr.toArray()));
         }
@@ -183,12 +209,21 @@ public class GeoObject {
         return l;
     }
 
+
     public long getId() {
         return id;
     }
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public long getQuizId() {
+        return quizId;
+    }
+
+    public void setQuizId(long quizId) {
+        this.quizId = quizId;
     }
 
     public String getOsmId() {
@@ -215,6 +250,14 @@ public class GeoObject {
         this.rank = rank;
     }
 
+    public List<NodeShape> getShapes() {
+        return shapes;
+    }
+
+    public void setShapes(List<NodeShape> shapes) {
+        this.shapes = shapes;
+    }
+
     public String getSupercat() {
         return supercat;
     }
@@ -231,22 +274,37 @@ public class GeoObject {
         this.subcat = subcat;
     }
 
-    public List<NodeShape> getShapes() {
-        return shapes;
+    public boolean isSeen() {
+        return isSeen;
     }
 
-    public void setShapes(List<NodeShape> shapes) {
-        this.shapes = shapes;
+    public void setSeen(boolean seen) {
+        isSeen = seen;
     }
 
-    public long getExerciseId() {
-        return exerciseId;
+    public long getTimeSinceQuestioned() {
+        return timeSinceQuestioned;
     }
 
-    public void setExerciseId(long exerciseId) {
-        this.exerciseId = exerciseId;
+    public void setTimeSinceQuestioned(long timeSinceQuestioned) {
+        this.timeSinceQuestioned = timeSinceQuestioned;
     }
 
+    public double getTimesAsked() {
+        return timesAsked;
+    }
+
+    public void setTimesAsked(double timesAsked) {
+        this.timesAsked = timesAsked;
+    }
+
+    public double getCorrectAnswers() {
+        return correctAnswers;
+    }
+
+    public void setCorrectAnswers(double correctAnswers) {
+        this.correctAnswers = correctAnswers;
+    }
 
     /**
      * @return [wsen]
@@ -399,20 +457,5 @@ public class GeoObject {
                         "subcat: " + this.subcat + "\n" +
                         "url: " + getLink() + "\n" +
                         "shape:\n" + sStr.toString();
-    }
-}
-
-class GeoObjectConverter {
-    @TypeConverter
-    public static List<NodeShape> fromString(String gosJson) {
-        Type listType = new TypeToken<List<NodeShape>>(){}.getType();
-        return new Gson().fromJson(gosJson, listType);
-    }
-
-    @TypeConverter
-    public static String fromArrayList(List<NodeShape> gos) {
-        Gson gson = new Gson();
-        String gosJson = gson.toJson(gos);
-        return gosJson;
     }
 }
