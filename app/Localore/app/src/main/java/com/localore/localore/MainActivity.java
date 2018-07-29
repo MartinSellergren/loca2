@@ -53,7 +53,8 @@ public class MainActivity extends AppCompatActivity {
         long userId = AppDatabase.getInstance(this).userDao().insert(user);
 
         NodeShape workingArea = getWorkingArea();
-        CreateExerciseService.start(userId, "My exercise", workingArea, this);
+        CreateExerciseService.start(userId, "My exercise0", workingArea, this);
+        CreateExerciseService.start(userId, "My exercise1", workingArea, this);
         CreateExerciseService.start(userId, "My exercise2", workingArea, this);
         CreateExerciseService.start(userId, "My exercise3", workingArea, this);
     }
@@ -63,9 +64,10 @@ public class MainActivity extends AppCompatActivity {
      * @param report Network-error?
      */
     public void onCreateExerciseServiceDone(String report) {
-        if (AppDatabase.getInstance(this).exerciseDao().size() == 3) {
+        if (AppDatabase.getInstance(this).exerciseDao().size() == 4) {
             Button b = findViewById(R.id.doIt_button);
             b.setText(report);
+
             Exercise exercise = AppDatabase.getInstance(this).exerciseDao().loadWithDisplayIndex(1);
             ExerciseControl.deleteExercise(exercise, this);
             LocaUtils.logDatabase(this);
@@ -115,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
 
         //sandböte
         return new NodeShape(Arrays.asList(
-                new double[]{18.4603786,59.0560492},
+                new double[]{18.4603786,59.056049},
                 new double[]{18.455658,59.0427181},
                 new double[]{18.4662151,59.0455437},
                 new double[]{18.4645844,59.0563581}));

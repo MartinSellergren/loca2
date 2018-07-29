@@ -1,14 +1,19 @@
 package com.localore.localore.model;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 
 import com.localore.localore.LocaUtils;
 import com.localore.localore.R;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,21 +40,6 @@ public class GeoObjInstructionsIter {
         }
     }
 
-//    /**
-//     * Constructor for offline (testing).
-//     */
-//    public GeoObjInstructionsIter() {
-//        try {
-//            this.url = new File("../resp_uppsala.xml").toURI().toURL(); //!
-//            //LOG.i("Query: " + url.toString());
-//        }
-//        catch (MalformedURLException e) {
-//            e.printStackTrace();
-//            System.exit(1);
-//        }
-//    }
-
-
     /**
      * @return URL that provides geo-objects-data.
      */
@@ -71,7 +61,11 @@ public class GeoObjInstructionsIter {
      */
     public void open() {
         try {
-            this.scanner = new Scanner(this.url.openStream());
+            URLConnection con = url.openConnection();
+            con.setConnectTimeout(0);
+            con.setReadTimeout(0);
+            InputStream in = con.getInputStream();
+            this.scanner = new Scanner(in);
         }
         catch(IOException e) {
             throw new RuntimeException(e.toString());

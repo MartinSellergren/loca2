@@ -71,7 +71,7 @@ public class ExerciseControl {
         }
     }
 
-    //region aquire
+    //region acquire
 
      /**
      * Fetches geo-objects in the working-area of exercise. Process raw OSM.
@@ -331,12 +331,15 @@ public class ExerciseControl {
      */
     private static void insertGeoObjectQuizzes(long exerciseId, Context context) {
         for (int quizCategoryType = 0; quizCategoryType < LocaUtils.quizCategories.length; quizCategoryType++) {
+            String supercat = LocaUtils.quizCategories[quizCategoryType];
+            List<Long> ids = AppDatabase.getInstance(context).geoDao().
+                    loadQuizlessIdsWithSupercatOrderdByRank(supercat);
+
+            if (ids.size() == 0) continue;
+
+            List<List<Long>> levelGroups = groupEquallySizedLevels(ids);
             QuizCategory quizCategory = new QuizCategory(exerciseId, quizCategoryType);
             long quizCategoryId = AppDatabase.getInstance(context).quizCategoryDao().insert(quizCategory);
-            String quizCategoryTypeStr = LocaUtils.quizCategories[quizCategoryType];
-
-            List<Long> ids = AppDatabase.getInstance(context).geoDao().loadQuizlessIdsOrderdByRank(quizCategoryTypeStr);
-            List<List<Long>> levelGroups = groupEquallySizedLevels(ids);
 
             for (int level = 0; level < levelGroups.size(); level++) {
                 Quiz quiz = new Quiz(quizCategoryId, level);
@@ -418,6 +421,24 @@ public class ExerciseControl {
             deleteQuizCategory(quizCategory, context);
 
         AppDatabase.getInstance(context).exerciseDao().delete(exercise);
+        decrementExerciseDisplayIndexesAbove(exercise.getDisplayIndex(), exercise.getUserId(), context);
+    }
+
+    /**
+     * Subtract 1 from display-indexes of exercises with current display-index strictly
+     * above specified value, of specified user.
+     *
+     * @param displayIndex Update display-indexes strictly below this.
+     * @param context
+     */
+    private static void decrementExerciseDisplayIndexesAbove(int displayIndex, long userId, Context context) {
+        List<Exercise> exercises = AppDatabase.getInstance(context).exerciseDao().loadWithUser(userId);
+        for (Exercise exercise : exercises) {
+            if (exercise.getDisplayIndex() > displayIndex) {
+                exercise.setDisplayIndex(exercise.getDisplayIndex() - 1);
+                AppDatabase.getInstance(context).exerciseDao().update(exercise);
+            }
+        }
     }
 
     /**

@@ -49,7 +49,7 @@ public interface GeoObjectDao {
     public List<Long> loadAllIds();
 
     @Query("SELECT id FROM GeoObject WHERE quizId = -1 AND supercat = :supercat ORDER BY rank")
-    public List<Long> loadQuizlessIdsOrderdByRank(String supercat);
+    public List<Long> loadQuizlessIdsWithSupercatOrderdByRank(String supercat);
 
     @Query("SELECT id FROM GeoObject WHERE quizId = :quizId")
     public List<Long> loadIdsWithQuiz(long quizId);
