@@ -13,7 +13,7 @@ import android.content.Context;
         Question.class,
         Quiz.class,
         QuizCategory.class,
-        QuizRun.class,
+        RunningQuiz.class,
         User.class},
         version = 1)
 @TypeConverters({AppDatabaseConverters.class})
@@ -23,7 +23,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract QuestionDao questionDao();
     public abstract QuizDao quizDao();
     public abstract QuizCategoryDao quizCategoryDao();
-    public abstract QuizRunDao quizRunDao();
+    public abstract RunningQuizDao runningQuizDao();
     public abstract UserDao userDao();
 
     private static AppDatabase INSTANCE;
@@ -55,5 +55,22 @@ public abstract class AppDatabase extends RoomDatabase {
             TEMP_INSTANCE = Room.databaseBuilder(context, AppDatabase.class, temp_database_name).build();
         }
         return TEMP_INSTANCE;
+    }
+
+
+    /**
+     * Close the main-db.
+     */
+    public static void closeMain() {
+        if (INSTANCE != null) INSTANCE.close();
+        INSTANCE = null;
+    }
+
+    /**
+     * Close the temp-db.
+     */
+    public static void closeTemp() {
+        if (TEMP_INSTANCE != null) TEMP_INSTANCE.close();
+        TEMP_INSTANCE = null;
     }
 }

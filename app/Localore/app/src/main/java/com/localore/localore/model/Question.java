@@ -15,9 +15,9 @@ public class Question {
     private long id;
 
     /**
-     * Quiz-run of this question.
+     * Running-quiz of this question.
      */
-    private long quizRunId;
+    private long runningQuizId;
 
     /**
      * Qeo-object defining question.
@@ -48,8 +48,8 @@ public class Question {
     private List<GeoObject> content;
 
 
-    public Question(long quizRunId, long geoObjectId, int index, String type, List<GeoObject> content) {
-        this.quizRunId = quizRunId;
+    public Question(long runningQuizId, long geoObjectId, int index, String type, List<GeoObject> content) {
+        this.runningQuizId = runningQuizId;
         this.geoObjectId = geoObjectId;
         this.index = index;
         this.type = type;
@@ -64,12 +64,12 @@ public class Question {
         this.id = id;
     }
 
-    public long getQuizRunId() {
-        return quizRunId;
+    public long getRunningQuizId() {
+        return runningQuizId;
     }
 
-    public void setQuizRunId(long quizRunId) {
-        this.quizRunId = quizRunId;
+    public void setRunningQuizId(long runningQuizId) {
+        this.runningQuizId = runningQuizId;
     }
 
     public long getGeoObjectId() {
@@ -110,6 +110,12 @@ public class Question {
 
     public void setContent(List<GeoObject> content) {
         this.content = content;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("id: %s, runningQuizId: %s, geoObjectId: %s, index: %s, answeredCorrectly: %s, type: %s",
+                id, runningQuizId, geoObjectId, index, answeredCorrectly, type);
     }
 }
 

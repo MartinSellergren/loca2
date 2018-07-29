@@ -15,6 +15,8 @@ import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
 import com.localore.localore.model.GeoObject;
 import com.localore.localore.model.NodeShape;
+import com.localore.localore.model.User;
+import com.localore.localore.modelManipulation.ExerciseControl;
 
 import java.util.Arrays;
 import java.util.List;
@@ -47,11 +49,13 @@ public class MainActivity extends AppCompatActivity {
         b.setText("Loading");
         b.setEnabled(false);
 
-        NodeShape workingArea = getWorkingArea();
-        Exercise e = new Exercise("Mefjärd", workingArea);
-        long exerciseId = AppDatabase.getInstance(this).exerciseDao().insert(e);
+        User user = new User("Martin");
+        long userId = AppDatabase.getInstance(this).userDao().insert(user);
 
-        CreateExerciseService.start(this, exerciseId);
+        NodeShape workingArea = getWorkingArea();
+        CreateExerciseService.start(userId, "My exercise", workingArea, this);
+        CreateExerciseService.start(userId, "My exercise2", workingArea, this);
+        CreateExerciseService.start(userId, "My exercise3", workingArea, this);
     }
 
     /**
@@ -59,23 +63,13 @@ public class MainActivity extends AppCompatActivity {
      * @param report Network-error?
      */
     public void onCreateExerciseServiceDone(String report) {
-        Button b = findViewById(R.id.doIt_button);
-        b.setText(report);
-
-        logGeoObjects(this);
-    }
-
-    public static void logGeoObjects(Context c) {
-        AppDatabase db = AppDatabase.getInstance(c);
-        List<Long> ids = db.geoDao().loadAllIds();
-        Log.i("_ME_", "log geo objects, count: " + ids.size());
-
-        for (long id : ids) {
-            GeoObject go = db.geoDao().load(id);
-            Log.i("_ME_", go.toString() + "\n");
+        if (AppDatabase.getInstance(this).exerciseDao().size() == 3) {
+            Button b = findViewById(R.id.doIt_button);
+            b.setText(report);
+            Exercise exercise = AppDatabase.getInstance(this).exerciseDao().loadWithDisplayIndex(1);
+            ExerciseControl.deleteExercise(exercise, this);
+            LocaUtils.logDatabase(this);
         }
-
-        Log.i("_ME_", "COUNT: " + db.geoDao().size());
     }
 
     /**
@@ -89,10 +83,10 @@ public class MainActivity extends AppCompatActivity {
 //         double n = 59.91097597079679;
 
         //mefjärd
-        double w = 18.460774;
-        double s = 58.958251;
-        double e = 18.619389;
-        double n = 59.080544;
+//        double w = 18.460774;
+//        double s = 58.958251;
+//        double e = 18.619389;
+//        double n = 59.080544;
 
         //lidingö
         // double w = 18.08246612548828;
@@ -113,11 +107,17 @@ public class MainActivity extends AppCompatActivity {
         // double n = 40.737473;
 
 
-        return new NodeShape(Arrays.asList(new double[][]{
-                new double[]{w, s},
-                new double[]{w, n},
-                new double[]{e, n},
-                new double[]{e, s}
-        }));
+//        return new NodeShape(Arrays.asList(
+//                new double[]{w, s},
+//                new double[]{w, n},
+//                new double[]{e, n},
+//                new double[]{e, s}));
+
+        //sandböte
+        return new NodeShape(Arrays.asList(
+                new double[]{18.4603786,59.0560492},
+                new double[]{18.455658,59.0427181},
+                new double[]{18.4662151,59.0455437},
+                new double[]{18.4645844,59.0563581}));
     }
 }

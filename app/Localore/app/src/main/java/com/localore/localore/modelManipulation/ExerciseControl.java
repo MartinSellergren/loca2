@@ -1,21 +1,31 @@
-package com.localore.localore.model;
+package com.localore.localore.modelManipulation;
 
 import android.content.Context;
 import android.util.Log;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.localore.localore.CreateExerciseService;
 import com.localore.localore.LocaUtils;
 import com.localore.localore.R;
+import com.localore.localore.model.AppDatabase;
+import com.localore.localore.model.Exercise;
+import com.localore.localore.model.GeoObjInstructionsIter;
+import com.localore.localore.model.GeoObject;
+import com.localore.localore.model.GeoObjectDao;
+import com.localore.localore.model.NodeShape;
+import com.localore.localore.model.Quiz;
+import com.localore.localore.model.QuizCategory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
- * Static class for finalizing creation of an exercise.
+ * Static class for exercise related operations (manipulate the database).
 
  */
-public class ExerciseCreation {
+public class ExerciseControl {
 
     /**
      * Max allowed distance in meters between two geo-objects for a merge.
@@ -26,6 +36,40 @@ public class ExerciseCreation {
      * Length based rank boost for geo-objects, by multiplying rank with [1, this].
      * */
     private static final double RANK_BOOST_FACTOR = 0.1;
+
+    /**
+     * Max number of geo-objects in a level. If more: split into two levels.
+     */
+    private static final int MAX_NO_GEO_OBJECTS_IN_A_LEVEL = 7;
+
+    //region create
+
+    /**
+     * Creates and inserts a new exercise-object into the db.
+     *
+     * @param userId
+     * @param exerciseName
+     * @param workingArea
+     * @param context
+     */
+    public static long newExercise(long userId, String exerciseName, NodeShape workingArea, Context context) {
+        Exercise exercise = new Exercise(userId, exerciseName, workingArea);
+        incrementExerciseDisplayIndexes(userId, context);
+        long exerciseId = AppDatabase.getInstance(context).exerciseDao().insert(exercise);
+        return exerciseId;
+    }
+
+    /**
+     * Add 1 to display-indexes of exercises of user.
+     * @param userId
+     */
+    private static void incrementExerciseDisplayIndexes(long userId, Context context) {
+        List<Exercise> exercises = AppDatabase.getInstance(context).exerciseDao().loadWithUser(userId);
+        for (Exercise exercise : exercises) {
+            exercise.setDisplayIndex( exercise.getDisplayIndex() + 1 );
+            AppDatabase.getInstance(context).exerciseDao().update(exercise);
+        }
+    }
 
     //region aquire
 
@@ -73,13 +117,13 @@ public class ExerciseCreation {
      * @post Processed geo-objects are placed in main database, along with all other
      * exercise-related stuff.
      *
-     * @param exercise Exercise under construction.
+     * @param exerciseId Parent of created quizzes.
      * @pre Raw geo-objects in temp-database.
      */
-    public static void postProcessing(Exercise exercise, Context context) {
+    public static void postProcessing(long exerciseId, Context context) {
         List<Long> insertedIds = dedupeAndInsertGeoObjects(context);
         boostGeoObjectRanksByLength(insertedIds, context);
-        insertGeoObjectQuizzes(exercise.getId(), context);
+        insertGeoObjectQuizzes(exerciseId, context);
     }
 
     //region dedupe
@@ -113,7 +157,7 @@ public class ExerciseCreation {
         }
 
         AppDatabase.getTempInstance(context).clearAllTables();
-        AppDatabase.getTempInstance(context).close();
+        AppDatabase.closeTemp();
         return insertedIds;
     }
 
@@ -289,8 +333,9 @@ public class ExerciseCreation {
         for (int quizCategoryType = 0; quizCategoryType < LocaUtils.quizCategories.length; quizCategoryType++) {
             QuizCategory quizCategory = new QuizCategory(exerciseId, quizCategoryType);
             long quizCategoryId = AppDatabase.getInstance(context).quizCategoryDao().insert(quizCategory);
+            String quizCategoryTypeStr = LocaUtils.quizCategories[quizCategoryType];
 
-            List<Long> ids = AppDatabase.getInstance(context).geoDao().loadWithoutQuizSortedByRank(quizCategory);
+            List<Long> ids = AppDatabase.getInstance(context).geoDao().loadQuizlessIdsOrderdByRank(quizCategoryTypeStr);
             List<List<Long>> levelGroups = groupEquallySizedLevels(ids);
 
             for (int level = 0; level < levelGroups.size(); level++) {
@@ -300,6 +345,42 @@ public class ExerciseCreation {
                 setQuizIds(goIds, quizId, AppDatabase.getInstance(context).geoDao());
             }
         }
+    }
+
+    /**
+     * Group geo-objects into levels. Attempt equally sized groups, obeying defined constraints.
+     *
+     * @param goIds Geo-object ids sorted by rank.
+     * @return Geo-objects grouped into levels. Equally sized groups if possible.
+     */
+    public static List<List<Long>> groupEquallySizedLevels(List<Long> goIds) {
+        if (goIds.size() == 0) return new ArrayList();
+
+        int noGroups = goIds.size() / MAX_NO_GEO_OBJECTS_IN_A_LEVEL +
+                (goIds.size() % MAX_NO_GEO_OBJECTS_IN_A_LEVEL == 0 ? 0 : 1);
+
+        int groupSize = goIds.size() / noGroups;
+        int[] groupSizes = new int[noGroups];
+        for (int i = 0; i < noGroups; i++) groupSizes[i] = groupSize;
+
+        int noGroupsWithOneExtra = goIds.size() % noGroups;
+        while (noGroupsWithOneExtra > 0) {
+            int i = new Random().nextInt(noGroups);
+            if (groupSizes[i] == groupSize) {
+                groupSizes[i]++;
+                noGroupsWithOneExtra--;
+            }
+        }
+
+        List<List<Long>> groups = new ArrayList<>();
+        int i0 = 0;
+
+        for (int size : groupSizes) {
+            groups.add(goIds.subList(i0, i0+size));
+            i0 = i0 + size;
+        }
+
+        return groups;
     }
 
     /**
@@ -317,6 +398,68 @@ public class ExerciseCreation {
     }
 
     //endregion
+
+    //endregion
+
+    //endregion
+
+    //region delete
+
+    /**
+     * @param exercise Exercise to be deleted from database (including underlying content).
+     * @param context
+     */
+    public static void deleteExercise(Exercise exercise, Context context) {
+        List<QuizCategory> quizCategories =
+                AppDatabase.getInstance(context).quizCategoryDao()
+                .loadWithExercise(exercise.getId());
+
+        for (QuizCategory quizCategory : quizCategories)
+            deleteQuizCategory(quizCategory, context);
+
+        AppDatabase.getInstance(context).exerciseDao().delete(exercise);
+    }
+
+    /**
+     * @param quizCategory Quiz-category to be deleted from database (including underlying content).
+     * @param context
+     */
+    public static void deleteQuizCategory(QuizCategory quizCategory, Context context) {
+        List<Quiz> quizzes =
+                AppDatabase.getInstance(context).quizDao()
+                .loadWithQuizCategory(quizCategory.getId());
+
+        for (Quiz quiz : quizzes)
+            deleteQuiz(quiz, context);
+
+        AppDatabase.getInstance(context).quizCategoryDao().delete(quizCategory);
+    }
+
+
+    /**
+     * @param quiz Quiz to be deleted from database (including underlying content).
+     * @param context
+     */
+    public static void deleteQuiz(Quiz quiz, Context context) {
+        List<Long> geoObjectIds =
+                AppDatabase.getInstance(context).geoDao()
+                        .loadIdsWithQuiz(quiz.getId());
+
+        for (long geoObjectId : geoObjectIds) {
+            GeoObject geoObject = AppDatabase.getInstance(context).geoDao().load(geoObjectId);
+            deleteGeoObject(geoObject, context);
+        }
+
+        AppDatabase.getInstance(context).quizDao().delete(quiz);
+    }
+
+    /**
+     * @param geoObject Geo-object to be deleted.
+     * @param context
+     */
+    public static void deleteGeoObject(GeoObject geoObject, Context context) {
+        AppDatabase.getInstance(context).geoDao().delete(geoObject);
+    }
 
     //endregion
 }

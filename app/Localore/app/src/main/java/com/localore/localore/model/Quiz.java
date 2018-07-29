@@ -5,7 +5,7 @@ import android.arch.persistence.room.PrimaryKey;
 
 /**
  * Data model of a quiz.
- * The execution of a quiz is randomized from Quiz-objects and specified by QuizRun.
+ * The execution of a quiz is randomized from Quiz-objects and specified by RunningQuiz.
  */
 @Entity
 public class Quiz {
@@ -72,7 +72,7 @@ public class Quiz {
     }
 
     public String toString() {
-        return String.format("Id:%s, Category:%s, Level:%s, Cleared:%s",
+        return String.format("id:%s, categoryId:%s, level:%s, cleared:%s",
                 this.id, this.quizCategoryId, this.level, this.isCleared);
     }
 }

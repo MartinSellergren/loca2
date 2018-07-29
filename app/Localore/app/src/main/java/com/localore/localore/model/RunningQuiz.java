@@ -8,7 +8,7 @@ import android.arch.persistence.room.PrimaryKey;
  * @inv Max one of this object exists in database.
  */
 @Entity
-public class QuizRun {
+public class RunningQuiz {
 
     @PrimaryKey(autoGenerate = true)
     private long id;
@@ -50,7 +50,7 @@ public class QuizRun {
 
     @Override
     public String toString() {
-        return String.format("QuizRun, id:%s, currentQuestion:%s",
+        return String.format("RunningQuiz, id:%s, currentQuestion:%s",
                 this.id, this.currentQuestionIndex);
     }
 }

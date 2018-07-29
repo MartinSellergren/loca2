@@ -19,11 +19,7 @@ public class QuizCategory {
     private long exerciseId;
 
     /**
-     * 0=Settlements
-     * 1=Roads
-     * 2=Nature
-     * 3=Transport
-     * 4=Constructions
+     * Index of LocaUtils.quizCategories[].
      */
     private int type;
 

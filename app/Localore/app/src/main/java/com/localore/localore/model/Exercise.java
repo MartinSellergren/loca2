@@ -1,7 +1,6 @@
 package com.localore.localore.model;
 
 import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Index;
 import android.arch.persistence.room.PrimaryKey;
 
 /**
@@ -14,16 +13,24 @@ public class Exercise {
     private long id;
 
     /**
+     * User owning this exercise.
+     */
+    private long userId;
+
+    /**
      * Determines the order of exercises in the select-exercise screen.
      * @Unique
      */
-    private int display_index;
+    private int displayIndex = 0;
 
     /**
      * @Unique
      */
     private String name;
 
+    /**
+     * Area to study.
+     */
     private NodeShape workingArea;
 
     /**
@@ -47,11 +54,10 @@ public class Exercise {
      * @param name
      * @param workingArea
      */
-    public Exercise(String name, NodeShape workingArea) {
+    public Exercise(long userId, String name, NodeShape workingArea) {
+        this.userId = userId;
         this.name = name;
         this.workingArea = workingArea;
-
-        this.display_index = 0;
     }
 
     public long getId() {
@@ -62,12 +68,20 @@ public class Exercise {
         this.id = id;
     }
 
-    public int getDisplay_index() {
-        return display_index;
+    public long getUserId() {
+        return userId;
     }
 
-    public void setDisplay_index(int display_index) {
-        this.display_index = display_index;
+    public void setUserId(long userId) {
+        this.userId = userId;
+    }
+
+    public int getDisplayIndex() {
+        return displayIndex;
+    }
+
+    public void setDisplayIndex(int displayIndex) {
+        this.displayIndex = displayIndex;
     }
 
     public String getName() {
@@ -104,6 +118,6 @@ public class Exercise {
 
     @Override
     public String toString(){
-        return "Exercise: " + this.name + ", index: " + this.display_index;
+        return "Exercise: " + this.name + ", index: " + this.displayIndex;
     }
 }

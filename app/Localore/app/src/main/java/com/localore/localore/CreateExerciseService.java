@@ -14,7 +14,7 @@ import android.util.Log;
 
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
-import com.localore.localore.model.ExerciseCreation;
+import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.model.NodeShape;
 
 
@@ -28,7 +28,10 @@ import com.localore.localore.model.NodeShape;
  * - Completes exercise with predefined quizzes.
  */
 public class CreateExerciseService extends IntentService {
-    private static final String EXERCISE_ID_PARAM_KEY = "com.localore.localore.CreateExerciseService.EXERCISE_PARAM_KEY";
+    private static final String USER_ID_PARAM_KEY = "com.localore.localore.CreateExerciseService.USER_PARAM_KEY";
+    private static final String EXERCISE_NAME_PARAM_KEY = "com.localore.localore.CreateExerciseService.EXERCISE_NAME_PARAM_KEY";
+    private static final String WORKING_AREA_PARAM_KEY = "com.localore.localore.CreateExerciseService.WORKING_AREA_PARAM_KEY";
+
     public static final String BROADCAST_ACTION = "com.localore.localore.CreateExerciseService.BROADCAST_ACTION";
     public static final String REPORT_KEY = "com.localore.localore.CreateExerciseService.REPORT_KEY";
 
@@ -37,14 +40,18 @@ public class CreateExerciseService extends IntentService {
     }
 
     /**
-     * Starts the service and passes parameter exercise-id.
+     * Starts the service and passes parameters in intent.
      *
+     * @param userId
+     * @param exerciseName
+     * @param workingArea
      * @param context
-     * @param exerciseId Id of exercise (currently in AppDatabase!) to be created completely.
      */
-    public static void start(Context context, long exerciseId) {
+    public static void start(long userId, String exerciseName, NodeShape workingArea, Context context) {
         Intent intent = new Intent(context, CreateExerciseService.class);
-        intent.putExtra(EXERCISE_ID_PARAM_KEY, exerciseId);
+        intent.putExtra(USER_ID_PARAM_KEY, userId);
+        intent.putExtra(EXERCISE_NAME_PARAM_KEY, exerciseName);
+        intent.putExtra(WORKING_AREA_PARAM_KEY, workingArea);
         context.startService(intent);
     }
 
@@ -88,23 +95,21 @@ public class CreateExerciseService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         Log.i("_ME_", "CreateExerciseService started");
-
         if (intent == null) return;
-        long exerciseId = intent.getLongExtra(EXERCISE_ID_PARAM_KEY, -1);
-        AppDatabase db = AppDatabase.getInstance(this);
 
-        Exercise exercise = db.exerciseDao().load(exerciseId);
-        if (exercise == null) throw new RuntimeException("Exercise not in db");
+        long userId = intent.getLongExtra(USER_ID_PARAM_KEY, -1);
+        String exerciseName = intent.getStringExtra(EXERCISE_NAME_PARAM_KEY);
+        NodeShape workingArea = (NodeShape)intent.getSerializableExtra(WORKING_AREA_PARAM_KEY);
+        long exerciseId = ExerciseControl.newExercise(userId, exerciseName, workingArea, this);
 
-        NodeShape workingArea = exercise.getWorkingArea();
-        boolean ok = ExerciseCreation.acquireGeoObjects(workingArea, this);
+        boolean ok = ExerciseControl.acquireGeoObjects(workingArea, this);
         if (!ok) {
             report("Failed");
             return;
         }
 
         Log.d("_ME_", "Post processing");
-        ExerciseCreation.postProcessing(exercise, this);
+        ExerciseControl.postProcessing(exerciseId, this);
 
         report("Done!");
     }

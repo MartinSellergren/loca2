@@ -36,7 +36,7 @@ public interface GeoObjectDao {
     @Query("SELECT * FROM GeoObject")
     public List<GeoObject> loadAll();
 
-    @Query("SELECT * FROM GeoObject WHERE id LIKE :id")
+    @Query("SELECT * FROM GeoObject WHERE id = :id")
     public GeoObject load(long id);
 
     @Query("SELECT * FROM GeoObject WHERE name = :name COLLATE NOCASE")
@@ -48,6 +48,15 @@ public interface GeoObjectDao {
     @Query("SELECT id FROM GeoObject")
     public List<Long> loadAllIds();
 
+    @Query("SELECT id FROM GeoObject WHERE quizId = -1 AND supercat = :supercat ORDER BY rank")
+    public List<Long> loadQuizlessIdsOrderdByRank(String supercat);
+
+    @Query("SELECT id FROM GeoObject WHERE quizId = :quizId")
+    public List<Long> loadIdsWithQuiz(long quizId);
+
+    @Query("SELECT id FROM GeoObject WHERE quizId = :quizId ORDER BY rank")
+    public List<Long> loadIdsWithQuizOrderedByRank(long quizId);
+
     @Query("SELECT count(*) FROM GeoObject")
-    public long size();
+    public int size();
 }

@@ -95,6 +95,8 @@ public class GeoObject {
         catch (Exception e) {
             throw new BuildException(e.getMessage(), instr);
         }
+
+        this.quizId = -1;
     }
     public class BuildException extends Exception {
         public BuildException(String msg, List<String> instr) {
@@ -427,7 +429,7 @@ public class GeoObject {
      * @return Compact representation.
      */
     public String toCompactString() {
-        return String.format("%s (%s, %s, %s)\n%s",
+        return String.format("%s, %s, %s, %s, %s",
                 this.name,
                 this.supercat,
                 this.subcat,
@@ -455,6 +457,7 @@ public class GeoObject {
                         "rank: " + this.rank + "\n" +
                         "supercat: " + this.supercat + "\n" +
                         "subcat: " + this.subcat + "\n" +
+                        "quizId: " + this.quizId + "\n" +
                         "url: " + getLink() + "\n" +
                         "shape:\n" + sStr.toString();
     }
