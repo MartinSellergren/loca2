@@ -3,10 +3,13 @@ package com.localore.localore.model;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 
+import com.localore.localore.LocaUtils;
+
 import java.util.List;
+import java.util.Random;
 
 /**
- * A question about a geo-object. Lives inside a quiz-run.
+ * A question about a geo-object. Lives inside a running-quiz.
  */
 @Entity
 public class Question {
@@ -36,9 +39,9 @@ public class Question {
     private boolean answeredCorrectly = false;
 
     /**
-     * name-it/ place-it/ pair-it"
+     * Index of LocaUtils.questionTypes[].
      */
-    private String type;
+    private int type;
 
     /**
      * - For name-it: even number of alternatives (including correct one)
@@ -48,12 +51,34 @@ public class Question {
     private List<GeoObject> content;
 
 
-    public Question(long runningQuizId, long geoObjectId, int index, String type, List<GeoObject> content) {
+    /**
+     * @param runningQuizId
+     * @param geoObjectId
+     * @param index
+     * @param type
+     * @param content
+     */
+    public Question(long runningQuizId, long geoObjectId, int index, int type, List<GeoObject> content) {
         this.runningQuizId = runningQuizId;
         this.geoObjectId = geoObjectId;
         this.index = index;
         this.type = type;
         this.content = content;
+    }
+
+    /**
+     * Randomize type and generate content.
+     *
+     * @param runningQuizId
+     * @param geoObject
+     * @param index
+     */
+    public Question(long runningQuizId, GeoObject geoObject, int index) {
+        this.runningQuizId = runningQuizId;
+        this.geoObjectId = geoObject.getId();
+        this.index = index;
+        this.type = new Random().nextInt(LocaUtils.questionTypes.length);
+        this.content = generateContent(geoObject, type);
     }
 
     public long getId() {

@@ -25,6 +25,11 @@ public class LocaUtils {
             "transport",
             "constructions"};
 
+    public static final String[] questionTypes = new String[]{
+            "name-it",
+            "place-it",
+            "pair-it"};
+
     /**
      * @param res Resource id of text-file.
      * @return Whole content of file.

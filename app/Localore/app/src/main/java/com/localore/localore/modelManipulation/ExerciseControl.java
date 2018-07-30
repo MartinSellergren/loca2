@@ -29,18 +29,18 @@ public class ExerciseControl {
 
     /**
      * Max allowed distance in meters between two geo-objects for a merge.
-     * */
+     */
     private static final double MERGE_LIMIT = 5;
 
     /**
      * Length based rank boost for geo-objects, by multiplying rank with [1, this].
-     * */
+     */
     private static final double RANK_BOOST_FACTOR = 0.1;
 
     /**
      * Max number of geo-objects in a level. If more: split into two levels.
      */
-    private static final int MAX_NO_GEO_OBJECTS_IN_A_LEVEL = 7;
+    private static final int MAX_NO_GEO_OBJECTS_IN_A_LEVEL = 5;
 
     //region create
 
