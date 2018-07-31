@@ -5,6 +5,7 @@ import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
+import android.arch.persistence.room.Transaction;
 import android.arch.persistence.room.Update;
 
 import java.util.List;
@@ -21,14 +22,16 @@ public interface QuestionDao {
     @Update
     public void update(Question question);
 
+    @Query("SELECT * FROM question WHERE runningQuizId = :runningQuizId AND `index` = :index")
+    public Question loadWithRunningQuizAndIndex(long runningQuizId, int index);
 
-    @Query("SELECT * FROM Question WHERE runningQuizId = :runningQuizId")
+    @Transaction @Query("SELECT * FROM question WHERE runningQuizId = :runningQuizId")
     public List<Question> loadWithRunningQuiz(long runningQuizId);
 
-    @Query("SELECT * FROM Question WHERE runningQuizId = :runningQuizId ORDER BY `index`")
+    @Transaction @Query("SELECT * FROM question WHERE runningQuizId = :runningQuizId ORDER BY `index`")
     public List<Question> loadWithRunningQuizOrderedByIndex(long runningQuizId);
 
-    @Query("SELECT id FROM Question WHERE answeredCorrectly = 0 AND runningQuizId = :runningQuizId")
+    @Transaction @Query("SELECT id FROM question WHERE answeredCorrectly = 0 AND runningQuizId = :runningQuizId")
     public List<Long> loadIdsIncorrectlyAnsweredWithRunningQuiz(long runningQuizId);
 }
 

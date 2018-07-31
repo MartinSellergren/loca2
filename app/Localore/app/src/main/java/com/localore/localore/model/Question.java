@@ -117,7 +117,7 @@ public class Question {
      * @return Name-it content.
      */
     private List<GeoObject> generateContent_nameIt(GeoObject geoObject, int difficulty) {
-
+        //todo
         return null;
     }
 
@@ -127,7 +127,7 @@ public class Question {
      * @return Place-it content.
      */
     private List<GeoObject> generateContent_placeIt(GeoObject geoObject, int difficulty) {
-
+        //todo
         return null;
     }
 
@@ -137,7 +137,7 @@ public class Question {
      * @return Pair-it content.
      */
     private List<GeoObject> generateContent_PairIt(GeoObject geoObject, int difficulty) {
-
+        //todo
         return null;
     }
 

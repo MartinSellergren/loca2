@@ -9,7 +9,6 @@ import com.localore.localore.model.Question;
 import com.localore.localore.model.Quiz;
 import com.localore.localore.model.QuizCategory;
 import com.localore.localore.model.RunningQuiz;
-import com.localore.localore.model.Session;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +45,35 @@ public class RunningQuizControl {
     public static final int MAX_NO_QUIZ_CATEGORY_REMINDERS = 3;
 
 
+    //region shortcuts
+
+    public static RunningQuiz load(Context context) {
+        return AppDatabase.getInstance(context).runningQuizDao().loadOne();
+    }
+
+    public static GeoObject loadGeoObjectFromQuestion(Question question, Context context) {
+        return AppDatabase.getInstance(context).geoDao().load(question.getGeoObjectId());
+    }
+
+    /**
+     * @param context
+     * @return Underlying quiz-data of running quiz.
+     */
+    public static Quiz loadQuizFromRunningQuiz(RunningQuiz runningQuiz, Context context) {
+        Question question =
+                AppDatabase.getInstance(context).questionDao()
+                        .loadWithRunningQuiz(runningQuiz.getId()).get(0);
+        GeoObject geoObject = loadGeoObjectFromQuestion(question, context);
+        return AppDatabase.getInstance(context).quizDao()
+                .load(geoObject.getQuizId());
+    }
+
+    public static QuizCategory loadQuizCategoryFromRunningQuiz(RunningQuiz runningQuiz, Context context) {
+        Quiz quiz = loadQuizFromRunningQuiz(runningQuiz, context);
+        return AppDatabase.getInstance(context).quizCategoryDao().load(quiz.getQuizCategoryId());
+    }
+
+    //
 
     //region new running-quiz
 
@@ -74,9 +102,7 @@ public class RunningQuizControl {
      * @param context
      */
     public static void newFollowUpQuiz(Context context) {
-        long runningQuizId =
-                AppDatabase.getInstance(context).runningQuizDao()
-                        .loadOne().getId();
+        long runningQuizId = load(context).getId();
         List<Long> incorrectGeoObjectIds =
                 AppDatabase.getInstance(context).questionDao()
                         .loadIdsIncorrectlyAnsweredWithRunningQuiz(runningQuizId);
@@ -145,11 +171,14 @@ public class RunningQuizControl {
     /**
      * Pick geo-objects for a reminder-quiz. Semi-random selection. Favour old and
      * problematic (bad success-rate) geo-objects.
+     *
      * @param geoObjectCandidateIds
-     * @return
+     * @return Selected geo-objects for reminder.
      */
     private static List<GeoObject> pickReminderQuizGeoObjects(List<Long> geoObjectCandidateIds) {
         int noQuestions = ExerciseControl.MAX_NO_GEO_OBJECTS_IN_A_LEVEL * DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT;
+
+        //todo
 
         return new ArrayList<>();
     }
@@ -175,9 +204,7 @@ public class RunningQuizControl {
      * @param context
      */
     private static void deleteRunningQuiz(Context context) {
-        RunningQuiz runningQuiz =
-                AppDatabase.getInstance(context).runningQuizDao()
-                        .loadOne();
+        RunningQuiz runningQuiz = load(context);
         List<Question> questions =
                 AppDatabase.getInstance(context).questionDao()
                         .loadWithRunningQuiz(runningQuiz.getId());
@@ -259,16 +286,53 @@ public class RunningQuizControl {
 
     //endregion
 
-    //region report question-results
+    //region question-operations
 
     /**
-     * Report result to question in running quiz.
+     * Report result of question in running quiz. Depends on type of running-quiz.
+     * For a Pair-it question: call this multiple times.
+     * Db-updates: Question in running-quiz, and Geo-object (defining question) stats.
+     *
      * @param question
      * @param correct
      * @param context
      */
     public static void reportQuestionResult(Question question, boolean correct, Context context) {
-        //todo
+        if (correct) {
+            question.setAnsweredCorrectly(true);
+            AppDatabase.getInstance(context).questionDao().update(question);
+        }
+
+        RunningQuiz runningQuiz = load(context);
+        double askWeight = 1;
+        if (question.getType() == Question.PAIR_IT) askWeight *= 0.5;
+        if (runningQuiz.getType() == RunningQuiz.FOLLOW_UP_QUIZ) askWeight *= 0.5;
+
+        GeoObject geoObject = loadGeoObjectFromQuestion(question, context);
+        geoObject.setTimesAsked( geoObject.getTimesAsked() + askWeight );
+        if (correct) {
+            geoObject.setNoCorrectAnswers(geoObject.getNoCorrectAnswers() + askWeight);
+            geoObject.setTimeOfPreviousCorrectAnswer(System.currentTimeMillis());
+        }
+
+        AppDatabase.getInstance(context).geoDao().update(geoObject);
+    }
+
+    /**
+     * - Returns next question in a quiz-run (NULL if no more).
+     * - Db-update: current question in running-quiz.
+     *
+     * @param context
+     * @return Next question, or NULL.
+     */
+    public static Question nextQuestion(Context context) {
+        RunningQuiz runningQuiz = load(context);
+        int nextQuestionIndex = runningQuiz.getCurrentQuestionIndex() + 1;
+        runningQuiz.setCurrentQuestionIndex(nextQuestionIndex);
+        AppDatabase.getInstance(context).runningQuizDao().update(runningQuiz);
+
+        return AppDatabase.getInstance(context).questionDao()
+                .loadWithRunningQuizAndIndex(runningQuiz.getId(), nextQuestionIndex);
     }
 
     //endregion
@@ -286,7 +350,7 @@ public class RunningQuizControl {
      * @return Brief feedback.
      */
     public static String onFinishedRunningQuiz(Context context) {
-        RunningQuiz runningQuiz = AppDatabase.getInstance(context).runningQuizDao().loadOne();
+        RunningQuiz runningQuiz = load(context);
         Quiz quiz = loadQuizFromRunningQuiz(runningQuiz, context);
         QuizCategory quizCategory = loadQuizCategoryFromRunningQuiz(runningQuiz, context);
         Exercise exercise = SessionControl.loadExercise(context);
@@ -325,27 +389,6 @@ public class RunningQuizControl {
         }
 
         return correctCount / questions.size();
-    }
-
-    /**
-     * @param context
-     * @return Underlying quiz-data of running quiz.
-     */
-    public static Quiz loadQuizFromRunningQuiz(RunningQuiz runningQuiz, Context context) {
-        Question question =
-                AppDatabase.getInstance(context).questionDao()
-                        .loadWithRunningQuiz(runningQuiz.getId()).get(0);
-        GeoObject geoObject =
-                AppDatabase.getInstance(context).geoDao()
-                        .load(question.getGeoObjectId());
-        return
-                AppDatabase.getInstance(context).quizDao()
-                        .load(geoObject.getQuizId());
-    }
-
-    public static QuizCategory loadQuizCategoryFromRunningQuiz(RunningQuiz runningQuiz, Context context) {
-        Quiz quiz = loadQuizFromRunningQuiz(runningQuiz, context);
-        return AppDatabase.getInstance(context).quizCategoryDao().load(quiz.getQuizCategoryId());
     }
 
     /**

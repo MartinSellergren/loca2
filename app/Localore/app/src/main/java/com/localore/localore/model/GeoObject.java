@@ -2,17 +2,13 @@ package com.localore.localore.model;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
-import android.arch.persistence.room.TypeConverter;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
-import com.google.gson.reflect.TypeToken;
 
 /**
  * Class representing a geo-object. Lives inside a quiz.
@@ -60,9 +56,9 @@ public class GeoObject {
     private String subcat = null;
 
     /**
-     * Time in ms since question about geo-object was asked.
+     * Time when a question defined by this geo-object was most recently answered correctly.
      */
-    private long timeSinceQuestioned = Long.MAX_VALUE;
+    private long timeOfPreviousCorrectAnswer = System.currentTimeMillis();
 
     /**
      * Number of asks. +1 for Name-it, place-it. +0.5 for Pair-it, follow-up.
@@ -72,7 +68,7 @@ public class GeoObject {
     /**
      * Number of correct answers. +1 for Name-it, place-it. +0.5 for Pair-it, follow-up.
      */
-    private double correctAnswers = 0;
+    private double noCorrectAnswers = 0;
 
     public GeoObject() {}
 
@@ -270,12 +266,12 @@ public class GeoObject {
         this.subcat = subcat;
     }
 
-    public long getTimeSinceQuestioned() {
-        return timeSinceQuestioned;
+    public long getTimeOfPreviousCorrectAnswer() {
+        return timeOfPreviousCorrectAnswer;
     }
 
-    public void setTimeSinceQuestioned(long timeSinceQuestioned) {
-        this.timeSinceQuestioned = timeSinceQuestioned;
+    public void setTimeOfPreviousCorrectAnswer(long timeOfPreviousCorrectAnswer) {
+        this.timeOfPreviousCorrectAnswer = timeOfPreviousCorrectAnswer;
     }
 
     public double getTimesAsked() {
@@ -286,12 +282,12 @@ public class GeoObject {
         this.timesAsked = timesAsked;
     }
 
-    public double getCorrectAnswers() {
-        return correctAnswers;
+    public double getNoCorrectAnswers() {
+        return noCorrectAnswers;
     }
 
-    public void setCorrectAnswers(double correctAnswers) {
-        this.correctAnswers = correctAnswers;
+    public void setNoCorrectAnswers(double noCorrectAnswers) {
+        this.noCorrectAnswers = noCorrectAnswers;
     }
 
     /**
