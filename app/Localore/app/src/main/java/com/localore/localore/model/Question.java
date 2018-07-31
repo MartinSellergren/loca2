@@ -3,10 +3,13 @@ package com.localore.localore.model;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
+import android.content.Context;
 import android.support.annotation.VisibleForTesting;
 
 import com.localore.localore.LocaUtils;
+import com.localore.localore.modelManipulation.RunningQuizControl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -78,6 +81,7 @@ public class Question {
 
     /**
      * Randomize type and generate content based on difficulty.
+     * Loads geo-objects from db for question-content (answer-alternatives etc).
      *
      * @param runningQuizId
      * @param geoObject
@@ -85,28 +89,32 @@ public class Question {
      * @param difficulty Determines level difficulty (no. answer alternatives..).
      *                   0 <= this <= DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT (+NO_EXTRA_QUESTIONS)
      */
-    public Question(long runningQuizId, GeoObject geoObject, int index, int difficulty) {
+    public Question(long runningQuizId, GeoObject geoObject, int index, int difficulty, Context context) {
         this.runningQuizId = runningQuizId;
         this.geoObjectId = geoObject.getId();
         this.index = index;
         this.type = new Random().nextInt(3);
-        this.content = generateContent(geoObject, type, difficulty);
+
+        if (difficulty > RunningQuizControl.DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT)
+            difficulty = RunningQuizControl.DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT;
+        this.content = generateContent(geoObject, type, difficulty, context);
     }
 
     /**
-     * Generate question-content about geo-object based on question-type.
+     * Generates question-content about geo-object based on question-type, by consulting db.
      *
      * @param geoObject
      * @param questionType
-     * @param difficulty
+     * @param difficulty <- [0, DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT]
+     * @param context
      * @return Content of question.
      */
     @VisibleForTesting
-    private List<GeoObject> generateContent(GeoObject geoObject, int questionType, int difficulty) {
+    private List<GeoObject> generateContent(GeoObject geoObject, int questionType, int difficulty, Context context) {
         switch (questionType) {
-            case 0: return generateContent_nameIt(geoObject, difficulty);
-            case 1: return generateContent_placeIt(geoObject, difficulty);
-            case 2: return generateContent_PairIt(geoObject, difficulty);
+            case 0: return generateContent_nameIt(geoObject, difficulty, context);
+            case 1: return generateContent_placeIt(geoObject, difficulty, context);
+            case 2: return generateContent_PairIt(geoObject, difficulty, context);
             default: throw new RuntimeException("Dead-end");
         }
     }
@@ -116,9 +124,22 @@ public class Question {
      * @param difficulty
      * @return Name-it content.
      */
-    private List<GeoObject> generateContent_nameIt(GeoObject geoObject, int difficulty) {
-        //todo
-        return null;
+    private List<GeoObject> generateContent_nameIt(GeoObject geoObject, int difficulty, Context context) {
+        int minNoAlternativePairs = 1;
+        int maxNoAlternativePairs = 3;
+        int noPairs = minNoAlternativePairs +
+                scaleBasedOnDifficulty(maxNoAlternativePairs - minNoAlternativePairs, difficulty);
+        int noAlternatives = noPairs * 2;
+
+        //todo: smart alternatives
+
+        List<GeoObject> content = loadRandomGeoObjectsExcept(geoObject, noAlternatives, context);
+        if (content.size() % 2 != 0) content = content.subList(0, content.size() - 1);
+
+        if (content.size() < minNoAlternativePairs * 2)
+            throw new RuntimeException("Not enough geo-objects in db");
+
+        return content;
     }
 
     /**
@@ -126,9 +147,20 @@ public class Question {
      * @param difficulty
      * @return Place-it content.
      */
-    private List<GeoObject> generateContent_placeIt(GeoObject geoObject, int difficulty) {
-        //todo
-        return null;
+    private List<GeoObject> generateContent_placeIt(GeoObject geoObject, int difficulty, Context context) {
+        int minNoAlternatives = 2;
+        int maxNoAlternatives = 6;
+        int noAlternatives = minNoAlternatives +
+                scaleBasedOnDifficulty(maxNoAlternatives - minNoAlternatives, difficulty);
+
+        //todo: smart alternatives
+
+        List<GeoObject> content = loadRandomGeoObjectsExcept(geoObject, noAlternatives, context);
+
+        if (content.size() < minNoAlternatives)
+            throw new RuntimeException("Not enough geo-objects in db");
+
+        return content;
     }
 
     /**
@@ -136,9 +168,52 @@ public class Question {
      * @param difficulty
      * @return Pair-it content.
      */
-    private List<GeoObject> generateContent_PairIt(GeoObject geoObject, int difficulty) {
-        //todo
-        return null;
+    private List<GeoObject> generateContent_PairIt(GeoObject geoObject, int difficulty, Context context) {
+        int minNoAlternativePairs = 1;
+        int maxNoAlternativePairs = 3;
+        int noPairs = minNoAlternativePairs +
+                scaleBasedOnDifficulty(maxNoAlternativePairs - minNoAlternativePairs, difficulty);
+        int noAlternatives = noPairs * 2;
+
+        //todo: smart alternatives
+
+        List<GeoObject> content = loadRandomGeoObjectsExcept(geoObject, noAlternatives, context);
+        if (content.size() % 2 != 0) content = content.subList(0, content.size() - 1);
+
+        if (content.size() < minNoAlternativePairs * 2)
+            throw new RuntimeException("Not enough geo-objects in db");
+
+        return content;
+    }
+
+    /**
+     *
+     * @param value
+     * @param difficulty <- [0, DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT]
+     * @return Value scaled based on difficulty <- [0, value].
+     */
+    @VisibleForTesting
+    private int scaleBasedOnDifficulty(double value, int difficulty) {
+        double maxDifficulty = RunningQuizControl.DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT;
+        double scaledValue = (difficulty / maxDifficulty) * value;
+        return (int)Math.round(scaledValue);
+    }
+
+    /**
+     * @param exceptGeoObject
+     * @param preferredCount
+     * @param context
+     * @return List of geo-objects of length preferredCount or less (if not enough geo-objects in db).
+     *         List doesn't contain the geo-object with id exceptId
+     *
+     */
+    private List<GeoObject> loadRandomGeoObjectsExcept(GeoObject exceptGeoObject, int preferredCount, Context context) {
+        List<GeoObject> geoObjects = AppDatabase.getInstance(context).geoDao().loadRandoms(preferredCount + 1);
+        if (geoObjects.size() == 0) return new ArrayList<>();
+
+        boolean removed = geoObjects.remove(exceptGeoObject);
+        if (!removed) geoObjects.remove(0);
+        return geoObjects;
     }
 
     public long getId() {

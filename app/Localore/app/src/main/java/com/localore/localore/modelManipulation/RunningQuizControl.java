@@ -73,7 +73,7 @@ public class RunningQuizControl {
         return AppDatabase.getInstance(context).quizCategoryDao().load(quiz.getQuizCategoryId());
     }
 
-    //
+    //endregion
 
     //region new running-quiz
 
@@ -138,7 +138,7 @@ public class RunningQuizControl {
         List<Long> geoObjectCandidateIds =
                 AppDatabase.getInstance(context).geoDao()
                         .loadIdsWithQuizIn(quizIds);
-        List<GeoObject> geoObjects = pickReminderQuizGeoObjects(geoObjectCandidateIds);
+        List<GeoObject> geoObjects = pickReminderQuizGeoObjects(geoObjectCandidateIds, context);
 
         newQuestions(geoObjects, runningQuizId, context);
     }
@@ -163,7 +163,7 @@ public class RunningQuizControl {
         List<Long> geoObjectCandidateIds =
                 AppDatabase.getInstance(context).geoDao()
                         .loadIdsWithQuizIn(quizIds);
-        List<GeoObject> geoObjects = pickReminderQuizGeoObjects(geoObjectCandidateIds);
+        List<GeoObject> geoObjects = pickReminderQuizGeoObjects(geoObjectCandidateIds, context);
 
         newQuestions(geoObjects, runningQuizId, context);
     }
@@ -175,12 +175,19 @@ public class RunningQuizControl {
      * @param geoObjectCandidateIds
      * @return Selected geo-objects for reminder.
      */
-    private static List<GeoObject> pickReminderQuizGeoObjects(List<Long> geoObjectCandidateIds) {
+    private static List<GeoObject> pickReminderQuizGeoObjects(List<Long> geoObjectCandidateIds, Context context) {
         int noQuestions = ExerciseControl.MAX_NO_GEO_OBJECTS_IN_A_LEVEL * DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT;
 
-        //todo
+        //todo: select relevant objects
 
-        return new ArrayList<>();
+        List<GeoObject> selected = new ArrayList<>();
+
+        for (int i = 0; i < noQuestions; i++) {
+            long id = geoObjectCandidateIds.get(i);
+            GeoObject geoObject = AppDatabase.getInstance(context).geoDao().load(id);
+            selected.add(geoObject);
+        }
+        return selected;
     }
 
     /**

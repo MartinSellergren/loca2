@@ -443,4 +443,13 @@ public class GeoObject {
                         "url: " + getLink() + "\n" +
                         "shape:\n" + sStr.toString();
     }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object ==  null) return false;
+        if (!(object instanceof GeoObject)) return false;
+
+        GeoObject geoObject2 = (GeoObject) object;
+        return this.getId() == geoObject2.getId();
+    }
 }

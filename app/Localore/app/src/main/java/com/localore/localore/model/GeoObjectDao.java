@@ -46,6 +46,9 @@ public interface GeoObjectDao {
     @Transaction @Query("SELECT * FROM geoobject WHERE quizId = :quizId")
     public List<GeoObject> loadWithQuiz(long quizId);
 
+    @Transaction @Query("SELECT * FROM geoobject ORDER BY RANDOM() LIMIT :preferredCount")
+    public List<GeoObject> loadRandoms(int preferredCount);
+
     @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = :quizId")
     public List<Long> loadIdsWithQuiz(long quizId);
 
