@@ -10,22 +10,6 @@ import java.util.List;
 
 public class AppDatabaseConverters {
 
-//    /**
-//     * Converter of List<Long>
-//     */
-//    @TypeConverter
-//    public static List<Long> toLongList(String json) {
-//        Type listType = new TypeToken<List<Long>>() {
-//        }.getType();
-//        return new Gson().fromJson(json, listType);
-//    }
-//    @TypeConverter
-//    public static String fromLongList(List<Long> ids) {
-//        Gson gson = new Gson();
-//        String json = gson.toJson(ids);
-//        return json;
-//    }
-
     /**
      * Converter of NodeShape
      */

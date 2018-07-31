@@ -21,9 +21,18 @@ public interface QuizCategoryDao {
     @Update
     public void update(QuizCategory quizCategory);
 
-    @Query("SELECT * FROM QuizCategory WHERE exerciseId = :exerciseId")
+    @Query("SELECT * FROM quizcategory WHERE id = :id")
+    public QuizCategory load(long id);
+
+    @Query("SELECT * FROM quizcategory WHERE exerciseId = :exerciseId")
     public List<QuizCategory> loadWithExercise(long exerciseId);
 
-    @Query("SELECT * FROM QuizCategory WHERE exerciseId = :exerciseId ORDER BY type")
+    @Query("SELECT * FROM quizcategory WHERE exerciseId = :exerciseId ORDER BY type")
     public List<QuizCategory> loadWithExerciseOrderedByType(long exerciseId);
+
+    @Query("SELECT id FROM quizcategory WHERE exerciseId = :exerciseId")
+    public List<Long> loadIdsWithExercise(long exerciseId);
+
+    @Query("SELECT * FROM quizcategory WHERE exerciseId = :exerciseId AND type = :type")
+    public QuizCategory loadWithExerciseAndType(long exerciseId, int type);
 }

@@ -14,6 +14,7 @@ import android.content.Context;
         Quiz.class,
         QuizCategory.class,
         RunningQuiz.class,
+        Session.class,
         User.class},
         version = 1)
 @TypeConverters({AppDatabaseConverters.class})
@@ -24,6 +25,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract QuizDao quizDao();
     public abstract QuizCategoryDao quizCategoryDao();
     public abstract RunningQuizDao runningQuizDao();
+    public abstract SessionDao sessionDao();
     public abstract UserDao userDao();
 
     private static AppDatabase INSTANCE;

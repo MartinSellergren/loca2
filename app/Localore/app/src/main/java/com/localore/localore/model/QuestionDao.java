@@ -21,7 +21,14 @@ public interface QuestionDao {
     @Update
     public void update(Question question);
 
+
+    @Query("SELECT * FROM Question WHERE runningQuizId = :runningQuizId")
+    public List<Question> loadWithRunningQuiz(long runningQuizId);
+
     @Query("SELECT * FROM Question WHERE runningQuizId = :runningQuizId ORDER BY `index`")
     public List<Question> loadWithRunningQuizOrderedByIndex(long runningQuizId);
+
+    @Query("SELECT id FROM Question WHERE answeredCorrectly = 0 AND runningQuizId = :runningQuizId")
+    public List<Long> loadIdsIncorrectlyAnsweredWithRunningQuiz(long runningQuizId);
 }
 

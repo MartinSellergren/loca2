@@ -27,7 +27,7 @@ public class Quiz {
     /**
      * True if quiz is completed with sufficient result.
      */
-    private boolean isCleared = false;
+    private boolean isPassed = false;
 
 
     /**
@@ -63,16 +63,16 @@ public class Quiz {
         this.level = level;
     }
 
-    public boolean isCleared() {
-        return isCleared;
+    public boolean isPassed() {
+        return isPassed;
     }
 
-    public void setCleared(boolean cleared) {
-        isCleared = cleared;
+    public void setPassed(boolean passed) {
+        isPassed = passed;
     }
 
     public String toString() {
-        return String.format("id:%s, categoryId:%s, level:%s, cleared:%s",
-                this.id, this.quizCategoryId, this.level, this.isCleared);
+        return String.format("id:%s, categoryId:%s, level:%s, passed:%s",
+                this.id, this.quizCategoryId, this.level, this.isPassed);
     }
 }

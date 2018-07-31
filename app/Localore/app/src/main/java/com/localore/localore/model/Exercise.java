@@ -34,9 +34,9 @@ public class Exercise {
     private NodeShape workingArea;
 
     /**
-     * Number of cleared levels since a global-reminder-quiz was taken.
+     * Number of passed levels since a global-reminder-quiz was taken.
      */
-    private int levelsSinceGlobalReminder = 0;
+    private int passedLevelsSinceGlobalReminder = 0;
 
     /**
      * Number of global reminder-quizzes to complete.
@@ -100,12 +100,12 @@ public class Exercise {
         this.workingArea = workingArea;
     }
 
-    public int getLevelsSinceGlobalReminder() {
-        return levelsSinceGlobalReminder;
+    public int getPassedLevelsSinceGlobalReminder() {
+        return passedLevelsSinceGlobalReminder;
     }
 
-    public void setLevelsSinceGlobalReminder(int levelsSinceGlobalReminder) {
-        this.levelsSinceGlobalReminder = levelsSinceGlobalReminder;
+    public void setPassedLevelsSinceGlobalReminder(int passedLevelsSinceGlobalReminder) {
+        this.passedLevelsSinceGlobalReminder = passedLevelsSinceGlobalReminder;
     }
 
     public int getRequiredGlobalReminders() {

@@ -5,6 +5,7 @@ import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
+import android.arch.persistence.room.Transaction;
 import android.arch.persistence.room.Update;
 
 import java.util.List;
@@ -33,30 +34,34 @@ public interface GeoObjectDao {
     @Query("SELECT * FROM GeoObject LIMIT 1")
     public GeoObject loadOne();
 
-    @Query("SELECT * FROM GeoObject")
-    public List<GeoObject> loadAll();
-
     @Query("SELECT * FROM GeoObject WHERE id = :id")
     public GeoObject load(long id);
 
-    @Query("SELECT * FROM GeoObject WHERE name = :name COLLATE NOCASE")
+    @Transaction @Query("SELECT * FROM geoobject WHERE id IN (:ids)")
+    public List<GeoObject> load(List<Long> ids);
+
+    @Transaction @Query("SELECT * FROM GeoObject WHERE name = :name COLLATE NOCASE")
     public List<GeoObject> loadWithSimilarName(String name);
 
-    @Query("SELECT id FROM GeoObject")
-    public List<Long> loadIds();
+    @Transaction @Query("SELECT * FROM geoobject WHERE quizId = :quizId")
+    public List<GeoObject> loadWithQuiz(long quizId);
 
-    @Query("SELECT id FROM GeoObject")
-    public List<Long> loadAllIds();
-
-    @Query("SELECT id FROM GeoObject WHERE quizId = -1 AND supercat = :supercat ORDER BY rank")
-    public List<Long> loadQuizlessIdsWithSupercatOrderdByRank(String supercat);
-
-    @Query("SELECT id FROM GeoObject WHERE quizId = :quizId")
+    @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = :quizId")
     public List<Long> loadIdsWithQuiz(long quizId);
 
-    @Query("SELECT id FROM GeoObject WHERE quizId = :quizId ORDER BY rank")
+    @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = :quizId ORDER BY rank")
     public List<Long> loadIdsWithQuizOrderedByRank(long quizId);
+
+    @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = -1 AND supercat = :supercat ORDER BY rank")
+    public List<Long> loadQuizlessIdsWithSupercatOrderdByRank(String supercat);
+
+    @Transaction @Query("SELECT id FROM geoobject WHERE quizId IN (:quizIds)")
+    public List<Long> loadIdsWithQuizIn(List<Long> quizIds);
 
     @Query("SELECT count(*) FROM GeoObject")
     public int size();
+
+    //for testing
+    @Transaction @Query("SELECT id FROM geoobject")
+    public List<Long> loadAllIds();
 }

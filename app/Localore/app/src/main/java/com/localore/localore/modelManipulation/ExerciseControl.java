@@ -40,7 +40,7 @@ public class ExerciseControl {
     /**
      * Max number of geo-objects in a level. If more: split into two levels.
      */
-    private static final int MAX_NO_GEO_OBJECTS_IN_A_LEVEL = 5;
+    public static final int MAX_NO_GEO_OBJECTS_IN_A_LEVEL = 5;
 
     //region create
 
@@ -330,8 +330,8 @@ public class ExerciseControl {
      * @param context
      */
     private static void insertGeoObjectQuizzes(long exerciseId, Context context) {
-        for (int quizCategoryType = 0; quizCategoryType < LocaUtils.quizCategories.length; quizCategoryType++) {
-            String supercat = LocaUtils.quizCategories[quizCategoryType];
+        for (int quizCategoryType = 0; quizCategoryType < QuizCategory.types.length; quizCategoryType++) {
+            String supercat = QuizCategory.types[quizCategoryType];
             List<Long> ids = AppDatabase.getInstance(context).geoDao().
                     loadQuizlessIdsWithSupercatOrderdByRank(supercat);
 
@@ -481,6 +481,18 @@ public class ExerciseControl {
     public static void deleteGeoObject(GeoObject geoObject, Context context) {
         AppDatabase.getInstance(context).geoDao().delete(geoObject);
     }
+
+    //endregion
+
+    //region reorder
+
+    //todo
+
+    //endregion
+
+    //region tapping
+
+    //todo
 
     //endregion
 }

@@ -59,12 +59,6 @@ public class GeoObject {
      */
     private String subcat = null;
 
-
-    /**
-     * True if question asked about geo-object.
-     */
-    private boolean isSeen = false;
-
     /**
      * Time in ms since question about geo-object was asked.
      */
@@ -274,14 +268,6 @@ public class GeoObject {
 
     public void setSubcat(String subcat) {
         this.subcat = subcat;
-    }
-
-    public boolean isSeen() {
-        return isSeen;
-    }
-
-    public void setSeen(boolean seen) {
-        isSeen = seen;
     }
 
     public long getTimeSinceQuestioned() {

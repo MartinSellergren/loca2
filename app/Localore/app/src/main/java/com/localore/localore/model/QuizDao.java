@@ -21,9 +21,18 @@ public interface QuizDao {
     @Update
     public void update(Quiz quiz);
 
-    @Query("SELECT * FROM Quiz WHERE quizCategoryId = :quizCategoryId")
+    @Query("SELECT * FROM quiz WHERE id = :id")
+    public Quiz load(long id);
+
+    @Query("SELECT * FROM quiz WHERE quizCategoryId = :quizCategoryId")
     public List<Quiz> loadWithQuizCategory(long quizCategoryId);
 
-    @Query("SELECT * FROM Quiz WHERE quizCategoryId = :quizCategoryId ORDER BY level")
+    @Query("SELECT * FROM quiz WHERE quizCategoryId = :quizCategoryId ORDER BY level")
     public List<Quiz> loadWithQuizCategoryOrderedByLevel(long quizCategoryId);
+
+    @Query("SELECT id FROM quiz WHERE isPassed = 1 AND quizCategoryId = :quizCategoryId")
+    public List<Long> loadPassedIdsWithQuizCategory(long quizCategoryId);
+
+    @Query("SELECT id FROM quiz WHERE isPassed = 1 AND quizCategoryId IN (:quizCategoryIds)")
+    public List<Long> loadPassedIdsWithQuizCategoryIn(List<Long> quizCategoryIds);
 }

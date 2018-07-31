@@ -1,6 +1,7 @@
 package com.localore.localore.model;
 
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 import android.graphics.drawable.Icon;
 
@@ -9,6 +10,22 @@ import android.graphics.drawable.Icon;
  */
 @Entity
 public class QuizCategory {
+
+    /**
+     * The different types of quiz-categories.
+     */
+    public static final String[] types = new String[]{
+            "settlements",
+            "roads",
+            "nature",
+            "transport",
+            "constructions"};
+    public static final int SETTLEMENTS = 0;
+    public static final int ROADS = 1;
+    public static final int NATURE = 2;
+    public static final int TRANSPORT = 3;
+    public static final int CONSTRUCTIONS = 4;
+
 
     @PrimaryKey(autoGenerate = true)
     private long id;
@@ -19,7 +36,7 @@ public class QuizCategory {
     private long exerciseId;
 
     /**
-     * Index of LocaUtils.quizCategories[].
+     * Quiz-category type.
      */
     private int type;
 

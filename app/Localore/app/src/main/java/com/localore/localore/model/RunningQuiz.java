@@ -1,6 +1,8 @@
 package com.localore.localore.model;
 
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
+import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.PrimaryKey;
 
 /**
@@ -9,6 +11,15 @@ import android.arch.persistence.room.PrimaryKey;
  */
 @Entity
 public class RunningQuiz {
+
+    /**
+     * The different types of running-quizzes.
+     */
+    public static final int LEVEL_QUIZ = 0;
+    public static final int FOLLOW_UP_QUIZ = 1;
+    public static final int QUIZ_CATEGORY_REMINDER = 2;
+    public static final int EXERCISE_REMINDER = 3;
+
 
     @PrimaryKey(autoGenerate = true)
     private long id;
@@ -19,9 +30,17 @@ public class RunningQuiz {
     private int currentQuestionIndex = 0;
 
     /**
-     * level / followup / reminder
+     * Running-quiz type.
      */
-    private String type;
+    private int type;
+
+    /**
+     * Constructs a running-quiz with given type.
+     * @param type
+     */
+    public RunningQuiz(int type) {
+        this.type = type;
+    }
 
 
     public long getId() {
@@ -40,11 +59,11 @@ public class RunningQuiz {
         this.currentQuestionIndex = currentQuestionIndex;
     }
 
-    public String getType() {
+    public int getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(int type) {
         this.type = type;
     }
 
