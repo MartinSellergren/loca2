@@ -41,4 +41,10 @@ public interface QuizDao {
 
     @Query("SELECT id FROM quiz WHERE isPassed = 1 AND quizCategoryId IN (:quizCategoryIds)")
     public List<Long> loadPassedIdsWithQuizCategoryIn(List<Long> quizCategoryIds);
+
+    @Query("SELECT COUNT(*) FROM quiz WHERE quizCategoryId = :quizCategoryId")
+    public int countWithQuizCategory(long quizCategoryId);
+
+    @Query("SELECT COUNT(*) FROM quiz WHERE isPassed = 1 AND quizCategoryId = :quizCategoryId")
+    public int countPassedWithQuizCategory(long quizCategoryId);
 }

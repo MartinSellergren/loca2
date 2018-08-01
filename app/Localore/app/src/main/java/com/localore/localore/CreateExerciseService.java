@@ -16,6 +16,7 @@ import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.model.NodeShape;
+import com.localore.localore.modelManipulation.SessionControl;
 
 
 /**
@@ -52,6 +53,14 @@ public class CreateExerciseService extends IntentService {
         context.startService(intent);
     }
 
+    /**
+     * Request foreground.
+     *
+     * @param intent
+     * @param flags
+     * @param startId
+     * @return
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // request foreground
@@ -89,6 +98,10 @@ public class CreateExerciseService extends IntentService {
         }
     }
 
+    /**
+     * Fetch and process.
+     * @param intent
+     */
     @Override
     protected void onHandleIntent(Intent intent) {
         Log.i("_ME_", "CreateExerciseService started");
@@ -96,7 +109,8 @@ public class CreateExerciseService extends IntentService {
 
         String exerciseName = intent.getStringExtra(EXERCISE_NAME_PARAM_KEY);
         NodeShape workingArea = (NodeShape)intent.getSerializableExtra(WORKING_AREA_PARAM_KEY);
-        long exerciseId = ExerciseControl.newExercise(exerciseName, workingArea, this);
+        long userId = SessionControl.load(this).getUserId();
+        long exerciseId = ExerciseControl.newExercise(userId, exerciseName, workingArea, this);
 
         boolean ok = ExerciseControl.acquireGeoObjects(workingArea, this);
         if (!ok) {
@@ -108,12 +122,6 @@ public class CreateExerciseService extends IntentService {
         ExerciseControl.postProcessing(exerciseId, this);
 
         report("Done!");
-    }
-
-    @Override
-    public void onDestroy() {
-        Log.d("_ME_", "CreateExerciseService destroyed");
-        super.onDestroy();
     }
 
     /**

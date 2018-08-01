@@ -5,6 +5,7 @@ import android.content.Context;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
 import com.localore.localore.model.Session;
+import com.localore.localore.model.User;
 
 /**
  * Static class for session-related operations (manipulate the database).
@@ -28,7 +29,7 @@ public class SessionControl {
 
     /**
      * @param context
-     * @return Active exercise, or null.
+     * @return Active exercise, or NULL.
      */
     public static Exercise loadExercise(Context context) {
         long exerciseId = load(context).getExerciseId();

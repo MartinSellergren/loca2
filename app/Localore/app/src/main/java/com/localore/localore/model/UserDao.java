@@ -21,6 +21,9 @@ public interface UserDao {
     @Update
     public void update(User user);
 
-    @Query("SELECT * FROM User")
+    @Query("SELECT * FROM user WHERE id = :id")
+    public User load(long id);
+
+    @Query("SELECT * FROM user")
     public List<User> loadAll();
 }

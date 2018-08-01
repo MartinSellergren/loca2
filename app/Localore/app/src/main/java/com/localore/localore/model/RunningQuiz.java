@@ -27,7 +27,7 @@ public class RunningQuiz {
     /**
      * Index of currently asked question.
      */
-    private int currentQuestionIndex = 0;
+    private int currentQuestionIndex = -1;
 
     /**
      * Running-quiz type.

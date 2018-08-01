@@ -5,7 +5,6 @@ import android.util.Log;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.localore.localore.CreateExerciseService;
 import com.localore.localore.LocaUtils;
 import com.localore.localore.R;
 import com.localore.localore.model.AppDatabase;
@@ -47,15 +46,14 @@ public class ExerciseControl {
     /**
      * Creates and inserts a new exercise-object into the db.
      *
+     * @param userId
      * @param exerciseName
      * @param workingArea
      * @param context
      *
-     * @pre Session has a logged in user.
      * @pre exerciseName unique
      */
-    public static long newExercise(String exerciseName, NodeShape workingArea, Context context) {
-        long userId = SessionControl.load(context).getUserId();
+    public static long newExercise(long userId, String exerciseName, NodeShape workingArea, Context context) {
         Exercise exercise = new Exercise(userId, exerciseName, workingArea);
         incrementExerciseDisplayIndexes(userId, context);
         long exerciseId = AppDatabase.getInstance(context).exerciseDao().insert(exercise);
@@ -527,25 +525,11 @@ public class ExerciseControl {
     }
 
     /**
+     * @param userId
      * @param context
-     * @return List of exercise-names of session-user, ordered by display-index.
-     *
-     * @pre Session-user set.
+     * @return List of exercise-progresses of a user, ordered by display-index.
      */
-    public static List<String> exerciseNames(Context context) {
-        long userId = SessionControl.load(context).getUserId();
-        return AppDatabase.getInstance(context).exerciseDao()
-                .loadNamesWithUserOrderedByDisplayIndex(userId);
-    }
-
-    /**
-     * @param context
-     * @return List of exercise-progresses of session-user, ordered by display-index.
-     *
-     * @pre Session-user set.
-     */
-    public static List<Integer> exerciseProgresses(Context context) {
-        long userId = SessionControl.load(context).getUserId();
+    public static List<Integer> exerciseProgresses(long userId, Context context) {
         List<Integer> progresses = new ArrayList<>();
 
         List<Long> exerciseIds = AppDatabase.getInstance(context).exerciseDao()
@@ -566,6 +550,33 @@ public class ExerciseControl {
                 (float)loadPassedQuizzesInExercise(exerciseId, context).size() /
                         loadQuizzesInExercise(exerciseId, context).size();
         return Math.round(progress);
+    }
+
+    /**
+     * @param exerciseId
+     * @param context
+     * @return For each quiz-category in exercise (ordered by type):
+     *         0. Number of levels
+     *         1. number of passed levels
+     *         2. number of required quiz-category-reminders]
+     */
+    public static List<int[]> loadQuizCategoriesData(long exerciseId, Context context) {
+        List<int[]> data = new ArrayList<>();
+        List<QuizCategory> quizCategories =
+                AppDatabase.getInstance(context).quizCategoryDao()
+                        .loadWithExerciseOrderedByType(exerciseId);
+
+        for (QuizCategory quizCategory : quizCategories) {
+            int noLevels = AppDatabase.getInstance(context).quizDao()
+                    .countWithQuizCategory(quizCategory.getId());
+            int noPassedLevels = AppDatabase.getInstance(context).quizDao()
+                    .countPassedWithQuizCategory(quizCategory.getId());
+            int noReminders = quizCategory.getRequiredNoCategoryReminders();
+
+            data.add(new int[]{noLevels, noPassedLevels, noReminders});
+        }
+
+        return data;
     }
 
 

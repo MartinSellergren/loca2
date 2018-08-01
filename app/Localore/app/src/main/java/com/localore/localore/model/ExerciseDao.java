@@ -37,14 +37,9 @@ public interface ExerciseDao {
     @Transaction @Query("SELECT * FROM exercise")
     public List<Exercise> loadAll();
 
-    @Transaction @Query("SELECT name FROM exercise WHERE userId = :userId ORDER BY displayIndex")
-    public List<String> loadNamesWithUserOrderedByDisplayIndex(long userId);
+    @Transaction @Query("SELECT name FROM exercise WHERE userId = :userId")
+    public List<String> loadNamesWithUser(long userId);
 
     @Transaction @Query("SELECT id FROM exercise WHERE userId = :userId ORDER BY displayIndex")
     public List<Long> loadIdsWithUserOrderedByDisplayIndex(long userId);
-
-
-
-    @Query("SELECT count(*) FROM Exercise")
-    public int size();
 }

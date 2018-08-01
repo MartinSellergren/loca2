@@ -1,7 +1,6 @@
 package com.localore.localore.model;
 
 import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 import android.graphics.drawable.Icon;
 
@@ -13,6 +12,7 @@ public class QuizCategory {
 
     /**
      * The different types of quiz-categories.
+     * Index defines display-order in exercise-view.
      */
     public static final String[] types = new String[]{
             "settlements",
@@ -43,7 +43,7 @@ public class QuizCategory {
     /**
      * Number of category reminder-quizzes to complete.
      */
-    private int requiredCategoryReminders = 0;
+    private int requiredNoCategoryReminders = 0;
 
     /**
      * @param exerciseId
@@ -92,12 +92,12 @@ public class QuizCategory {
         this.type = type;
     }
 
-    public int getRequiredCategoryReminders() {
-        return requiredCategoryReminders;
+    public int getRequiredNoCategoryReminders() {
+        return requiredNoCategoryReminders;
     }
 
-    public void setRequiredCategoryReminders(int requiredCategoryReminders) {
-        this.requiredCategoryReminders = requiredCategoryReminders;
+    public void setRequiredNoCategoryReminders(int requiredNoCategoryReminders) {
+        this.requiredNoCategoryReminders = requiredNoCategoryReminders;
     }
 
     @Override

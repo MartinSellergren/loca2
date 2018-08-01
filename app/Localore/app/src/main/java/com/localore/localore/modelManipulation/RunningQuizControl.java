@@ -16,6 +16,7 @@ import java.util.Random;
 
 /**
  * Static class for running-exercise related operations (manipulate the database).
+ * Assumes there's no more than one running-quiz in the database.
  */
 public class RunningQuizControl {
 
@@ -78,16 +79,14 @@ public class RunningQuizControl {
     //region new running-quiz
 
     /**
-     * Set running-quiz to a new level-quiz (constructed from db quiz-data of active exercise).
+     * Set running-quiz to a new level-quiz (constructed from db quiz-data of exercise).
+     * @param exerciseId
      * @param quizCategoryType
-     * @pre Session exercise set.
+     * @param context
      */
-    public static void newLevelQuiz(int quizCategoryType, Context context) {
+    public static void newLevelQuiz(long exerciseId, int quizCategoryType, Context context) {
         int runningQuizType = 0;
         long runningQuizId = newRunningQuiz(runningQuizType, context);
-
-        long exerciseId = SessionControl.load(context).getExerciseId();
-        if (exerciseId == -1) throw new RuntimeException("No session-exercise");
 
         Quiz quizData = loadCurrentLevelQuiz(exerciseId, quizCategoryType, context);
         List<GeoObject> levelGeoObjects =
@@ -100,6 +99,7 @@ public class RunningQuizControl {
     /**
      * Set running-quiz to a new follow-up-quiz (constructed from db running-quiz).
      * @param context
+     * @pre A running-quiz in db.
      */
     public static void newFollowUpQuiz(Context context) {
         long runningQuizId = load(context).getId();
@@ -118,17 +118,16 @@ public class RunningQuizControl {
 
     /**
      * Set running-quiz to a new level-reminder-quiz (generated semi-randomly
-     * from geo-object-stats of active exercise).
+     * from geo-object-stats of exercise).
      *
+     * @param exerciseId
      * @param quizCategoryType
      * @param context
-     * @pre Session exercise set.
      */
-    public static void newLevelReminder(int quizCategoryType, Context context) {
+    public static void newLevelReminder(long exerciseId, int quizCategoryType, Context context) {
         int runningQuizType = 2;
         long runningQuizId = newRunningQuiz(runningQuizType, context);
 
-        long exerciseId = SessionControl.loadExercise(context).getId();
         QuizCategory quizCategory =
                 AppDatabase.getInstance(context).quizCategoryDao()
                         .loadWithExerciseAndType(exerciseId, quizCategoryType);
@@ -145,15 +144,15 @@ public class RunningQuizControl {
 
     /**
      * Set running-quiz to a new exercise-reminder-quiz (generated semi-randomly
-     * from geo-object-stats of active exercise).
+     * from geo-object-stats of exercise).
+     *
+     * @param exerciseId
      * @param context
-     * @pre Session exercise set.
      */
-    public static void newExerciseReminder(Context context) {
+    public static void newExerciseReminder(long exerciseId, Context context) {
         int runningQuizType = 3;
         long runningQuizId = newRunningQuiz(runningQuizType, context);
 
-        long exerciseId = SessionControl.load(context).getExerciseId();
         List<Long> quizCategoryIds =
                 AppDatabase.getInstance(context).quizCategoryDao()
                         .loadIdsWithExercise(exerciseId);
@@ -326,11 +325,13 @@ public class RunningQuizControl {
     }
 
     /**
+     * Call to start quiz, and to progress to next question.
+     *
      * - Returns next question in a quiz-run (NULL if no more).
      * - Db-update: current question in running-quiz.
      *
      * @param context
-     * @return Next question, or NULL.
+     * @return Next question, or NULL if quiz is done.
      */
     public static Question nextQuestion(Context context) {
         RunningQuiz runningQuiz = load(context);
@@ -353,14 +354,14 @@ public class RunningQuizControl {
      * Follow-up: Update nothing.
      * Reminders: Decrement number of required reminders.
      *
+     * @param exercise
      * @param context
      * @return Brief feedback.
      */
-    public static String onFinishedRunningQuiz(Context context) {
+    public static String onFinishedRunningQuiz(Exercise exercise, Context context) {
         RunningQuiz runningQuiz = load(context);
         Quiz quiz = loadQuizFromRunningQuiz(runningQuiz, context);
         QuizCategory quizCategory = loadQuizCategoryFromRunningQuiz(runningQuiz, context);
-        Exercise exercise = SessionControl.loadExercise(context);
 
         List<Question> questions =
                 AppDatabase.getInstance(context).questionDao()
@@ -369,12 +370,12 @@ public class RunningQuizControl {
 
         if (runningQuiz.getType() == RunningQuiz.LEVEL_QUIZ) {
             if (successRate >= ACCEPTABLE_QUIZ_SUCCESS_RATE)
-                reportLevelPassed(quiz, context);
+                reportLevelPassed(exercise, quiz, context);
 
-            setRequiredReminderQuizzes(quizCategory, context);
+            setRequiredReminderQuizzes(exercise, quizCategory, context);
         }
         else if (runningQuiz.getType() == RunningQuiz.QUIZ_CATEGORY_REMINDER) {
-            quizCategory.setRequiredCategoryReminders( quizCategory.getRequiredCategoryReminders()-1 );
+            quizCategory.setRequiredNoCategoryReminders( quizCategory.getRequiredNoCategoryReminders()-1 );
             AppDatabase.getInstance(context).quizCategoryDao().update(quizCategory);
         }
         else if (runningQuiz.getType() == RunningQuiz.EXERCISE_REMINDER) {
@@ -399,28 +400,29 @@ public class RunningQuizControl {
     }
 
     /**
-     * Sets quiz passed and increments exercise.passedLevelsSinceGlobalReminder.
+     * Sets quiz passed and increments passed-levels-since-global-reminder of exercise.
+     * @param exercise
      * @param context
      */
-    private static void reportLevelPassed(Quiz quiz, Context context) {
+    private static void reportLevelPassed(Exercise exercise, Quiz quiz, Context context) {
         quiz.setPassed(true);
         AppDatabase.getInstance(context).quizDao().update(quiz);
 
-        Exercise exercise = SessionControl.loadExercise(context);
         exercise.setPassedLevelsSinceGlobalReminder( exercise.getPassedLevelsSinceGlobalReminder() + 1 );
+        AppDatabase.getInstance(context).exerciseDao().update(exercise);
     }
 
     /**
-     * Set required reminder quizzes: exercise-reminders (update active exercise) and
+     * Set required reminder quizzes: exercise-reminders (update exercise) and
      * quiz-category-reminders (update quiz-category of finished quiz).
      *
+     * @param exercise
      * @param quizCategory Quiz-category of finished quiz.
      * @param context
      */
-    private static void setRequiredReminderQuizzes(QuizCategory quizCategory, Context context) {
+    private static void setRequiredReminderQuizzes(Exercise exercise, QuizCategory quizCategory, Context context) {
         //todo: based on n.o problematic/ old words (not random)
 
-        Exercise exercise = SessionControl.loadExercise(context);
         if (exercise.getPassedLevelsSinceGlobalReminder() >= PASSED_LEVELS_BEFORE_EXERCISE_REMINDER) {
             int noExerciseReminders =
                     MIN_NO_EXERCISE_REMINDERS +
@@ -435,7 +437,7 @@ public class RunningQuizControl {
                 MIN_NO_QUIZ_CATEGORY_REMINDERS +
                         new Random().nextInt(
                                 MAX_NO_QUIZ_CATEGORY_REMINDERS - MIN_NO_QUIZ_CATEGORY_REMINDERS + 1);
-        quizCategory.setRequiredCategoryReminders(noQuizCategoryReminders);
+        quizCategory.setRequiredNoCategoryReminders(noQuizCategoryReminders);
         AppDatabase.getInstance(context).quizCategoryDao().update(quizCategory);
     }
 
