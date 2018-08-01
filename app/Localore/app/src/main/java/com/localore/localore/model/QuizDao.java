@@ -30,6 +30,12 @@ public interface QuizDao {
     @Query("SELECT * FROM quiz WHERE quizCategoryId = :quizCategoryId ORDER BY level")
     public List<Quiz> loadWithQuizCategoryOrderedByLevel(long quizCategoryId);
 
+    @Query("SELECT * FROM quiz WHERE quizCategoryId IN (:quizCategoryIds)")
+    public List<Quiz> loadWithQuizCategories(List<Long> quizCategoryIds);
+
+    @Query("SELECT * FROM quiz WHERE isPassed = 1 AND quizCategoryId IN (:quizCategoryIds)")
+    public List<Quiz> loadPassedWithQuizCategories(List<Long> quizCategoryIds);
+
     @Query("SELECT id FROM quiz WHERE isPassed = 1 AND quizCategoryId = :quizCategoryId")
     public List<Long> loadPassedIdsWithQuizCategory(long quizCategoryId);
 

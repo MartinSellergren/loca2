@@ -28,7 +28,6 @@ import com.localore.localore.model.NodeShape;
  * - Completes exercise with predefined quizzes.
  */
 public class CreateExerciseService extends IntentService {
-    private static final String USER_ID_PARAM_KEY = "com.localore.localore.CreateExerciseService.USER_PARAM_KEY";
     private static final String EXERCISE_NAME_PARAM_KEY = "com.localore.localore.CreateExerciseService.EXERCISE_NAME_PARAM_KEY";
     private static final String WORKING_AREA_PARAM_KEY = "com.localore.localore.CreateExerciseService.WORKING_AREA_PARAM_KEY";
 
@@ -42,14 +41,12 @@ public class CreateExerciseService extends IntentService {
     /**
      * Starts the service and passes parameters in intent.
      *
-     * @param userId
      * @param exerciseName
      * @param workingArea
      * @param context
      */
-    public static void start(long userId, String exerciseName, NodeShape workingArea, Context context) {
+    public static void start(String exerciseName, NodeShape workingArea, Context context) {
         Intent intent = new Intent(context, CreateExerciseService.class);
-        intent.putExtra(USER_ID_PARAM_KEY, userId);
         intent.putExtra(EXERCISE_NAME_PARAM_KEY, exerciseName);
         intent.putExtra(WORKING_AREA_PARAM_KEY, workingArea);
         context.startService(intent);
@@ -97,10 +94,9 @@ public class CreateExerciseService extends IntentService {
         Log.i("_ME_", "CreateExerciseService started");
         if (intent == null) return;
 
-        long userId = intent.getLongExtra(USER_ID_PARAM_KEY, -1);
         String exerciseName = intent.getStringExtra(EXERCISE_NAME_PARAM_KEY);
         NodeShape workingArea = (NodeShape)intent.getSerializableExtra(WORKING_AREA_PARAM_KEY);
-        long exerciseId = ExerciseControl.newExercise(userId, exerciseName, workingArea, this);
+        long exerciseId = ExerciseControl.newExercise(exerciseName, workingArea, this);
 
         boolean ok = ExerciseControl.acquireGeoObjects(workingArea, this);
         if (!ok) {

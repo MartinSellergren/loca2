@@ -274,7 +274,7 @@ public class RunningQuizControl {
                 int difficulty = questionDifficulties[i]++;
                 GeoObject geoObject = geoObjects.get(i);
 
-                Question question = new Question(runningQuizId, geoObject, index, difficulty);
+                Question question = new Question(runningQuizId, geoObject, index, difficulty, context);
                 AppDatabase.getInstance(context).questionDao().insert(question);
             }
         }

@@ -63,21 +63,22 @@ public class Question {
      */
     private List<GeoObject> content;
 
+    public Question() {}
 
-    /**
-     * @param runningQuizId
-     * @param geoObjectId
-     * @param index
-     * @param questionType
-     * @param content
-     */
-    public Question(long runningQuizId, long geoObjectId, int index, int questionType, List<GeoObject> content) {
-        this.runningQuizId = runningQuizId;
-        this.geoObjectId = geoObjectId;
-        this.index = index;
-        this.type = questionType;
-        this.content = content;
-    }
+//    /**
+//     * @param runningQuizId
+//     * @param geoObjectId
+//     * @param index
+//     * @param questionType
+//     * @param content
+//     */
+//    public Question(long runningQuizId, long geoObjectId, int index, int questionType, List<GeoObject> content) {
+//        this.runningQuizId = runningQuizId;
+//        this.geoObjectId = geoObjectId;
+//        this.index = index;
+//        this.type = questionType;
+//        this.content = content;
+//    }
 
     /**
      * Randomize type and generate content based on difficulty.

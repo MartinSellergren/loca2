@@ -73,7 +73,7 @@ public class LocaUtils {
     public static void logExercises(long userId, Context context) {
         List<Exercise> exercises =
                 AppDatabase.getInstance(context).exerciseDao()
-                        .loadWithUserOrderdByDisplayIndex(userId);
+                        .loadWithUserOrderedByDisplayIndex(userId);
 
         for (Exercise exercise : exercises) {
             Log.i("_DB_", "**EXERCISE: " + exercise.toString());

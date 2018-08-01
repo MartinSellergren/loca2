@@ -47,12 +47,15 @@ public class ExerciseControl {
     /**
      * Creates and inserts a new exercise-object into the db.
      *
-     * @param userId
      * @param exerciseName
      * @param workingArea
      * @param context
+     *
+     * @pre Session has a logged in user.
+     * @pre exerciseName unique
      */
-    public static long newExercise(long userId, String exerciseName, NodeShape workingArea, Context context) {
+    public static long newExercise(String exerciseName, NodeShape workingArea, Context context) {
+        long userId = SessionControl.load(context).getUserId();
         Exercise exercise = new Exercise(userId, exerciseName, workingArea);
         incrementExerciseDisplayIndexes(userId, context);
         long exerciseId = AppDatabase.getInstance(context).exerciseDao().insert(exercise);
@@ -493,6 +496,78 @@ public class ExerciseControl {
     //region tapping
 
     //todo
+
+    //endregion
+
+
+    //region misc
+
+    /**
+     * @param exerciseId
+     * @param context
+     * @return Quizzes in exercise.
+     */
+    public static List<Quiz> loadQuizzesInExercise(long exerciseId, Context context) {
+        List<Long> quizCategoryIds = AppDatabase.getInstance(context).quizCategoryDao()
+                .loadIdsWithExercise(exerciseId);
+        return AppDatabase.getInstance(context).quizDao()
+                .loadWithQuizCategories(quizCategoryIds);
+    }
+
+    /**
+     * @param exerciseId
+     * @param context
+     * @return Passed quizzes in exercise.
+     */
+    public static List<Quiz> loadPassedQuizzesInExercise(long exerciseId, Context context) {
+        List<Long> quizCategoryIds = AppDatabase.getInstance(context).quizCategoryDao()
+                .loadIdsWithExercise(exerciseId);
+        return AppDatabase.getInstance(context).quizDao()
+                .loadPassedWithQuizCategories(quizCategoryIds);
+    }
+
+    /**
+     * @param context
+     * @return List of exercise-names of session-user, ordered by display-index.
+     *
+     * @pre Session-user set.
+     */
+    public static List<String> exerciseNames(Context context) {
+        long userId = SessionControl.load(context).getUserId();
+        return AppDatabase.getInstance(context).exerciseDao()
+                .loadNamesWithUserOrderedByDisplayIndex(userId);
+    }
+
+    /**
+     * @param context
+     * @return List of exercise-progresses of session-user, ordered by display-index.
+     *
+     * @pre Session-user set.
+     */
+    public static List<Integer> exerciseProgresses(Context context) {
+        long userId = SessionControl.load(context).getUserId();
+        List<Integer> progresses = new ArrayList<>();
+
+        List<Long> exerciseIds = AppDatabase.getInstance(context).exerciseDao()
+                .loadIdsWithUserOrderedByDisplayIndex(userId);
+        for (Long exerciseId : exerciseIds)
+            progresses.add(progressOfExercise(exerciseId, context));
+
+        return progresses;
+    }
+
+    /**
+     * @param exerciseId
+     * @param context
+     * @return Progress <= [0, 100] of exercise.
+     */
+    public static int progressOfExercise(long exerciseId, Context context) {
+        float progress =
+                (float)loadPassedQuizzesInExercise(exerciseId, context).size() /
+                        loadQuizzesInExercise(exerciseId, context).size();
+        return Math.round(progress);
+    }
+
 
     //endregion
 }

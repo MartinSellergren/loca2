@@ -36,13 +36,14 @@ public class SessionControl {
     }
 
     /**
-     * Call when user logs in. Sets session's userId.
+     * Call when user logs in. Sets session's userId. Replaces already logged in user.
      * @param userId
      * @param context
      */
-    public static void onLogin(long userId, Context context) {
+    public static void login(long userId, Context context) {
         Session session = load(context);
         session.setId(userId);
+        session.setExerciseId(-1);
         AppDatabase.getInstance(context).sessionDao().update(session);
     }
 
@@ -50,7 +51,7 @@ public class SessionControl {
      * Call when user logs out. Sets session userId to -1.
      * @param context
      */
-    public static void onLogout(Context context) {
+    public static void logout(Context context) {
         Session session = load(context);
         session.setId(-1);
         AppDatabase.getInstance(context).sessionDao().update(session);
