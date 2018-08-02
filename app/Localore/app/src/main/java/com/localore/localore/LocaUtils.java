@@ -10,7 +10,9 @@ import com.localore.localore.model.Question;
 import com.localore.localore.model.Quiz;
 import com.localore.localore.model.QuizCategory;
 import com.localore.localore.model.RunningQuiz;
+import com.localore.localore.model.Session;
 import com.localore.localore.model.User;
+import com.localore.localore.modelManipulation.SessionControl;
 
 import java.io.InputStream;
 import java.util.List;
@@ -51,18 +53,40 @@ public class LocaUtils {
 
 
     //region Logging
+
+    /**
+     * Log all objects in specified database.
+     * @param db
+     */
+    public static void logGeoObjects(AppDatabase db) {
+        List<Long> ids = db.geoDao().loadAllIds();
+        Log.i("<ME>", "log geo objects, count: " + ids.size());
+
+        for (long id : ids) {
+            GeoObject go = db.geoDao().load(id);
+            Log.i("<ME>", go.toString() + "\n");
+        }
+
+        Log.i("<ME>", "COUNT: " + db.geoDao().size());
+    }
+
+
     /**
      * Log the main database.
      */
     public static void logDatabase(Context context) {
-        List<User> users = AppDatabase.getInstance(context).userDao().loadAll();
+        Log.i("<DB>", "********** DB START **********");
 
+        List<User> users = AppDatabase.getInstance(context).userDao().loadAll();
         for (User user : users) {
-            Log.i("_DB_", "*USER: " + user.toString());
+            Log.i("<DB>", "*USER: " + user.toString());
             logExercises(user.getId(), context);
         }
 
         logRunningQuiz(context);
+        logSession(context);
+
+        Log.i("<DB>", "*********** DB END ***********");
     }
 
     /**
@@ -76,7 +100,7 @@ public class LocaUtils {
                         .loadWithUserOrderedByDisplayIndex(userId);
 
         for (Exercise exercise : exercises) {
-            Log.i("_DB_", "**EXERCISE: " + exercise.toString());
+            Log.i("<DB>", "**EXERCISE: " + exercise.toString());
             logQuizCategories(exercise.getId(), context);
         }
     }
@@ -92,7 +116,7 @@ public class LocaUtils {
                         .loadWithExerciseOrderedByType(exerciseId);
 
         for (QuizCategory quizCategory : quizCategories) {
-            Log.i("_DB_", "***QUIZ-CATEGORY: " + quizCategory.toString());
+            Log.i("<DB>", "***QUIZ-CATEGORY: " + quizCategory.toString());
             logQuizzes(quizCategory.getId(), context);
         }
     }
@@ -108,7 +132,7 @@ public class LocaUtils {
                         .loadWithQuizCategoryOrderedByLevel(quizCategoryId);
 
         for (Quiz quiz : quizzes) {
-            Log.i("_DB_", "****QUIZ: " + quiz.toString());
+            Log.i("<DB>", "****QUIZ: " + quiz.toString());
             logGeoObjects(quiz.getId(), context);
         }
     }
@@ -125,7 +149,7 @@ public class LocaUtils {
 
         for (long geoObjectId : geoObjectIds) {
             GeoObject geoObject = AppDatabase.getInstance(context).geoDao().load(geoObjectId);
-            Log.i("_DB_", "*****GEO-OBJECT: " + geoObject.toCompactString());
+            Log.i("<DB>", "*****GEO-OBJECT: " + geoObject.toCompactString());
         }
     }
 
@@ -136,33 +160,26 @@ public class LocaUtils {
     public static void logRunningQuiz(Context context) {
         RunningQuiz runningQuiz = AppDatabase.getInstance(context).runningQuizDao().loadOne();
         if (runningQuiz == null) {
-            Log.i("_DB_", "-No running quiz");
+            Log.i("<DB>", "-No running quiz");
             return;
         }
-        Log.i("_DB_", "-RUNNING-QUIZ: " + runningQuiz.toString());
+        Log.i("<DB>", "-RUNNING-QUIZ: " + runningQuiz.toString());
 
         List<Question> questions =
                 AppDatabase.getInstance(context).questionDao()
                         .loadWithRunningQuizOrderedByIndex(runningQuiz.getId());
         for (Question question : questions) {
-            Log.i("_DB_", "--QUESTION: " + question.toString());
+            Log.i("<DB>", "--QUESTION: " + question.toString());
         }
     }
 
     /**
-     * Log all objects in specified database.
-     * @param db
+     * Log session..
+     * @param context
      */
-    public static void logGeoObjects(AppDatabase db) {
-        List<Long> ids = db.geoDao().loadAllIds();
-        Log.i("_ME_", "log geo objects, count: " + ids.size());
-
-        for (long id : ids) {
-            GeoObject go = db.geoDao().load(id);
-            Log.i("_ME_", go.toString() + "\n");
-        }
-
-        Log.i("_ME_", "COUNT: " + db.geoDao().size());
+    public static void logSession(Context context) {
+        Session session = SessionControl.load(context);
+        Log.i("<DB>", session.toString());
     }
 
     //endregion

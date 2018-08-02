@@ -46,4 +46,8 @@ public class Session {
     public void setExerciseId(long exerciseId) {
         this.exerciseId = exerciseId;
     }
+
+    public String toString() {
+        return String.format("Session-user: %s, Session-exercise: %s", userId, exerciseId);
+    }
 }

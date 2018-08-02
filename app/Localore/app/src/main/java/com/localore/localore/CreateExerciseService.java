@@ -104,7 +104,7 @@ public class CreateExerciseService extends IntentService {
      */
     @Override
     protected void onHandleIntent(Intent intent) {
-        Log.i("_ME_", "CreateExerciseService started");
+        Log.i("<ME>", "CreateExerciseService started");
         if (intent == null) return;
 
         String exerciseName = intent.getStringExtra(EXERCISE_NAME_PARAM_KEY);
@@ -118,7 +118,7 @@ public class CreateExerciseService extends IntentService {
             return;
         }
 
-        Log.d("_ME_", "Post processing");
+        Log.d("<ME>", "Post processing");
         ExerciseControl.postProcessing(exerciseId, this);
 
         report("Done!");

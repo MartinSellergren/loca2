@@ -38,30 +38,30 @@ public class MainActivity extends AppCompatActivity {
     public void onSignUp(View v) {
         User user = new User("Martin" + new Random().nextInt(1000));
         AppDatabase.getInstance(this).userDao().insert(user);
-        LocaUtils.logDatabase(this);
 
-        Log.i("_VIEW_", "SIGN UP");
+        Log.i("<VIEW>", "SIGN UP");
+        LocaUtils.logDatabase(this);
     }
 
     public void onLogin(View v) {
         User user = AppDatabase.getInstance(this).userDao().loadAll().get(0);
         SessionControl.login(user.getId(), this);
 
-        LocaUtils.logDatabase(this);
-
-        Log.i("_VIEW_", "LOG IN");
+        Log.i("<VIEW>", "LOG IN");
         List<Exercise> exercises = AppDatabase.getInstance(this).exerciseDao()
                 .loadWithUserOrderedByDisplayIndex(user.getId());
         List<Integer> exerciseProgresses = ExerciseControl.exerciseProgresses(user.getId(), this);
-        Log.i("_VIEW_", "exercises: " + exercises.toString());
-        Log.i("_VIEW_", "exerciseProgress: " + exerciseProgresses.toString());
+        Log.i("<VIEW>", "exercises: " + exercises.toString());
+        Log.i("<VIEW>", "exerciseProgress: " + exerciseProgresses.toString());
+
+        LocaUtils.logDatabase(this);
     }
 
     public void onLogout(View v) {
+        Log.i("<VIEW>", "LOG OUT");
+
         SessionControl.logout(this);
         LocaUtils.logDatabase(this);
-
-        Log.i("_VIEW_", "LOG OUT");
     }
 
     /**
@@ -73,9 +73,9 @@ public class MainActivity extends AppCompatActivity {
         List<String> existingExerciseNames =
                 AppDatabase.getInstance(this).exerciseDao()
                         .loadNamesWithUser(userId);
+        Log.i("<VIEW>", "CREATE EXERCISE");
+        Log.i("<VIEW>", "Existing exercise names: " + existingExerciseNames.toString());
 
-        Log.i("_VIEW_", "CREATE EXERCISE");
-        Log.i("_VIEW_", "Existing exercise names: " + existingExerciseNames.toString());
 
         Button b = (Button) view;
         b.setText("Loading");
@@ -102,64 +102,66 @@ public class MainActivity extends AppCompatActivity {
      * @param report Network-error?
      */
     public void onCreateExerciseServiceDone(String report) {
-        Button b = findViewById(R.id.doIt_button);
-        b.setText(report);
-        LocaUtils.logDatabase(this);
+        Button b = findViewById(R.id.button4);
+        b.setText(String.format("(%s) %s", report, "create exercise"));
+        b.setEnabled(true);
 
-        Log.i("_VIEW_", "EXERCISE CREATED");
+        Log.i("<VIEW>", "EXERCISE CREATED");
+        LocaUtils.logDatabase(this);
     }
 
     public void onDeleteExercise(View v) {
-        Exercise exercise = AppDatabase.getInstance(this).exerciseDao().loadAll().get(0);
+        List<Exercise> exercises = AppDatabase.getInstance(this).exerciseDao().loadAll();
+        Exercise exercise = exercises.get( new Random().nextInt(exercises.size()) );
         ExerciseControl.deleteExercise(exercise, this);
-        LocaUtils.logDatabase(this);
 
-        Log.i("_VIEW_", "DELETE EXERCISE");
+        Log.i("<VIEW>", "DELETE EXERCISE: " + exercise.getName());
+        LocaUtils.logDatabase(this);
     }
 
     public void onEnterExercise(View v) {
         List<Exercise> exercises = AppDatabase.getInstance(this).exerciseDao().loadAll();
         Exercise exercise = exercises.get(new Random().nextInt(exercises.size()));
         SessionControl.enterExercise(exercise.getId(), this);
-        LocaUtils.logDatabase(this);
 
-
-        Log.i("_VIEW_", "ENTER EXERCISE");
+        Log.i("<VIEW>", "ENTER EXERCISE");
         long exerciseId = SessionControl.loadExercise(this).getId();
         int progress = ExerciseControl.progressOfExercise(exerciseId, this);
         int requiredNoExerciseReminders = SessionControl.loadExercise(this).getRequiredGlobalReminders();
-        Log.i("_VIEW_", "Progress: " + progress + ". Reminders: " + requiredNoExerciseReminders);
+        Log.i("<VIEW>", "Progress: " + progress + ". Reminders: " + requiredNoExerciseReminders);
 
         //region quiz-categories data
 
         List<int[]> quizCategoriesData = ExerciseControl.loadQuizCategoriesData(exerciseId, this);
         for (int i = 0; i < quizCategoriesData.size(); i++) {
             int[] quizCategoryData = quizCategoriesData.get(i);
-            Log.i("_VIEW_", "Quiz-category: " + QuizCategory.types[i]);
-            Log.i("_VIEW_", "  no levels: " + quizCategoryData[0]);
-            Log.i("_VIEW_", "  no passed levels: " + quizCategoryData[1]);
-            Log.i("_VIEW_", "  no reminders: " + quizCategoryData[2]);
+            Log.i("<VIEW>", "Quiz-category: " + QuizCategory.types[i]);
+            Log.i("<VIEW>", "  no levels: " + quizCategoryData[0]);
+            Log.i("<VIEW>", "  no passed levels: " + quizCategoryData[1]);
+            Log.i("<VIEW>", "  no reminders: " + quizCategoryData[2]);
         }
 
         //endregion
+        LocaUtils.logDatabase(this);
     }
 
     public void onLeaveExercise(View v) {
         SessionControl.leaveExercise(this);
-        LocaUtils.logDatabase(this);
 
         long userId = SessionControl.load(this).getUserId();
-        Log.i("_VIEW_", "LEAVE EXERCISE");
+        Log.i("<VIEW>", "LEAVE EXERCISE");
         List<Exercise> exercises = AppDatabase.getInstance(this).exerciseDao()
                 .loadWithUserOrderedByDisplayIndex(userId);
         List<Integer> exerciseProgresses = ExerciseControl.exerciseProgresses(userId, this);
-        Log.i("_VIEW_", "exercises: " + exercises.toString());
-        Log.i("_VIEW_", "exerciseProgress: " + exerciseProgresses.toString());
+        Log.i("<VIEW>", "exercises: " + exercises.toString());
+        Log.i("<VIEW>", "exerciseProgress: " + exerciseProgresses.toString());
+
+        LocaUtils.logDatabase(this);
     }
 
     public void onTapping(View v) {
         //TODO
-        Log.i("_VIEW_", "TAPPING");
+        Log.i("<VIEW>", "TAPPING");
     }
 
     //region start level quiz
@@ -169,40 +171,40 @@ public class MainActivity extends AppCompatActivity {
                 SessionControl.load(this).getExerciseId(),
                 QuizCategory.SETTLEMENTS,
                 this);
+        Log.i("<VIEW>", "NEW LEVEL QUIZ: SETTLEMENTS");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEW LEVEL QUIZ: SETTLEMENTS");
     }
     public void onLevelQuiz_roads(View v) {
         RunningQuizControl.newLevelQuiz(
                 SessionControl.load(this).getExerciseId(),
                 QuizCategory.ROADS,
                 this);
+        Log.i("<VIEW>", "NEW LEVEL QUIZ: ROADS");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEW LEVEL QUIZ: ROADS");
     }
     public void onLevelQuiz_nature(View v) {
         RunningQuizControl.newLevelQuiz(
                 SessionControl.load(this).getExerciseId(),
                 QuizCategory.NATURE,
                 this);
+        Log.i("<VIEW>", "NEW LEVEL QUIZ: NATURE");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEW LEVEL QUIZ: NATURE");
     }
     public void onLevelQuiz_transport(View v) {
         RunningQuizControl.newLevelQuiz(
                 SessionControl.load(this).getExerciseId(),
                 QuizCategory.TRANSPORT,
                 this);
+        Log.i("<VIEW>", "NEW LEVEL QUIZ: TRANSPORT");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEW LEVEL QUIZ: TRANSPORT");
     }
     public void onLevelQuiz_constructions(View v) {
         RunningQuizControl.newLevelQuiz(
                 SessionControl.load(this).getExerciseId(),
                 QuizCategory.CONSTRUCTIONS,
                 this);
+        Log.i("<VIEW>", "NEW LEVEL QUIZ: CONSTRUCTIONS");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEW LEVEL QUIZ: CONSTRUCTIONS");
     }
 
     //endregion
@@ -213,24 +215,24 @@ public class MainActivity extends AppCompatActivity {
                 SessionControl.load(this).getExerciseId(),
                 QuizCategory.SETTLEMENTS,
                 this);
+        Log.i("<VIEW>", "NEW QUIZ-CATEGORY-REMINDER: SETTLEMENTS");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEW QUIZ-CATEGORY-REMINDER: SETTLEMENTS");
     }
     public void onLevelCategoryReminder_roads(View v) {
         RunningQuizControl.newLevelReminder(
                 SessionControl.load(this).getExerciseId(),
                 QuizCategory.ROADS,
                 this);
+        Log.i("<VIEW>", "NEW QUIZ-CATEGORY-REMINDER: ROADS");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEW QUIZ-CATEGORY-REMINDER: ROADS");
     }
     public void onLevelCategoryReminder_nature(View v) {
         RunningQuizControl.newLevelReminder(
                 SessionControl.load(this).getExerciseId(),
                 QuizCategory.NATURE,
                 this);
+        Log.i("<VIEW>", "NEW QUIZ-CATEGORY-REMINDER: NATURE");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEW QUIZ-CATEGORY-REMINDER: NATURE");
     }
     public void onLevelCategoryReminder_transport(View v) {
         RunningQuizControl.newLevelReminder(
@@ -243,21 +245,21 @@ public class MainActivity extends AppCompatActivity {
                 SessionControl.load(this).getExerciseId(),
                 QuizCategory.CONSTRUCTIONS,
                 this);
+        Log.i("<VIEW>", "NEW QUIZ-CATEGORY-REMINDER: CONSTRUCTIONS");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEW QUIZ-CATEGORY-REMINDER: CONSTRUCTIONS");
     }
     //endregion
 
     public void onFollowUpQuiz(View v) {
         RunningQuizControl.newFollowUpQuiz(this);
+        Log.i("<VIEW>", "NEW FOLLOW-UP QUIZ");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEW FOLLOW-UP QUIZ");
     }
 
     public void onExerciseReminder(View v) {
         RunningQuizControl.newExerciseReminder(SessionControl.load(this).getExerciseId(), this);
+        Log.i("<VIEW>", "NEW EXERCISE REMINDER");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEW EXERCISE REMINDER");
     }
 
     public void onReportQuestionResult_correct(View v) {
@@ -267,8 +269,8 @@ public class MainActivity extends AppCompatActivity {
                 .loadWithRunningQuizAndIndex(runningQuiz.getId(), questionIndex);
         RunningQuizControl.reportQuestionResult(question, true, this);
 
+        Log.i("<VIEW>", "REPORT QUESTION: CORRECT");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "REPORT QUESTION: CORRECT");
     }
 
     public void onReportQuestionResult_incorrect(View v) {
@@ -278,24 +280,25 @@ public class MainActivity extends AppCompatActivity {
                 .loadWithRunningQuizAndIndex(runningQuiz.getId(), questionIndex);
         RunningQuizControl.reportQuestionResult(question, false, this);
 
+        Log.i("<VIEW>", "REPORT QUESTION: INCORRECT");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "REPORT QUESTION: INCORRECT");
     }
 
     public void onNextQuestion(View v) {
         Question question = RunningQuizControl.nextQuestion(this);
 
+        Log.i("<VIEW>", "NEXT QUESTION");
+        if (question == null) Log.i("<VIEW>", "Done!");
+        else Log.i("<VIEW>", question.toString());
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "NEXT QUESTION");
-        Log.i("_VIEW_", question.toString());
     }
 
     public void onFinishedRunningQuiz(View v) {
         Exercise exercise = SessionControl.loadExercise(this);
         RunningQuizControl.onFinishedRunningQuiz(exercise, this);
 
+        Log.i("<VIEW>", "FINISHED QUIZ");
         LocaUtils.logDatabase(this);
-        Log.i("_VIEW_", "FINISHED QUIZ");
     }
 
 

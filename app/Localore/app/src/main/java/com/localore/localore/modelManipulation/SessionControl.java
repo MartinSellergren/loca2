@@ -43,7 +43,7 @@ public class SessionControl {
      */
     public static void login(long userId, Context context) {
         Session session = load(context);
-        session.setId(userId);
+        session.setUserId(userId);
         session.setExerciseId(-1);
         AppDatabase.getInstance(context).sessionDao().update(session);
     }
@@ -54,7 +54,8 @@ public class SessionControl {
      */
     public static void logout(Context context) {
         Session session = load(context);
-        session.setId(-1);
+        session.setUserId(-1);
+        session.setExerciseId(-1);
         AppDatabase.getInstance(context).sessionDao().update(session);
     }
 

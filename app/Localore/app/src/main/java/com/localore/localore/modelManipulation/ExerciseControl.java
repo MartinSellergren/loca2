@@ -94,7 +94,7 @@ public class ExerciseControl {
                 AppDatabase.getTempInstance(context).geoDao().insert(go);
             }
             catch (GeoObject.BuildException e) {
-                Log.i("_ME_", "Can't build: " + e.toString());
+                Log.i("<ME>", "Can't build: " + e.toString());
             }
         }
 
@@ -144,7 +144,7 @@ public class ExerciseControl {
         List<Long> insertedIds = new ArrayList<>();
 
         while (AppDatabase.getTempInstance(context).geoDao().size() > 0) {
-            Log.d("_ME_", "size: " + AppDatabase.getTempInstance(context).geoDao().size());
+            Log.d("<ME>", "size: " + AppDatabase.getTempInstance(context).geoDao().size());
 
             GeoObject go = AppDatabase.getTempInstance(context).geoDao().loadOne();
             AppDatabase.getTempInstance(context).geoDao().delete(go);

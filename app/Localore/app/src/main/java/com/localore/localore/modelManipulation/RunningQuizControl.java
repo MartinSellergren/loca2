@@ -103,17 +103,19 @@ public class RunningQuizControl {
      */
     public static void newFollowUpQuiz(Context context) {
         long runningQuizId = load(context).getId();
-        List<Long> incorrectGeoObjectIds =
-                AppDatabase.getInstance(context).questionDao()
-                        .loadIdsIncorrectlyAnsweredWithRunningQuiz(runningQuizId);
-        List<GeoObject> incorrectGeoObjects =
-                AppDatabase.getInstance(context).geoDao()
-                        .load(incorrectGeoObjectIds);
+        List<Question> incorrectQuestions =
+                AppDatabase.getInstance(context)
+                        .questionDao().loadIncorrectWithRunningQuizOrderedByIndex(runningQuizId);
 
         int runningQuizType = 1;
         runningQuizId = newRunningQuiz(runningQuizType, context);
 
-        newQuestions(incorrectGeoObjects, runningQuizId, context);
+        for (int i = 0; i < incorrectQuestions.size(); i++) {
+            Question question = incorrectQuestions.get(i);
+            question.setRunningQuizId(runningQuizId);
+            question.setIndex(i);
+            AppDatabase.getInstance(context).questionDao().insert(question);
+        }
     }
 
     /**
@@ -206,11 +208,13 @@ public class RunningQuizControl {
     }
 
     /**
-     * Deleted running-quiz from database (including underlying questions).
+     * Deleted running-quiz from database (including underlying questions), if one exists.
      * @param context
      */
     private static void deleteRunningQuiz(Context context) {
         RunningQuiz runningQuiz = load(context);
+        if (runningQuiz == null) return;
+
         List<Question> questions =
                 AppDatabase.getInstance(context).questionDao()
                         .loadWithRunningQuiz(runningQuiz.getId());
@@ -251,6 +255,8 @@ public class RunningQuizControl {
      * @param context
      */
     private static void newQuestions(List<GeoObject> geoObjects, long runningQuizId, Context context) {
+        if (geoObjects.size() == 0) return;
+
         int[] questionCounts = new int[geoObjects.size()];
         for (int i = 0; i < questionCounts.length; i++)
             questionCounts[i] = DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT;
@@ -264,9 +270,9 @@ public class RunningQuizControl {
 
         int questionIndex = 0;
 
-        while (allIsZero(questionCounts)) {
+        while (!allIsZero(questionCounts)) {
             int i = new Random().nextInt(geoObjects.size());
-            if (questionCounts[i] != 0) {
+            if (questionCounts[i] > 0) {
                 questionCounts[i] -= 1;
 
                 int index = questionIndex++;
@@ -304,10 +310,9 @@ public class RunningQuizControl {
      * @param context
      */
     public static void reportQuestionResult(Question question, boolean correct, Context context) {
-        if (correct) {
-            question.setAnsweredCorrectly(true);
-            AppDatabase.getInstance(context).questionDao().update(question);
-        }
+        if (correct) question.setAnsweredCorrectly(true);
+        else question.setAnsweredCorrectly(false);
+        AppDatabase.getInstance(context).questionDao().update(question);
 
         RunningQuiz runningQuiz = load(context);
         double askWeight = 1;

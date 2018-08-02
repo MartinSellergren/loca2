@@ -411,11 +411,15 @@ public class GeoObject {
      * @return Compact representation.
      */
     public String toCompactString() {
-        return String.format("%s, %s, %s, %s, %s",
+        return String.format("%s.%s, %s, %s, rank:%s, prev-correct:%s, times-asked:%s, no-corrects:%s, %s",
+                this.id,
                 this.name,
                 this.supercat,
                 this.subcat,
                 this.rank,
+                this.timeOfPreviousCorrectAnswer,
+                this.timesAsked,
+                this.noCorrectAnswers,
                 getLink());
     }
 

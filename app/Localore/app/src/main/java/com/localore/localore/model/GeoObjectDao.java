@@ -38,7 +38,7 @@ public interface GeoObjectDao {
     public GeoObject load(long id);
 
     @Transaction @Query("SELECT * FROM geoobject WHERE id IN (:ids)")
-    public List<GeoObject> load(List<Long> ids);
+    public List<GeoObject> loadIn(List<Long> ids);
 
     @Transaction @Query("SELECT * FROM GeoObject WHERE name = :name COLLATE NOCASE")
     public List<GeoObject> loadWithSimilarName(String name);

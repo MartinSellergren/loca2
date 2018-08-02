@@ -33,7 +33,7 @@ public class GeoObjInstructionsIter {
     public GeoObjInstructionsIter(NodeShape area, Context context) {
         try {
             this.url = getQueryURL(area, context);
-            Log.i("_ME_", "Query: " + url.toString());
+            Log.i("<ME>", "Query: " + url.toString());
         }
         catch(MalformedURLException e) {
             throw new RuntimeException(e.toString());

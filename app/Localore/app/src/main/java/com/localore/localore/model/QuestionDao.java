@@ -31,7 +31,15 @@ public interface QuestionDao {
     @Transaction @Query("SELECT * FROM question WHERE runningQuizId = :runningQuizId ORDER BY `index`")
     public List<Question> loadWithRunningQuizOrderedByIndex(long runningQuizId);
 
-    @Transaction @Query("SELECT id FROM question WHERE answeredCorrectly = 0 AND runningQuizId = :runningQuizId")
-    public List<Long> loadIdsIncorrectlyAnsweredWithRunningQuiz(long runningQuizId);
+//    @Transaction @Query("SELECT DISTINCT geoObjectId FROM question WHERE answeredCorrectly = 0 AND runningQuizId = :runningQuizId")
+//    public List<Long> loadGeoObjectsIdIncorrectlyAnsweredWithRunningQuiz(long runningQuizId);
+
+    @Transaction @Query("SELECT * FROM question WHERE answeredCorrectly = 0 AND runningQuizId = :runningQuizId ORDER BY `index`")
+    public List<Question> loadIncorrectWithRunningQuizOrderedByIndex(long runningQuizId);
+
+
+    //for testing
+    @Transaction @Query("SELECT * FROM question")
+    public List<Question> loadAll();
 }
 
