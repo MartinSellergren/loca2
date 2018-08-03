@@ -41,9 +41,9 @@ public class QuizCategory {
     private int type;
 
     /**
-     * Number of category reminder-quizzes to complete.
+     * Number of quiz-category reminder-quizzes to complete.
      */
-    private int requiredNoCategoryReminders = 0;
+    private int noRequiredReminders = 0;
 
     /**
      * @param exerciseId
@@ -92,12 +92,12 @@ public class QuizCategory {
         this.type = type;
     }
 
-    public int getRequiredNoCategoryReminders() {
-        return requiredNoCategoryReminders;
+    public int getNoRequiredReminders() {
+        return noRequiredReminders;
     }
 
-    public void setRequiredNoCategoryReminders(int requiredNoCategoryReminders) {
-        this.requiredNoCategoryReminders = requiredNoCategoryReminders;
+    public void setNoRequiredReminders(int noRequiredReminders) {
+        this.noRequiredReminders = noRequiredReminders;
     }
 
     @Override

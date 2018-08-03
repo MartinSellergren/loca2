@@ -69,7 +69,7 @@ public class RunningQuiz {
 
     @Override
     public String toString() {
-        return String.format("RunningQuiz, id:%s, currentQuestion:%s",
-                this.id, this.currentQuestionIndex);
+        return String.format("RunningQuiz, id:%s, currentQuestion:%s, type:%s",
+                this.id, this.currentQuestionIndex, this.type);
     }
 }

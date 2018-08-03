@@ -1,4 +1,0 @@
-- close db?
-- index db?
-- @transaction?
-- pass db/dao, not context

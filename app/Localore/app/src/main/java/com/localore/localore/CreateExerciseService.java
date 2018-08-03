@@ -13,7 +13,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.localore.localore.model.AppDatabase;
-import com.localore.localore.model.Exercise;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.model.NodeShape;
 import com.localore.localore.modelManipulation.SessionControl;
@@ -107,21 +106,37 @@ public class CreateExerciseService extends IntentService {
         Log.i("<ME>", "CreateExerciseService started");
         if (intent == null) return;
 
+        AppDatabase mainDb = AppDatabase.getInstance(this);
+        AppDatabase tempDb = AppDatabase.getTempInstance(this);
+
         String exerciseName = intent.getStringExtra(EXERCISE_NAME_PARAM_KEY);
         NodeShape workingArea = (NodeShape)intent.getSerializableExtra(WORKING_AREA_PARAM_KEY);
-        long userId = SessionControl.load(this).getUserId();
-        long exerciseId = ExerciseControl.newExercise(userId, exerciseName, workingArea, this);
+        long userId = SessionControl.load(mainDb).getUserId();
+        long exerciseId = ExerciseControl.newExercise(userId, exerciseName, workingArea, mainDb);
 
-        boolean ok = ExerciseControl.acquireGeoObjects(workingArea, this);
+        boolean ok = ExerciseControl.acquireGeoObjects(workingArea, tempDb, this);
+        Log.i("<ME>", "N.o raw osm's: " + tempDb.geoDao().count());
+        if (tempDb.geoDao().count() < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
+            report("Too few geo-objects");
+            return;
+        }
+
         if (!ok) {
             report("Failed");
             return;
         }
 
         Log.d("<ME>", "Post processing");
-        ExerciseControl.postProcessing(exerciseId, this);
+        int noGeoObjects = ExerciseControl.postProcessing(exerciseId, tempDb, mainDb);
+        Log.i("<ME>", "N.o geo-objects: "  + noGeoObjects);
 
-        report("Done!");
+        if (noGeoObjects < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
+            report("Too few geo-objects");
+            ExerciseControl.deleteExercise(mainDb.exerciseDao().load(exerciseId), mainDb);
+            return;
+        }
+
+        report("Done");
     }
 
     /**

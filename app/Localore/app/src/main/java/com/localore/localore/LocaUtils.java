@@ -16,9 +16,31 @@ import com.localore.localore.modelManipulation.SessionControl;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 public class LocaUtils {
+
+    private static Random random = new Random();
+
+    /**
+     * @param lowerBound
+     * @param upperBound
+     * @return Random integer <- [lowerBound, upperBound)
+     */
+    public static int randi(int lowerBound, int upperBound) {
+        if (upperBound < lowerBound || lowerBound < 0 || upperBound < 1) return 0;
+        return lowerBound + random.nextInt(upperBound - lowerBound);
+    }
+
+    /**
+     * @param upperBound
+     * @return Random integer <- [0, upperBound)
+     */
+    public static int randi(int upperBound) {
+        if (upperBound < 1) return 0;
+        return random.nextInt(upperBound);
+    }
 
     /**
      * @param res Resource id of text-file.
@@ -67,24 +89,24 @@ public class LocaUtils {
             Log.i("<ME>", go.toString() + "\n");
         }
 
-        Log.i("<ME>", "COUNT: " + db.geoDao().size());
+        Log.i("<ME>", "COUNT: " + db.geoDao().count());
     }
 
 
     /**
      * Log the main database.
      */
-    public static void logDatabase(Context context) {
+    public static void logDatabase(AppDatabase db) {
         Log.i("<DB>", "********** DB START **********");
 
-        List<User> users = AppDatabase.getInstance(context).userDao().loadAll();
+        List<User> users = db.userDao().loadAll();
         for (User user : users) {
             Log.i("<DB>", "*USER: " + user.toString());
-            logExercises(user.getId(), context);
+            logExercises(user.getId(), db);
         }
 
-        logRunningQuiz(context);
-        logSession(context);
+        logRunningQuiz(db);
+        logSession(db);
 
         Log.i("<DB>", "*********** DB END ***********");
     }
@@ -92,82 +114,79 @@ public class LocaUtils {
     /**
      * Log exercises (and all underlying content) of a user.
      * @param userId
-     * @param context
+     * @param db
      */
-    public static void logExercises(long userId, Context context) {
+    public static void logExercises(long userId, AppDatabase db) {
         List<Exercise> exercises =
-                AppDatabase.getInstance(context).exerciseDao()
+                db.exerciseDao()
                         .loadWithUserOrderedByDisplayIndex(userId);
 
         for (Exercise exercise : exercises) {
             Log.i("<DB>", "**EXERCISE: " + exercise.toString());
-            logQuizCategories(exercise.getId(), context);
+            logQuizCategories(exercise.getId(), db);
         }
     }
 
     /**
      * Log quiz-categories (and all underlying content) of an exercise.
      * @param exerciseId
-     * @param context
+     * @param db
      */
-    public static void logQuizCategories(long exerciseId, Context context) {
-        List<QuizCategory> quizCategories =
-                AppDatabase.getInstance(context).quizCategoryDao()
-                        .loadWithExerciseOrderedByType(exerciseId);
+    public static void logQuizCategories(long exerciseId, AppDatabase db) {
+        List<QuizCategory> quizCategories = db.quizCategoryDao()
+                .loadWithExerciseOrderedByType(exerciseId);
 
         for (QuizCategory quizCategory : quizCategories) {
             Log.i("<DB>", "***QUIZ-CATEGORY: " + quizCategory.toString());
-            logQuizzes(quizCategory.getId(), context);
+            logQuizzes(quizCategory.getId(), db);
         }
     }
 
     /**
      * Log quizzes (and all underlying content) of a quiz-category.
      * @param quizCategoryId
-     * @param context
+     * @param db
      */
-    public static void logQuizzes(long quizCategoryId, Context context) {
-        List<Quiz> quizzes =
-                AppDatabase.getInstance(context).quizDao()
-                        .loadWithQuizCategoryOrderedByLevel(quizCategoryId);
+    public static void logQuizzes(long quizCategoryId, AppDatabase db) {
+        List<Quiz> quizzes = db.quizDao()
+                .loadWithQuizCategoryOrderedByLevel(quizCategoryId);
 
         for (Quiz quiz : quizzes) {
             Log.i("<DB>", "****QUIZ: " + quiz.toString());
-            logGeoObjects(quiz.getId(), context);
+            logGeoObjects(quiz.getId(), db);
         }
     }
 
     /**
      * Log geo-objects of a quiz.
      * @param quizId
-     * @param context
+     * @param db
      */
-    public static void logGeoObjects(long quizId, Context context) {
-        List<Long> geoObjectIds =
-                AppDatabase.getInstance(context).geoDao()
-                        .loadIdsWithQuizOrderedByRank(quizId);
-
-        for (long geoObjectId : geoObjectIds) {
-            GeoObject geoObject = AppDatabase.getInstance(context).geoDao().load(geoObjectId);
-            Log.i("<DB>", "*****GEO-OBJECT: " + geoObject.toCompactString());
-        }
+    public static void logGeoObjects(long quizId, AppDatabase db) {
+        Log.i("<DB>", "*****NO GEO-OBJECTS: " + db.geoDao().countInQuiz(quizId));
+//
+//        List<Long> geoObjectIds = db.geoDao().loadIdsWithQuizOrderedByRank(quizId);
+//
+//        for (long geoObjectId : geoObjectIds) {
+//            GeoObject geoObject = db.geoDao().load(geoObjectId);
+//            Log.i("<DB>", "*****GEO-OBJECT: " + geoObject.toString());
+//        }
     }
 
     /**
      * Log running-quiz, with questions.
-     * @param context
+     * @param db
      */
-    public static void logRunningQuiz(Context context) {
-        RunningQuiz runningQuiz = AppDatabase.getInstance(context).runningQuizDao().loadOne();
+    public static void logRunningQuiz(AppDatabase db) {
+        RunningQuiz runningQuiz = db.runningQuizDao().loadOne();
         if (runningQuiz == null) {
             Log.i("<DB>", "-No running quiz");
             return;
         }
         Log.i("<DB>", "-RUNNING-QUIZ: " + runningQuiz.toString());
 
-        List<Question> questions =
-                AppDatabase.getInstance(context).questionDao()
-                        .loadWithRunningQuizOrderedByIndex(runningQuiz.getId());
+        List<Question> questions = db.questionDao()
+                .loadWithRunningQuizOrderedByIndex(runningQuiz.getId());
         for (Question question : questions) {
             Log.i("<DB>", "--QUESTION: " + question.toString());
         }
@@ -175,10 +194,10 @@ public class LocaUtils {
 
     /**
      * Log session..
-     * @param context
+     * @param db
      */
-    public static void logSession(Context context) {
-        Session session = SessionControl.load(context);
+    public static void logSession(AppDatabase db) {
+        Session session = SessionControl.load(db);
         Log.i("<DB>", session.toString());
     }
 

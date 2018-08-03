@@ -5,6 +5,7 @@ import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
+import android.arch.persistence.room.Transaction;
 import android.arch.persistence.room.Update;
 
 import java.util.List;
@@ -24,13 +25,13 @@ public interface QuizCategoryDao {
     @Query("SELECT * FROM quizcategory WHERE id = :id")
     public QuizCategory load(long id);
 
-    @Query("SELECT * FROM quizcategory WHERE exerciseId = :exerciseId")
+    @Transaction @Query("SELECT * FROM quizcategory WHERE exerciseId = :exerciseId")
     public List<QuizCategory> loadWithExercise(long exerciseId);
 
-    @Query("SELECT * FROM quizcategory WHERE exerciseId = :exerciseId ORDER BY type")
+    @Transaction @Query("SELECT * FROM quizcategory WHERE exerciseId = :exerciseId ORDER BY type")
     public List<QuizCategory> loadWithExerciseOrderedByType(long exerciseId);
 
-    @Query("SELECT id FROM quizcategory WHERE exerciseId = :exerciseId")
+    @Transaction @Query("SELECT id FROM quizcategory WHERE exerciseId = :exerciseId")
     public List<Long> loadIdsWithExercise(long exerciseId);
 
     @Query("SELECT * FROM quizcategory WHERE exerciseId = :exerciseId AND type = :type")

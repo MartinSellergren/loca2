@@ -19,6 +19,9 @@ public interface ExerciseDao {
     @Update
     public void update(Exercise exercise);
 
+    @Update
+    public void update(List<Exercise> exercises);
+
     @Delete
     public void delete(Exercise exercise);
 

@@ -5,6 +5,7 @@ import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
+import android.arch.persistence.room.Transaction;
 import android.arch.persistence.room.Update;
 
 import java.util.List;
@@ -24,6 +25,6 @@ public interface UserDao {
     @Query("SELECT * FROM user WHERE id = :id")
     public User load(long id);
 
-    @Query("SELECT * FROM user")
+    @Transaction @Query("SELECT * FROM user")
     public List<User> loadAll();
 }

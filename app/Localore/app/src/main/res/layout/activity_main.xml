@@ -73,8 +73,15 @@
                 android:id="@+id/button8"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:onClick="onTapping"
-                android:text="tapping" />
+                android:onClick="onTapping_nextLevel"
+                android:text="tapping - next level" />
+
+            <Button
+                android:id="@+id/button25"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:onClick="onTapping_pastLevels"
+                android:text="tapping - past levels" />
 
             <Button
                 android:id="@+id/button9"

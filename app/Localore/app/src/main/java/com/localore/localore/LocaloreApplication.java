@@ -12,7 +12,6 @@ public class LocaloreApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
-        // For now!
-        AppDatabase.getInstance(this).clearAllTables();
+        //AppDatabase.getInstance(this).clearAllTables();
     }
 }

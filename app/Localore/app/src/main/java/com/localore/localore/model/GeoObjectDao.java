@@ -46,6 +46,9 @@ public interface GeoObjectDao {
     @Transaction @Query("SELECT * FROM geoobject WHERE quizId = :quizId")
     public List<GeoObject> loadWithQuiz(long quizId);
 
+    @Transaction @Query("SELECT * FROM geoobject WHERE quizId IN (:quizIds)")
+    public List<GeoObject> loadWithQuizIn(List<Long> quizIds);
+
     @Transaction @Query("SELECT * FROM geoobject ORDER BY RANDOM() LIMIT :preferredCount")
     public List<GeoObject> loadRandoms(int preferredCount);
 
@@ -55,14 +58,17 @@ public interface GeoObjectDao {
     @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = :quizId ORDER BY rank")
     public List<Long> loadIdsWithQuizOrderedByRank(long quizId);
 
-    @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = -1 AND supercat = :supercat ORDER BY rank")
-    public List<Long> loadQuizlessIdsWithSupercatOrderdByRank(String supercat);
-
     @Transaction @Query("SELECT id FROM geoobject WHERE quizId IN (:quizIds)")
     public List<Long> loadIdsWithQuizIn(List<Long> quizIds);
 
+    @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = -1 AND supercat = :supercat ORDER BY rank")
+    public List<Long> loadQuizlessIdsWithSupercatOrderdByRank(String supercat);
+
     @Query("SELECT count(*) FROM GeoObject")
-    public int size();
+    public int count();
+
+    @Query("SELECT count(*) FROM geoobject WHERE quizId = :quizId")
+    public int countInQuiz(long quizId);
 
     //for testing
     @Transaction @Query("SELECT id FROM geoobject")

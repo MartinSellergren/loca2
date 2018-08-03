@@ -36,12 +36,12 @@ public class Exercise {
     /**
      * Number of passed levels since a global-reminder-quiz was taken.
      */
-    private int passedLevelsSinceGlobalReminder = 0;
+    private int noPassedLevelsSinceExerciseReminder = 0;
 
     /**
      * Number of global reminder-quizzes to complete.
      */
-    private int requiredGlobalReminders = 0;
+    private int noRequiredExerciseReminders = 0;
 
     /**
      * Color theme of every view of this exercise.
@@ -100,20 +100,20 @@ public class Exercise {
         this.workingArea = workingArea;
     }
 
-    public int getPassedLevelsSinceGlobalReminder() {
-        return passedLevelsSinceGlobalReminder;
+    public int getNoPassedLevelsSinceExerciseReminder() {
+        return noPassedLevelsSinceExerciseReminder;
     }
 
-    public void setPassedLevelsSinceGlobalReminder(int passedLevelsSinceGlobalReminder) {
-        this.passedLevelsSinceGlobalReminder = passedLevelsSinceGlobalReminder;
+    public void setNoPassedLevelsSinceExerciseReminder(int noPassedLevelsSinceExerciseReminder) {
+        this.noPassedLevelsSinceExerciseReminder = noPassedLevelsSinceExerciseReminder;
     }
 
-    public int getRequiredGlobalReminders() {
-        return requiredGlobalReminders;
+    public int getNoRequiredExerciseReminders() {
+        return noRequiredExerciseReminders;
     }
 
-    public void setRequiredGlobalReminders(int requiredGlobalReminders) {
-        this.requiredGlobalReminders = requiredGlobalReminders;
+    public void setNoRequiredExerciseReminders(int noRequiredExerciseReminders) {
+        this.noRequiredExerciseReminders = noRequiredExerciseReminders;
     }
 
     @Override

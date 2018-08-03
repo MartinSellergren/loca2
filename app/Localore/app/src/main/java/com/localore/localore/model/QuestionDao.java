@@ -16,8 +16,14 @@ public interface QuestionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     public long insert(Question question);
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    public List<Long> insert(List<Question> questions);
+
     @Delete
     public void delete(Question question);
+
+    @Delete
+    public void delete(List<Question> questions);
 
     @Update
     public void update(Question question);
@@ -36,6 +42,9 @@ public interface QuestionDao {
 
     @Transaction @Query("SELECT * FROM question WHERE answeredCorrectly = 0 AND runningQuizId = :runningQuizId ORDER BY `index`")
     public List<Question> loadIncorrectWithRunningQuizOrderedByIndex(long runningQuizId);
+
+    @Transaction @Query("SELECT count(*) FROM question WHERE runningQuizId = :runningQuizId")
+    public int countWithRunningQuiz(long runningQuizId);
 
 
     //for testing

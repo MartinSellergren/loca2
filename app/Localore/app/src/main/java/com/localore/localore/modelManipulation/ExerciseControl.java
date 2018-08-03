@@ -18,7 +18,6 @@ import com.localore.localore.model.QuizCategory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Static class for exercise related operations (manipulate the database).
@@ -27,9 +26,14 @@ import java.util.Random;
 public class ExerciseControl {
 
     /**
+     * An area containing less objects than this is not allowed for an exercise.
+     */
+    public static final int MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE = 15;
+
+    /**
      * Max allowed distance in meters between two geo-objects for a merge.
      */
-    private static final double MERGE_LIMIT = 5;
+    private static final double MERGE_LIMIT = 50;
 
     /**
      * Length based rank boost for geo-objects, by multiplying rank with [1, this].
@@ -44,45 +48,46 @@ public class ExerciseControl {
     //region create
 
     /**
-     * Creates and inserts a new exercise-object into the db.
+     * Creates and inserts a new exercise-object into db.
      *
      * @param userId
      * @param exerciseName
      * @param workingArea
-     * @param context
+     * @param db
      *
      * @pre exerciseName unique
      */
-    public static long newExercise(long userId, String exerciseName, NodeShape workingArea, Context context) {
+    public static long newExercise(long userId, String exerciseName, NodeShape workingArea, AppDatabase db) {
         Exercise exercise = new Exercise(userId, exerciseName, workingArea);
-        incrementExerciseDisplayIndexes(userId, context);
-        long exerciseId = AppDatabase.getInstance(context).exerciseDao().insert(exercise);
+        incrementExerciseDisplayIndexes(userId, db);
+        long exerciseId = db.exerciseDao().insert(exercise);
         return exerciseId;
     }
 
     /**
      * Add 1 to display-indexes of exercises of user.
-     * @param userId
+     * @param db
      */
-    private static void incrementExerciseDisplayIndexes(long userId, Context context) {
-        List<Exercise> exercises = AppDatabase.getInstance(context).exerciseDao().loadWithUser(userId);
-        for (Exercise exercise : exercises) {
+    private static void incrementExerciseDisplayIndexes(long userId, AppDatabase db) {
+        List<Exercise> exercises = db.exerciseDao().loadWithUser(userId);
+        for (Exercise exercise : exercises)
             exercise.setDisplayIndex( exercise.getDisplayIndex() + 1 );
-            AppDatabase.getInstance(context).exerciseDao().update(exercise);
-        }
+
+        db.exerciseDao().update(exercises);
     }
 
     //region acquire
 
      /**
-     * Fetches geo-objects in the working-area of exercise. Process raw OSM.
-     * Updates temp-database with geo-objects. They all have quizId -1.
+     * Fetches geo-objects in the working-area of exercise. Processes raw OSM.
+     * Updates database with geo-objects. They all have quizId -1.
      *
      * @param workingArea Area containing objects.
+     * @param context For reading conversion-table from file.
      * @return True if database updated as planned. False means network error (etc?).
      */
-    public static boolean acquireGeoObjects(NodeShape workingArea, Context context) {
-        AppDatabase.getTempInstance(context).clearAllTables();
+    public static boolean acquireGeoObjects(NodeShape workingArea, AppDatabase tempDb, Context context) {
+        tempDb.clearAllTables();
         JsonObject convTable = openConversionTable(context);
         GeoObjInstructionsIter iter = new GeoObjInstructionsIter(workingArea, context);
         iter.open();
@@ -91,7 +96,7 @@ public class ExerciseControl {
         while ((instr=iter.next()) != null) {
             try {
                 GeoObject go = new GeoObject(instr, convTable);
-                AppDatabase.getTempInstance(context).geoDao().insert(go);
+                tempDb.geoDao().insert(go);
             }
             catch (GeoObject.BuildException e) {
                 Log.i("<ME>", "Can't build: " + e.toString());
@@ -119,58 +124,62 @@ public class ExerciseControl {
      * exercise-related stuff.
      *
      * @param exerciseId Parent of created quizzes.
-     * @pre Raw geo-objects in temp-database.
+     * @param tempDb
+     * @param mainDb
+     * @return N.o geo-objects in the new exercise.
      */
-    public static void postProcessing(long exerciseId, Context context) {
-        List<Long> insertedIds = dedupeAndInsertGeoObjects(context);
-        boostGeoObjectRanksByLength(insertedIds, context);
-        insertGeoObjectQuizzes(exerciseId, context);
+    public static int postProcessing(long exerciseId, AppDatabase tempDb, AppDatabase mainDb) {
+        List<Long> insertedIds = dedupeAndInsertGeoObjects(tempDb, mainDb);
+        boostGeoObjectRanksByLength(insertedIds, mainDb);
+        insertGeoObjectQuizzes(exerciseId, mainDb);
+        return insertedIds.size();
     }
 
     //region dedupe
 
     /**
-     * Dedupe geo-objects in temp-db and insert into the main db.
-     * Temp-db is emptied and closed.
+     * Dedupe geo-objects in src-db and insert into dest-db.
+     * Src-db is emptied and closed.
      * Dedupe:
-     * Attempt to merge object-pices into one object.
+     * Attempt to merge object-pieces into one object.
      * Same (similar) name + close proximity -> merge.
      *
-     * @param context
-     * @pre Raw geo-objects in temp-database.
-     * @return IDs of the geo-objects inserted into the main-db.
+     * @param src
+     * @param dest
+     * @pre Raw geo-objects in src
+     * @return IDs of the geo-objects inserted into dest.
      */
-    public static List<Long> dedupeAndInsertGeoObjects(Context context) {
+    public static List<Long> dedupeAndInsertGeoObjects(AppDatabase src, AppDatabase dest) {
         List<Long> insertedIds = new ArrayList<>();
 
-        while (AppDatabase.getTempInstance(context).geoDao().size() > 0) {
-            Log.d("<ME>", "size: " + AppDatabase.getTempInstance(context).geoDao().size());
+        while (src.geoDao().count() > 0) {
+            Log.d("<ME>", "count: " + src.geoDao().count());
 
-            GeoObject go = AppDatabase.getTempInstance(context).geoDao().loadOne();
-            AppDatabase.getTempInstance(context).geoDao().delete(go);
+            GeoObject go = src.geoDao().loadOne();
+            src.geoDao().delete(go);
 
-            List<GeoObject> sameNames = deleteAllGeoObjectsWithSimilarNameInTempDb(go.getName(), context);
+            List<GeoObject> sameNames = deleteAllGeoObjectsWithSimilarName(go.getName(), src);
             sameNames.add(go);
             List<GeoObject> merged = mergeMergables(sameNames);
 
-            List<Long> ids = AppDatabase.getInstance(context).geoDao().insert(merged);
+            List<Long> ids = dest.geoDao().insert(merged);
             insertedIds.addAll(ids);
         }
 
-        AppDatabase.getTempInstance(context).clearAllTables();
+        src.clearAllTables();
         AppDatabase.closeTemp();
         return insertedIds;
     }
 
     /**
-     * Remove, from temp-db, all geo-objects with specified (or similar) name.
+     * Remove all geo-objects with specified (or similar) name.
      * @param name
-     * @param context
+     * @param db
      * @return Deleted geo-objects.
      */
-    private static List<GeoObject> deleteAllGeoObjectsWithSimilarNameInTempDb(String name, Context context) {
-        List<GeoObject> rmvs = AppDatabase.getTempInstance(context).geoDao().loadWithSimilarName(name);
-        AppDatabase.getTempInstance(context).geoDao().delete(rmvs);
+    private static List<GeoObject> deleteAllGeoObjectsWithSimilarName(String name, AppDatabase db) {
+        List<GeoObject> rmvs = db.geoDao().loadWithSimilarName(name);
+        db.geoDao().delete(rmvs);
         return rmvs;
     }
 
@@ -289,31 +298,33 @@ public class ExerciseControl {
     //region boost ranks
 
     /**
-     * In the main-db, increase rank of long/big objects.
+     * Increase rank of long/big geo-objects in db.
      * @param ids IDs of geo-objects to process.
+     * @param db
      */
-    public static void boostGeoObjectRanksByLength(List<Long> ids, Context context) {
-        double meanLength = meanGeoObjectLength(ids, context);
+    public static void boostGeoObjectRanksByLength(List<Long> ids, AppDatabase db) {
+        double meanLength = meanGeoObjectLength(ids, db);
         if (meanLength == 0) return;
 
         for (long id : ids) {
-            GeoObject g = AppDatabase.getInstance(context).geoDao().load(id);
+            GeoObject g = db.geoDao().load(id);
 
             double ratio = g.getLength() / meanLength * RANK_BOOST_FACTOR;
-            g.setRank( g.getRank() * (1+ratio) );
-            AppDatabase.getInstance(context).geoDao().update(g);
+            g.setRank( g.getRank() * (1 + ratio) );
+            db.geoDao().update(g);
         }
     }
 
     /**
-     * @param ids IDs of concerned geo-objects in main-db.
-     * @return Mean length of geo-objects.
+     * @param ids IDs of concerned geo-objects.
+     * @param db
+     * @return Mean length of geo-objects in db.
      */
-    private static double meanGeoObjectLength(List<Long> ids, Context context) {
+    private static double meanGeoObjectLength(List<Long> ids, AppDatabase db) {
         double sum = 0;
 
         for (long id : ids) {
-            GeoObject g = AppDatabase.getInstance(context).geoDao().load(id);
+            GeoObject g = db.geoDao().load(id);
             sum += g.getLength();
         }
 
@@ -327,26 +338,26 @@ public class ExerciseControl {
     /**
      * Creates quizzes with categories based on geo-objects without a quiz (-1) and inserts into db.
      * Also updates geo-object's quiz-references (none -1 afterwords).
+     *
      * @param exerciseId Parent exercise.
-     * @param context
+     * @param db
      */
-    private static void insertGeoObjectQuizzes(long exerciseId, Context context) {
+    private static void insertGeoObjectQuizzes(long exerciseId, AppDatabase db) {
         for (int quizCategoryType = 0; quizCategoryType < QuizCategory.types.length; quizCategoryType++) {
             String supercat = QuizCategory.types[quizCategoryType];
-            List<Long> ids = AppDatabase.getInstance(context).geoDao().
-                    loadQuizlessIdsWithSupercatOrderdByRank(supercat);
+            List<Long> ids = db.geoDao().loadQuizlessIdsWithSupercatOrderdByRank(supercat);
 
             if (ids.size() == 0) continue;
 
             List<List<Long>> levelGroups = groupEquallySizedLevels(ids);
             QuizCategory quizCategory = new QuizCategory(exerciseId, quizCategoryType);
-            long quizCategoryId = AppDatabase.getInstance(context).quizCategoryDao().insert(quizCategory);
+            long quizCategoryId = db.quizCategoryDao().insert(quizCategory);
 
             for (int level = 0; level < levelGroups.size(); level++) {
                 Quiz quiz = new Quiz(quizCategoryId, level);
-                long quizId = AppDatabase.getInstance(context).quizDao().insert(quiz);
+                long quizId = db.quizDao().insert(quiz);
                 List<Long> goIds = levelGroups.get(level);
-                setQuizIds(goIds, quizId, AppDatabase.getInstance(context).geoDao());
+                setQuizIds(goIds, quizId, db.geoDao());
             }
         }
     }
@@ -369,7 +380,7 @@ public class ExerciseControl {
 
         int noGroupsWithOneExtra = goIds.size() % noGroups;
         while (noGroupsWithOneExtra > 0) {
-            int i = new Random().nextInt(noGroups);
+            int i = LocaUtils.randi(noGroups);
             if (groupSizes[i] == groupSize) {
                 groupSizes[i]++;
                 noGroupsWithOneExtra--;
@@ -411,18 +422,17 @@ public class ExerciseControl {
 
     /**
      * @param exercise Exercise to be deleted from database (including underlying content).
-     * @param context
+     * @param db
      */
-    public static void deleteExercise(Exercise exercise, Context context) {
-        List<QuizCategory> quizCategories =
-                AppDatabase.getInstance(context).quizCategoryDao()
+    public static void deleteExercise(Exercise exercise, AppDatabase db) {
+        List<QuizCategory> quizCategories = db.quizCategoryDao()
                 .loadWithExercise(exercise.getId());
 
         for (QuizCategory quizCategory : quizCategories)
-            deleteQuizCategory(quizCategory, context);
+            deleteQuizCategory(quizCategory, db);
 
-        AppDatabase.getInstance(context).exerciseDao().delete(exercise);
-        decrementExerciseDisplayIndexesAbove(exercise.getDisplayIndex(), exercise.getUserId(), context);
+        db.exerciseDao().delete(exercise);
+        decrementExerciseDisplayIndexesAbove(exercise.getDisplayIndex(), exercise.getUserId(), db);
     }
 
     /**
@@ -430,57 +440,40 @@ public class ExerciseControl {
      * above specified value, of specified user.
      *
      * @param displayIndex Update display-indexes strictly below this.
-     * @param context
+     * @param db
      */
-    private static void decrementExerciseDisplayIndexesAbove(int displayIndex, long userId, Context context) {
-        List<Exercise> exercises = AppDatabase.getInstance(context).exerciseDao().loadWithUser(userId);
+    private static void decrementExerciseDisplayIndexesAbove(int displayIndex, long userId, AppDatabase db) {
+        List<Exercise> exercises = db.exerciseDao().loadWithUser(userId);
         for (Exercise exercise : exercises) {
             if (exercise.getDisplayIndex() > displayIndex) {
                 exercise.setDisplayIndex(exercise.getDisplayIndex() - 1);
-                AppDatabase.getInstance(context).exerciseDao().update(exercise);
             }
         }
+        db.exerciseDao().update(exercises);
     }
 
     /**
      * @param quizCategory Quiz-category to be deleted from database (including underlying content).
-     * @param context
+     * @param db
      */
-    public static void deleteQuizCategory(QuizCategory quizCategory, Context context) {
-        List<Quiz> quizzes =
-                AppDatabase.getInstance(context).quizDao()
+    public static void deleteQuizCategory(QuizCategory quizCategory, AppDatabase db) {
+        List<Quiz> quizzes = db.quizDao()
                 .loadWithQuizCategory(quizCategory.getId());
 
-        for (Quiz quiz : quizzes)
-            deleteQuiz(quiz, context);
+        for (Quiz quiz : quizzes) deleteQuiz(quiz, db);
 
-        AppDatabase.getInstance(context).quizCategoryDao().delete(quizCategory);
+        db.quizCategoryDao().delete(quizCategory);
     }
 
 
     /**
      * @param quiz Quiz to be deleted from database (including underlying content).
-     * @param context
+     * @param db
      */
-    public static void deleteQuiz(Quiz quiz, Context context) {
-        List<Long> geoObjectIds =
-                AppDatabase.getInstance(context).geoDao()
-                        .loadIdsWithQuiz(quiz.getId());
-
-        for (long geoObjectId : geoObjectIds) {
-            GeoObject geoObject = AppDatabase.getInstance(context).geoDao().load(geoObjectId);
-            deleteGeoObject(geoObject, context);
-        }
-
-        AppDatabase.getInstance(context).quizDao().delete(quiz);
-    }
-
-    /**
-     * @param geoObject Geo-object to be deleted.
-     * @param context
-     */
-    public static void deleteGeoObject(GeoObject geoObject, Context context) {
-        AppDatabase.getInstance(context).geoDao().delete(geoObject);
+    public static void deleteQuiz(Quiz quiz, AppDatabase db) {
+        List<GeoObject> delGeoObjects = db.geoDao().loadWithQuiz(quiz.getId());
+        db.geoDao().delete(delGeoObjects);
+        db.quizDao().delete(quiz);
     }
 
     //endregion
@@ -493,7 +486,29 @@ public class ExerciseControl {
 
     //region tapping
 
-    //todo
+    /**
+     * Load and return geo-objects for a tapping-session.
+     *
+     * @param exerciseId
+     * @param quizCategoryType
+     * @param loadNextLevel Geo-objects in next level, vs. past levels.
+     * @param db
+     * @return Tapping-session geo-objects.
+     */
+    public static List<GeoObject> loadGeoObjectsForTapping(long exerciseId, int quizCategoryType, boolean loadNextLevel, AppDatabase db) {
+        Quiz nextQuiz = loadNextLevelQuiz(exerciseId, quizCategoryType, db);
+
+        if (loadNextLevel) {
+            return db.geoDao().loadWithQuiz(nextQuiz.getId());
+        }
+        else {
+            QuizCategory quizCategory = db.quizCategoryDao()
+                    .loadWithExerciseAndType(exerciseId, quizCategoryType);
+            List<Long> idsOfPastLevels = db.quizDao()
+                    .loadIdsWithLevelBelowAndQuizCategory(nextQuiz.getLevel(), quizCategory.getId());
+            return db.geoDao().loadWithQuizIn(idsOfPastLevels);
+        }
+    }
 
     //endregion
 
@@ -502,81 +517,96 @@ public class ExerciseControl {
 
     /**
      * @param exerciseId
-     * @param context
+     * @param db
      * @return Quizzes in exercise.
      */
-    public static List<Quiz> loadQuizzesInExercise(long exerciseId, Context context) {
-        List<Long> quizCategoryIds = AppDatabase.getInstance(context).quizCategoryDao()
-                .loadIdsWithExercise(exerciseId);
-        return AppDatabase.getInstance(context).quizDao()
-                .loadWithQuizCategories(quizCategoryIds);
+    public static List<Quiz> loadQuizzesInExercise(long exerciseId, AppDatabase db) {
+        List<Long> quizCategoryIds = db.quizCategoryDao().loadIdsWithExercise(exerciseId);
+        return db.quizDao().loadWithQuizCategories(quizCategoryIds);
     }
 
     /**
      * @param exerciseId
-     * @param context
+     * @param db
      * @return Passed quizzes in exercise.
      */
-    public static List<Quiz> loadPassedQuizzesInExercise(long exerciseId, Context context) {
-        List<Long> quizCategoryIds = AppDatabase.getInstance(context).quizCategoryDao()
-                .loadIdsWithExercise(exerciseId);
-        return AppDatabase.getInstance(context).quizDao()
-                .loadPassedWithQuizCategories(quizCategoryIds);
+    public static List<Quiz> loadPassedQuizzesInExercise(long exerciseId, AppDatabase db) {
+        List<Long> quizCategoryIds = db.quizCategoryDao().loadIdsWithExercise(exerciseId);
+        return db.quizDao().loadPassedWithQuizCategories(quizCategoryIds);
     }
 
     /**
      * @param userId
-     * @param context
+     * @param db
      * @return List of exercise-progresses of a user, ordered by display-index.
      */
-    public static List<Integer> exerciseProgresses(long userId, Context context) {
+    public static List<Integer> exerciseProgresses(long userId, AppDatabase db) {
         List<Integer> progresses = new ArrayList<>();
 
-        List<Long> exerciseIds = AppDatabase.getInstance(context).exerciseDao()
+        List<Long> exerciseIds = db.exerciseDao()
                 .loadIdsWithUserOrderedByDisplayIndex(userId);
         for (Long exerciseId : exerciseIds)
-            progresses.add(progressOfExercise(exerciseId, context));
+            progresses.add(progressOfExercise(exerciseId, db));
 
         return progresses;
     }
 
     /**
      * @param exerciseId
-     * @param context
+     * @param db
      * @return Progress <= [0, 100] of exercise.
      */
-    public static int progressOfExercise(long exerciseId, Context context) {
+    public static int progressOfExercise(long exerciseId, AppDatabase db) {
         float progress =
-                (float)loadPassedQuizzesInExercise(exerciseId, context).size() /
-                        loadQuizzesInExercise(exerciseId, context).size();
-        return Math.round(progress);
+                (float)loadPassedQuizzesInExercise(exerciseId, db).size() /
+                        loadQuizzesInExercise(exerciseId, db).size();
+        return Math.round(progress * 100);
     }
 
     /**
      * @param exerciseId
-     * @param context
+     * @param db
      * @return For each quiz-category in exercise (ordered by type):
-     *         0. Number of levels
-     *         1. number of passed levels
-     *         2. number of required quiz-category-reminders]
+     *         0. Type
+     *         1. Number of levels
+     *         2. number of passed levels
+     *         3. number of required quiz-category-reminders]
      */
-    public static List<int[]> loadQuizCategoriesData(long exerciseId, Context context) {
+    public static List<int[]> loadQuizCategoriesData(long exerciseId, AppDatabase db) {
         List<int[]> data = new ArrayList<>();
         List<QuizCategory> quizCategories =
-                AppDatabase.getInstance(context).quizCategoryDao()
+                db.quizCategoryDao()
                         .loadWithExerciseOrderedByType(exerciseId);
 
         for (QuizCategory quizCategory : quizCategories) {
-            int noLevels = AppDatabase.getInstance(context).quizDao()
+            int type = quizCategory.getType();
+            int noLevels = db.quizDao()
                     .countWithQuizCategory(quizCategory.getId());
-            int noPassedLevels = AppDatabase.getInstance(context).quizDao()
+            int noPassedLevels = db.quizDao()
                     .countPassedWithQuizCategory(quizCategory.getId());
-            int noReminders = quizCategory.getRequiredNoCategoryReminders();
+            int noReminders = quizCategory.getNoRequiredReminders();
 
-            data.add(new int[]{noLevels, noPassedLevels, noReminders});
+            data.add(new int[]{type, noLevels, noPassedLevels, noReminders});
         }
 
         return data;
+    }
+
+    /**
+     * Load next level-quiz of specified quiz-category in specified exercise
+     * (i.e quiz with lowest level not yet done).
+     * @param exerciseId
+     * @param quizCategoryType
+     * @param db
+     * @return Next level-quiz of quiz-category, or NULL.
+     */
+    public static Quiz loadNextLevelQuiz(long exerciseId, int quizCategoryType, AppDatabase db) {
+        QuizCategory quizCategory = db.quizCategoryDao()
+                .loadWithExerciseAndType(exerciseId, quizCategoryType);
+        if (quizCategory == null) return null;
+
+        return db.quizDao()
+                .loadLowestLevelNotYetDoneInQuizCategory(quizCategory.getId());
     }
 
 

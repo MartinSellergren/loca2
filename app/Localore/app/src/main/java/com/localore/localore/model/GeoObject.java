@@ -410,7 +410,8 @@ public class GeoObject {
     /**
      * @return Compact representation.
      */
-    public String toCompactString() {
+    @Override
+    public String toString() {
         return String.format("%s.%s, %s, %s, rank:%s, prev-correct:%s, times-asked:%s, no-corrects:%s, %s",
                 this.id,
                 this.name,
@@ -423,8 +424,7 @@ public class GeoObject {
                 getLink());
     }
 
-    @Override
-    public String toString() {
+    public String toDetailedString() {
         StringBuilder sStr = new StringBuilder();
         if (this.shapes == null) {
             sStr.append("null");
