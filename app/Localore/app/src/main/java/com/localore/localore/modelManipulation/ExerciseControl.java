@@ -512,7 +512,6 @@ public class ExerciseControl {
 
     //endregion
 
-
     //region misc
 
     /**
@@ -608,7 +607,6 @@ public class ExerciseControl {
         return db.quizDao()
                 .loadLowestLevelNotYetDoneInQuizCategory(quizCategory.getId());
     }
-
 
     //endregion
 }

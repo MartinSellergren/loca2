@@ -14,6 +14,8 @@ import com.localore.localore.model.User;
  */
 public class SessionControl {
 
+    //region setters getters
+
     /**
      * Return session. If none exists, create one.
      * @param db
@@ -30,6 +32,7 @@ public class SessionControl {
         return session;
     }
 
+
     /**
      * @param db
      * @return Active exercise, or NULL.
@@ -38,6 +41,8 @@ public class SessionControl {
         long exerciseId = load(db).getExerciseId();
         return db.exerciseDao().load(exerciseId);
     }
+
+    //endregion
 
     /**
      * Call when user logs in. Sets session's userId. Replaces already logged in user.

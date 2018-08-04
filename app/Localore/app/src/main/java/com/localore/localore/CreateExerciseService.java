@@ -34,6 +34,12 @@ public class CreateExerciseService extends IntentService {
     public static final String BROADCAST_ACTION = "com.localore.localore.CreateExerciseService.BROADCAST_ACTION";
     public static final String REPORT_KEY = "com.localore.localore.CreateExerciseService.REPORT_KEY";
 
+    //region error-codes
+    public static int UNSPECIFIED_ERROR = -1;
+    public static int NETWORK_ERROR = -2;
+    public static int TOO_FEW_GEO_OBJECTS_ERROR = -3;
+    //endregion
+
     public CreateExerciseService() {
         super("CreateExerciseService");
     }
@@ -63,7 +69,7 @@ public class CreateExerciseService extends IntentService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // request foreground
-        Intent notificationIntent = new Intent(this, MainActivity.class);
+        Intent notificationIntent = new Intent(this, CreateExerciseActivity.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
@@ -117,12 +123,12 @@ public class CreateExerciseService extends IntentService {
         boolean ok = ExerciseControl.acquireGeoObjects(workingArea, tempDb, this);
         Log.i("<ME>", "N.o raw osm's: " + tempDb.geoDao().count());
         if (tempDb.geoDao().count() < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
-            report("Too few geo-objects");
+            report(TOO_FEW_GEO_OBJECTS_ERROR);
             return;
         }
 
         if (!ok) {
-            report("Failed");
+            report(UNSPECIFIED_ERROR);
             return;
         }
 
@@ -131,21 +137,21 @@ public class CreateExerciseService extends IntentService {
         Log.i("<ME>", "N.o geo-objects: "  + noGeoObjects);
 
         if (noGeoObjects < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
-            report("Too few geo-objects");
+            report(TOO_FEW_GEO_OBJECTS_ERROR);
             ExerciseControl.deleteExercise(mainDb.exerciseDao().load(exerciseId), mainDb);
             return;
         }
 
-        report("Done");
+        report(exerciseId);
     }
 
     /**
-     * Broadcast status-report.
-     * @param report
+     * Report result of exercise creating. Send it in a broadcast.
+     * @param result New exercise-id if all went well. Else error-code.
      */
-    private void report(String report) {
+    private void report(long result) {
         Intent localIntent = new Intent(BROADCAST_ACTION);
-        localIntent.putExtra(REPORT_KEY, report);
+        localIntent.putExtra(REPORT_KEY, result);
         LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
     }
 }
