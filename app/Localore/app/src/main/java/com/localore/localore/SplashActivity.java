@@ -11,6 +11,10 @@ import com.localore.localore.model.Session;
 import com.localore.localore.model.SessionDao;
 import com.localore.localore.modelManipulation.SessionControl;
 
+/**
+ * A splash screen, displayed for some seconds, then starts relevant activity
+ * (based on session in db).
+ */
 public class SplashActivity extends AppCompatActivity {
     private static int DISPLAY_TIME = 2500;
 
@@ -31,7 +35,8 @@ public class SplashActivity extends AppCompatActivity {
                     startSelectExerciseActivity();
                 }
                 else {
-                    startExerciseActivity();
+                    //startExerciseActivity();
+                    startSelectExerciseActivity();
                 }
             }
         }, DISPLAY_TIME);

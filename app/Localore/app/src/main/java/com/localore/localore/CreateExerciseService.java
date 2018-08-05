@@ -47,12 +47,12 @@ public class CreateExerciseService extends IntentService {
     /**
      * Starts the service and passes parameters in intent.
      *
-     * @param exerciseName
-     * @param workingArea
+     * @param exerciseId
      * @param context
      */
-    public static void start(String exerciseName, NodeShape workingArea, Context context) {
+    public static void start(long exerciseId, Context context) {
         Intent intent = new Intent(context, CreateExerciseService.class);
+        intent.putExtra(EXERCISE_NAME_PARAM_KEY, exerciseName);
         intent.putExtra(EXERCISE_NAME_PARAM_KEY, exerciseName);
         intent.putExtra(WORKING_AREA_PARAM_KEY, workingArea);
         context.startService(intent);

@@ -4,67 +4,186 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.BundleCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.NodeShape;
 import com.localore.localore.modelManipulation.SessionControl;
+import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 
 import java.util.List;
 
 public class CreateExerciseActivity extends AppCompatActivity {
 
+    private MapView mapView;
+    private EditText editText_exerciseName;
+    private MenuItem menuItem_createExercise;
+
+    /**
+     * List of names of existing exercises.
+     */
+    private List<String> existingExerciseNames;
+
+
+    /**
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_exercise);
-    }
+        setTitle(getString(R.string.new_exercise));
 
-    public void onCreateExercise(View view) {
-        Button b = (Button) view;
-        b.setText("Loading");
-        b.setEnabled(false);
+        this.editText_exerciseName = findViewById(R.id.editText_exerciseName);
+        this.menuItem_createExercise = findViewById(R.id.menuItem_createExercise);
+        this.mapView = findViewById(R.id.mapView_createExercise);
 
-        // listen to broadcasts from CreateExerciseService
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        Long result = intent.getLongExtra(
-                                CreateExerciseService.REPORT_KEY,
-                                CreateExerciseService.UNSPECIFIED_ERROR);
-                        onExerciseCreated(result);
-                    }
-                },
-                new IntentFilter(CreateExerciseService.BROADCAST_ACTION)
-        );
-
-        String name = "My exercise" + LocaUtils.randi(1000);
-        NodeShape workingArea = LocaUtils.getWorkingArea();
-        CreateExerciseService.start("My exercise" + LocaUtils.randi(1000), workingArea, this);
-    }
-
-    public void onExerciseCreated(final long result) {
-        Button b = findViewById(R.id.button_createExercise);
-        b.setText(result + "");
-
-        if (result < 0) return;
-
-        Button b2 = findViewById(R.id.button_enterCreatedExercise);
-        b2.setVisibility(View.VISIBLE);
-
-        b2.setOnClickListener(new View.OnClickListener() {
+        mapView.onCreate(savedInstanceState);
+        mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
-            public void onClick(View view) {
-                AppDatabase db = AppDatabase.getInstance(CreateExerciseActivity.this);
-                SessionControl.enterExercise(result, db);
-                Intent intent = new Intent(CreateExerciseActivity.this, ExerciseActivity.class);
-                startActivity(intent);
+            public void onMapReady(MapboxMap mapboxMap) {
+                customizeMap(mapboxMap);
             }
         });
+
+        AppDatabase db = AppDatabase.getInstance(this);
+        long userId = SessionControl.load(db).getUserId();
+        this.existingExerciseNames = db.exerciseDao().loadNamesWithUser(userId);
     }
+
+    //region create exercise-button
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.create_exercise_actions, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.menuItem_createExercise) {
+            createExercise();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    //endregion
+
+    /**
+     * Customize the map.
+     *
+     * - Set to user's location at min allowed zoom.
+     * - Make it clickable to insert nodes: select an area.
+     *   - "Fill area" if >2 nodes (auto-close path).
+     *   - Don't allow clicks that make segments crossed.
+     *   - Test updateDoneButton() after each new node.
+     * - If nodes: floating button to delete all nodes.
+     * - If too zoomed out: Floating button "zoom in" to allowed zoom + dimmed map.
+     *
+     * @param mapboxMap
+     */
+    private void customizeMap(MapboxMap mapboxMap) {
+
+    }
+
+    /**
+     * Enable/disable create-exercise-button based on user-input.
+     */
+    private void updateDoneButton() {
+        String exerciseName = this.editText_exerciseName.getText().toString();
+        NodeShape workingArea = selectedShape();
+        this.menuItem_createExercise.setEnabled(okExerciseName(exerciseName) && okWorkingArea(workingArea));
+    }
+
+    /**
+     * @param name
+     * @return True if name is ok for a new exercise (i.e is unique).
+     */
+    private boolean okExerciseName(String name) {
+        return !this.existingExerciseNames.contains(name);
+    }
+
+    /**
+     * @param workingArea
+     * @return True if shape is ok as a working area for a new exercise.
+     */
+    private boolean okWorkingArea(NodeShape workingArea) {
+        return false;
+    }
+
+    /**
+     * @return Shape constructed from user-specified nodes in map.
+     */
+    private NodeShape selectedShape() {
+        //todo
+        return null;
+    }
+
+    //region create the exercise (after name and area specified)
+
+    /**
+     * Starts the create-exercise-service which puts a new exercise in the db.
+     */
+    public void createExercise() {
+        String name = this.editText_exerciseName.getText().toString();
+        NodeShape workingArea = selectedShape();
+        CreateExerciseService.start(name, workingArea, this);
+
+//        Intent intent = new Intent(this, LoadingNewExerciseActivity.class);
+//        startActivity(intent);
+    }
+
+    //endregion
+
+    //region handle mapView's lifecycle
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mapView.onStart();
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mapView.onStop();
+    }
+    @Override
+    protected void onSaveInstanceState(Bundle bundle) {
+        super.onSaveInstanceState(bundle);
+        mapView.onSaveInstanceState(bundle);
+    }
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapView.onLowMemory();
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDestroy();
+    }
+    //endregion
 }

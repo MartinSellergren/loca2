@@ -26,10 +26,15 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
+    //room
     def room_version = "1.1.1"
     implementation "android.arch.persistence.room:runtime:$room_version"
     annotationProcessor "android.arch.persistence.room:compiler:$room_version"
 
+    //gson
     implementation "com.google.code.gson:gson:2.8.5"
     implementation 'com.android.support:recyclerview-v7:28.0.0-alpha3'
+
+    implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:6.3.0'
+    implementation 'com.android.support:design:28.0.0-alpha3'
 }

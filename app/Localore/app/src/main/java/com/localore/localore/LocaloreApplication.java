@@ -6,6 +6,7 @@ import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Session;
 import com.localore.localore.model.User;
 import com.localore.localore.modelManipulation.SessionControl;
+import com.mapbox.mapboxsdk.Mapbox;
 
 import java.util.List;
 
@@ -14,6 +15,8 @@ public class LocaloreApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        Mapbox.getInstance(getApplicationContext(), getString(R.string.mapbox_access_token));
 
         AppDatabase db = AppDatabase.getInstance(this);
         List<User> users = db.userDao().loadAll();

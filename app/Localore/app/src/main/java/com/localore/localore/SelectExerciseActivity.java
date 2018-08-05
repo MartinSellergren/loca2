@@ -21,16 +21,15 @@ import java.util.List;
 
 /**
  * Activity for selecting exercise / choosing to create a new exercise.
+ *
+ * @pre Session-user set before starting activity.
  */
 public class SelectExerciseActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_select_exercise);
-
         AppDatabase db = AppDatabase.getInstance(this);
-        long userId = db.sessionDao().load().getUserId();
+        long userId = SessionControl.load(db).getUserId();
         List<Exercise> exercises = db.exerciseDao().loadWithUserOrderedByDisplayIndex(userId);
         List<Integer> exerciseProgresses = ExerciseControl.exerciseProgresses(userId, db);
 
@@ -39,6 +38,10 @@ public class SelectExerciseActivity extends AppCompatActivity {
         //recyclerView.setHasFixedSize(true); //todo: recyclerView fixed size?
         ExerciseLabelAdapter adapter = new ExerciseLabelAdapter(exercises, exerciseProgresses);
         recyclerView.setAdapter(adapter);
+
+        setTitle(getString(R.string.select_exercise));
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_select_exercise);
     }
 
     /**
@@ -50,6 +53,11 @@ public class SelectExerciseActivity extends AppCompatActivity {
     }
 
 
+    //region the list content: recycler-view adapter and view-holder
+
+    /**
+     * The Adapter for the exercise-list.
+     */
     private class ExerciseLabelAdapter extends RecyclerView.Adapter<ExerciseLabelHolder> {
         private List<Exercise> exercises;
         private List<Integer> exerciseProgresses;
@@ -78,6 +86,9 @@ public class SelectExerciseActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * One exercise-label (i.e one list-item in the list of exercises).
+     */
     private class ExerciseLabelHolder extends RecyclerView.ViewHolder {
         private Exercise exercise;
         private int progress;
@@ -105,4 +116,6 @@ public class SelectExerciseActivity extends AppCompatActivity {
             textView.setText(String.format("%s : %s percent", exercise.getName(), progress));
         }
     }
+
+    //endregion
 }
