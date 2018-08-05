@@ -16,7 +16,6 @@ public interface SessionDao {
     @Update
     public void update(Session session);
 
-
     @Query("SELECT * FROM session")
     public Session load();
 }

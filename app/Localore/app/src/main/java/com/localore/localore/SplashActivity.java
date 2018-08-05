@@ -31,6 +31,9 @@ public class SplashActivity extends AppCompatActivity {
                 if (session.getUserId() == -1) {
                     //log-in / sign-up
                 }
+                else if (session.getLoadingExerciseStatus() != LoadingNewExerciseActivity.NOT_STARTED) {
+                    startLoadingNewExerciseActivity();
+                }
                 else if (session.getExerciseId() == -1) {
                     startSelectExerciseActivity();
                 }
@@ -49,6 +52,11 @@ public class SplashActivity extends AppCompatActivity {
 
     private void startExerciseActivity() {
         Intent intent = new Intent(this, ExerciseActivity.class);
+        startActivity(intent);
+    }
+
+    private void startLoadingNewExerciseActivity() {
+        Intent intent = new Intent(this, LoadingNewExerciseActivity.class);
         startActivity(intent);
     }
 }

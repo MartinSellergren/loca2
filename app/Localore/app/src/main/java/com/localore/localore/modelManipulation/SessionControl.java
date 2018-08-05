@@ -2,9 +2,11 @@ package com.localore.localore.modelManipulation;
 
 import android.content.Context;
 
+import com.localore.localore.LoadingNewExerciseActivity;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
 import com.localore.localore.model.ExerciseDao;
+import com.localore.localore.model.NodeShape;
 import com.localore.localore.model.Session;
 import com.localore.localore.model.SessionDao;
 import com.localore.localore.model.User;
@@ -67,11 +69,11 @@ public class SessionControl {
     }
 
     /**
-     * Call when user enters Exercise-view. Sets session's exerciseId.
+     * Sets session's exerciseId.
      * @param exerciseId
      * @param db
      */
-    public static void enterExercise(long exerciseId, AppDatabase db) {
+    public static void setActiveExercise(long exerciseId, AppDatabase db) {
         Session session = load(db);
         session.setExerciseId(exerciseId);
         db.sessionDao().update(session);
@@ -81,9 +83,36 @@ public class SessionControl {
      * Call when user leaves exercise, i.e goes to select-exercise-screen.
      * @param db
      */
-    public static void leaveExercise(AppDatabase db) {
+    public static void setNoActiveExercise(AppDatabase db) {
         Session session = load(db);
         session.setExerciseId(-1);
         db.sessionDao().update(session);
     }
+
+    //region loading-exercise-control
+
+    /**
+     * Call before starting the LoadingNewExerciseActivity.
+     * @param name
+     * @param workingArea
+     */
+    public static void initLoadingOfNewExercise(String name, NodeShape workingArea, AppDatabase db) {
+        Session session = load(db);
+        session.setLoadingExerciseName(name);
+        session.setLoadingExerciseWorkingArea(workingArea);
+        session.setLoadingExerciseStatus(LoadingNewExerciseActivity.NOT_STARTED);
+        db.sessionDao().update(session);
+    }
+
+    public static void finalizeLoadingOfNewExercise(AppDatabase db) {
+        updateLoadingExerciseStatus(LoadingNewExerciseActivity.NOT_STARTED, db);
+    }
+
+    public static void updateLoadingExerciseStatus(int status, AppDatabase db) {
+        Session session = load(db);
+        session.setLoadingExerciseStatus(status);
+        db.sessionDao().update(session);
+    }
+
+    //
 }

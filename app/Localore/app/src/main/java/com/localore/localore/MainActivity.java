@@ -18,13 +18,11 @@ import com.localore.localore.model.NodeShape;
 import com.localore.localore.model.Question;
 import com.localore.localore.model.QuizCategory;
 import com.localore.localore.model.RunningQuiz;
-import com.localore.localore.model.Session;
 import com.localore.localore.model.User;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.RunningQuizControl;
 import com.localore.localore.modelManipulation.SessionControl;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -123,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
         AppDatabase db = AppDatabase.getInstance(this);
         List<Exercise> exercises = db.exerciseDao().loadAll();
         Exercise exercise = exercises.get( LocaUtils.randi(exercises.size()) );
-        SessionControl.enterExercise(exercise.getId(), db);
+        SessionControl.setActiveExercise(exercise.getId(), db);
 
         Log.i("<VIEW>", "ENTER EXERCISE");
         long exerciseId = SessionControl.loadExercise(db).getId();
@@ -149,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onLeaveExercise(View v) {
         AppDatabase db = AppDatabase.getInstance(this);
-        SessionControl.leaveExercise(db);
+        SessionControl.setNoActiveExercise(db);
 
         long userId = SessionControl.load(db).getUserId();
         Log.i("<VIEW>", "LEAVE EXERCISE");

@@ -1,20 +1,9 @@
 package com.localore.localore;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.BundleCompat;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 
 import com.localore.localore.model.AppDatabase;
@@ -75,7 +64,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.menuItem_createExercise) {
-            createExercise();
+            startLoadingNewExerciseActivity();
         }
 
         return super.onOptionsItemSelected(item);
@@ -136,15 +125,13 @@ public class CreateExerciseActivity extends AppCompatActivity {
     //region create the exercise (after name and area specified)
 
     /**
-     * Starts the create-exercise-service which puts a new exercise in the db.
+     * Prepares session (in db) and then starts the loading-new-exercise activity.
      */
-    public void createExercise() {
+    public void startLoadingNewExerciseActivity() {
         String name = this.editText_exerciseName.getText().toString();
         NodeShape workingArea = selectedShape();
-        CreateExerciseService.start(name, workingArea, this);
 
-//        Intent intent = new Intent(this, LoadingNewExerciseActivity.class);
-//        startActivity(intent);
+        LoadingNewExerciseActivity.freshStart(name, workingArea, this);
     }
 
     //endregion

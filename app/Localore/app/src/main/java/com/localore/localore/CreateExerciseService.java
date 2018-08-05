@@ -5,6 +5,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.Context;
 import android.os.Build;
@@ -19,20 +20,19 @@ import com.localore.localore.modelManipulation.SessionControl;
 
 
 /**
- * Service for completing exercise-construction by updating the database.
+ * Service for creating a new exercise.
  * Fetches OSM-geo-elements using Overpass service, processes these into GeoObjects and
  * constructs quizzes.
  *
- * In: An exercise with name and working area.
+ * In: Name and working area.
+ * - Adds the new exercise to db.
  * - Adds geo-objects of this exercise to the database.
- * - Completes exercise with predefined quizzes.
+ * - Completes exercise with predefined quizzes etc.
  */
 public class CreateExerciseService extends IntentService {
     private static final String EXERCISE_NAME_PARAM_KEY = "com.localore.localore.CreateExerciseService.EXERCISE_NAME_PARAM_KEY";
     private static final String WORKING_AREA_PARAM_KEY = "com.localore.localore.CreateExerciseService.WORKING_AREA_PARAM_KEY";
-
     public static final String BROADCAST_ACTION = "com.localore.localore.CreateExerciseService.BROADCAST_ACTION";
-    public static final String REPORT_KEY = "com.localore.localore.CreateExerciseService.REPORT_KEY";
 
     //region error-codes
     public static int UNSPECIFIED_ERROR = -1;
@@ -47,15 +47,15 @@ public class CreateExerciseService extends IntentService {
     /**
      * Starts the service and passes parameters in intent.
      *
-     * @param exerciseId
+     * @param exerciseName
+     * @param workingArea
      * @param context
      */
-    public static void start(long exerciseId, Context context) {
+    public static ComponentName start(String exerciseName, NodeShape workingArea, Context context) {
         Intent intent = new Intent(context, CreateExerciseService.class);
         intent.putExtra(EXERCISE_NAME_PARAM_KEY, exerciseName);
-        intent.putExtra(EXERCISE_NAME_PARAM_KEY, exerciseName);
         intent.putExtra(WORKING_AREA_PARAM_KEY, workingArea);
-        context.startService(intent);
+        return context.startService(intent);
     }
 
     /**
@@ -105,6 +105,9 @@ public class CreateExerciseService extends IntentService {
 
     /**
      * Fetch and process.
+     * Sets active-exercise to new exercise in session (before work).
+     * Sets result: completed/ error in session before exit.
+     *
      * @param intent
      */
     @Override
@@ -112,23 +115,26 @@ public class CreateExerciseService extends IntentService {
         Log.i("<ME>", "CreateExerciseService started");
         if (intent == null) return;
 
+        String exerciseName = intent.getStringExtra(EXERCISE_NAME_PARAM_KEY);
+        if (exerciseName == null) return; //if exerciseName explicitly set to null
+        NodeShape workingArea = (NodeShape)intent.getSerializableExtra(WORKING_AREA_PARAM_KEY);
+
         AppDatabase mainDb = AppDatabase.getInstance(this);
         AppDatabase tempDb = AppDatabase.getTempInstance(this);
 
-        String exerciseName = intent.getStringExtra(EXERCISE_NAME_PARAM_KEY);
-        NodeShape workingArea = (NodeShape)intent.getSerializableExtra(WORKING_AREA_PARAM_KEY);
         long userId = SessionControl.load(mainDb).getUserId();
         long exerciseId = ExerciseControl.newExercise(userId, exerciseName, workingArea, mainDb);
+        SessionControl.setActiveExercise(exerciseId, mainDb);
 
         boolean ok = ExerciseControl.acquireGeoObjects(workingArea, tempDb, this);
         Log.i("<ME>", "N.o raw osm's: " + tempDb.geoDao().count());
         if (tempDb.geoDao().count() < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
-            report(TOO_FEW_GEO_OBJECTS_ERROR);
+            report(LoadingNewExerciseActivity.TOO_FEW_GEO_OBJECTS_ERROR);
             return;
         }
 
         if (!ok) {
-            report(UNSPECIFIED_ERROR);
+            report(LoadingNewExerciseActivity.UNSPECIFIED_ERROR);
             return;
         }
 
@@ -137,21 +143,21 @@ public class CreateExerciseService extends IntentService {
         Log.i("<ME>", "N.o geo-objects: "  + noGeoObjects);
 
         if (noGeoObjects < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
-            report(TOO_FEW_GEO_OBJECTS_ERROR);
-            ExerciseControl.deleteExercise(mainDb.exerciseDao().load(exerciseId), mainDb);
+            report(LoadingNewExerciseActivity.TOO_FEW_GEO_OBJECTS_ERROR);
             return;
         }
 
-        report(exerciseId);
+        report(LoadingNewExerciseActivity.COMPLETED);
     }
 
     /**
      * Report result of exercise creating. Send it in a broadcast.
      * @param result New exercise-id if all went well. Else error-code.
      */
-    private void report(long result) {
+    private void report(int result) {
+        SessionControl.updateLoadingExerciseStatus(result, AppDatabase.getInstance(this));
+
         Intent localIntent = new Intent(BROADCAST_ACTION);
-        localIntent.putExtra(REPORT_KEY, result);
         LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
     }
 }

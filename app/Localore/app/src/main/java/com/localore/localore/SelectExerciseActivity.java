@@ -13,7 +13,6 @@ import android.widget.TextView;
 
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
-import com.localore.localore.model.Session;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.SessionControl;
 
@@ -103,7 +102,7 @@ public class SelectExerciseActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View view) {
                     AppDatabase db = AppDatabase.getInstance(SelectExerciseActivity.this);
-                    SessionControl.enterExercise(exercise.getId(), db);
+                    SessionControl.setActiveExercise(exercise.getId(), db);
                     Intent intent = new Intent(SelectExerciseActivity.this, ExerciseActivity.class);
                     startActivity(intent);
                 }
