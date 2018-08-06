@@ -23,6 +23,14 @@ import java.util.Scanner;
 
 public class LocaUtils {
 
+    /**
+     * Exception thrown when work as been interrupted. E.g when user press exit-button.
+     */
+    public static class WorkInterruptedException extends Exception {
+        public WorkInterruptedException(String msg) { super(msg); }
+        public WorkInterruptedException() { super(); }
+    }
+
     private static Random random = new Random();
 
     /**

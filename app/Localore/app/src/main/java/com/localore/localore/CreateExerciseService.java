@@ -36,6 +36,7 @@ public class CreateExerciseService extends IntentService {
     private static final String WORKING_AREA_PARAM_KEY = "com.localore.localore.CreateExerciseService.WORKING_AREA_PARAM_KEY";
     public static final String BROADCAST_ACTION = "com.localore.localore.CreateExerciseService.BROADCAST_ACTION";
 
+
     public CreateExerciseService() {
         super("CreateExerciseService");
     }
@@ -65,7 +66,7 @@ public class CreateExerciseService extends IntentService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // request foreground
-        Intent notificationIntent = new Intent(this, CreateExerciseActivity.class);
+        Intent notificationIntent = new Intent(this, LoadingNewExerciseActivity.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
@@ -104,6 +105,9 @@ public class CreateExerciseService extends IntentService {
      * Sets active-exercise to new exercise in session (before work).
      * Sets result: completed/ error in session before exit.
      *
+     * If acquisition-process interrupted by setting volatile flag to true in
+     * exercise-control: Wipe construction and exit service with error-code.
+     *
      * @param intent
      */
     @Override
@@ -121,31 +125,41 @@ public class CreateExerciseService extends IntentService {
         long userId = SessionControl.load(mainDb).getUserId();
         long exerciseId = ExerciseControl.newExercise(userId, exerciseName, workingArea, mainDb);
         SessionControl.setActiveExercise(exerciseId, mainDb);
+        boolean successful = false;
 
         try {
             ExerciseControl.acquireGeoObjects(workingArea, tempDb, this);
+
+            Log.i("<ME>", "N.o raw osm's: " + tempDb.geoDao().count());
+            if (tempDb.geoDao().count() < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
+                report(LoadingNewExerciseActivity.TOO_FEW_GEO_OBJECTS_ERROR);
+                return;
+            }
+
+            Log.d("<ME>", "Post processing");
+            int noGeoObjects = ExerciseControl.postProcessing(exerciseId, tempDb, mainDb);
+
+            Log.i("<ME>", "N.o geo-objects: " + noGeoObjects);
+
+            if (noGeoObjects < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
+                report(LoadingNewExerciseActivity.TOO_FEW_GEO_OBJECTS_ERROR);
+                return;
+            }
+
+            successful = true;
+            report(LoadingNewExerciseActivity.COMPLETED);
+
+        }
+        catch (LocaUtils.WorkInterruptedException e) {
+            report(LoadingNewExerciseActivity.INTERRUPTED_ERROR);
         }
         catch (IOException e) {
             report(LoadingNewExerciseActivity.NETWORK_ERROR);
-            return;
         }
-
-        Log.i("<ME>", "N.o raw osm's: " + tempDb.geoDao().count());
-        if (tempDb.geoDao().count() < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
-            report(LoadingNewExerciseActivity.TOO_FEW_GEO_OBJECTS_ERROR);
-            return;
+        finally {
+            if (!successful)
+                ExerciseControl.wipeConstruction(exerciseId, this);
         }
-
-        Log.d("<ME>", "Post processing");
-        int noGeoObjects = ExerciseControl.postProcessing(exerciseId, tempDb, mainDb);
-        Log.i("<ME>", "N.o geo-objects: "  + noGeoObjects);
-
-        if (noGeoObjects < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
-            report(LoadingNewExerciseActivity.TOO_FEW_GEO_OBJECTS_ERROR);
-            return;
-        }
-
-        report(LoadingNewExerciseActivity.COMPLETED);
     }
 
     /**

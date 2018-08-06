@@ -1,5 +1,6 @@
 package com.localore.localore;
 
+import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,8 +14,10 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.localore.localore.model.AppDatabase;
+import com.localore.localore.model.Exercise;
 import com.localore.localore.model.NodeShape;
 import com.localore.localore.model.Session;
+import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.SessionControl;
 
 /**
@@ -40,6 +43,7 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
     public static final int NETWORK_ERROR = -2;
     public static final int TOO_FEW_GEO_OBJECTS_ERROR = -3;
     public static final int DEAD_SERVICE_ERROR = -4;
+    public static final int INTERRUPTED_ERROR = -5;
     //endregion
 
     /**
@@ -143,8 +147,11 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
         else if (status == COMPLETED) {
             completedLayout();
         }
+        else if (status == INTERRUPTED_ERROR) {
+            //handled on exit-button-click
+        }
         else {
-            wipeConstruction();
+            ExerciseControl.wipeConstruction(session.getExerciseId(), this);
             errorLayout(status);
         }
     }
@@ -177,18 +184,6 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
     }
 
     /**
-     * - Removes session-exercise (and everything below).
-     * - Removes geo-objects without a quiz (-1 -reference which new geo-objects have
-     * at a point during post-processing).
-     */
-    private void wipeConstruction() {
-        AppDatabase db = AppDatabase.getInstance(this);
-        long exerciseId = SessionControl.load(db).getId();
-
-        //todo
-    }
-
-    /**
      * Take action depending on status in session.
      * - Enter exercise: Exercise loading is complete. Leave loading-activity and enter exercise.
      * - Retry loading exercise: Error loading exercise, now retry.
@@ -199,13 +194,12 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
         int status = session.getLoadingExerciseStatus();
 
         if (status == COMPLETED) { //enter exercise
-            SessionControl.finalizeLoadingOfNewExercise(AppDatabase.getInstance(this));
-            Intent intent = new Intent(this, ExerciseActivity.class);
-            startActivity(intent);
+            boolean successful = true;
+            leave(successful);
         }
         else if (status < 0) { //retry construction
             killService();
-            wipeConstruction();
+            ExerciseControl.wipeConstruction(session.getExerciseId(), this);
 
             String name = session.getLoadingExerciseName();
             NodeShape workingArea = session.getLoadingExerciseWorkingArea();
@@ -220,15 +214,39 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
      */
     public void onExitButton(View view) {
         killService();
-        //wait until killed
-        wipeConstruction();
-
-        SessionControl.finalizeLoadingOfNewExercise(AppDatabase.getInstance(this));
-        Intent intent = new Intent(this, SelectExerciseActivity.class);
-        startActivity(intent);
+        boolean successful = false;
+        leave(successful);
     }
 
+    /**
+     * Service cleans up construction and exits.
+     */
     public void killService() {
-        //todo
+        ExerciseControl.interruptAcquisition = true;
+    }
+
+    /**
+     * All way out of this activity goes through this method.
+     * Cleans-up and starts new activity.
+     *
+     * @param successful True if exercise loaded according to plan.
+     */
+    public void leave(boolean successful) {
+        SessionControl.finalizeLoadingOfNewExercise(AppDatabase.getInstance(this));
+
+        if (successful) {
+            ExerciseControl.wipeConstructionJunk(this);
+            Intent intent = new Intent(this, ExerciseActivity.class);
+            startActivity(intent);
+        }
+        else {
+            AppDatabase db = AppDatabase.getInstance(this);
+            long exerciseId = SessionControl.load(db).getExerciseId();
+            ExerciseControl.wipeConstruction(exerciseId, this);
+
+            SessionControl.setNoActiveExercise(AppDatabase.getInstance(this));
+            Intent intent = new Intent(this, SelectExerciseActivity.class);
+            startActivity(intent);
+        }
     }
 }

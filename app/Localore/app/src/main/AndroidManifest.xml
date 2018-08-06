@@ -27,16 +27,20 @@
             android:name=".CreateExerciseService"
             android:exported="false" />
 
-        <activity android:name=".SplashActivity">
+        <activity
+            android:name=".SplashActivity"
+            android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".SelectExerciseActivity" />
+        <activity
+            android:name=".SelectExerciseActivity"
+            android:launchMode="singleTask"/>
         <activity
             android:name=".ExerciseActivity"
+            android:launchMode="singleTop"
             android:parentActivityName=".SelectExerciseActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -44,7 +48,7 @@
         </activity>
         <activity
             android:name=".CreateExerciseActivity"
-            android:launchMode="singleTask"
+            android:launchMode="singleInstance"
             android:parentActivityName=".SelectExerciseActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

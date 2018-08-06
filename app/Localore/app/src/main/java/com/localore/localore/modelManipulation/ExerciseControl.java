@@ -79,6 +79,13 @@ public class ExerciseControl {
 
     //region acquire
 
+
+    /**
+     * If true: stops acquiring and exits with exception.
+     */
+    public static volatile boolean interruptAcquisition;
+
+
      /**
      * Fetches geo-objects in the working-area of exercise. Processes raw OSM.
      * Updates database with geo-objects. They all have quizId -1.
@@ -87,7 +94,8 @@ public class ExerciseControl {
      * @param context For reading conversion-table from file.
      * @return True if database updated as planned. False means network error (etc?).
      */
-    public static boolean acquireGeoObjects(NodeShape workingArea, AppDatabase tempDb, Context context)  throws IOException {
+    public static void acquireGeoObjects(NodeShape workingArea, AppDatabase tempDb, Context context)  throws IOException, LocaUtils.WorkInterruptedException {
+        interruptAcquisition = false;
         tempDb.clearAllTables();
         JsonObject convTable = openConversionTable(context);
         GeoObjInstructionsIter iter = new GeoObjInstructionsIter(workingArea, context);
@@ -95,6 +103,10 @@ public class ExerciseControl {
         List<String> instr;
 
         while ((instr=iter.next()) != null) {
+            if (interruptAcquisition == true) {
+                throw new LocaUtils.WorkInterruptedException();
+            }
+
             try {
                 GeoObject go = new GeoObject(instr, convTable);
                 tempDb.geoDao().insert(go);
@@ -103,8 +115,6 @@ public class ExerciseControl {
                 Log.i("<ME>", "Can't build: " + e.toString());
             }
         }
-
-        return true;
     }
 
     /**
@@ -417,6 +427,42 @@ public class ExerciseControl {
 
     //endregion
 
+    //region wipe construction
+
+    /**
+     * Undo db-changes made by acquisition-process:
+     * - Exercise under construction (and everything below).
+     * - Construction-junk.
+     *
+     * @param exerciseId
+     * @param context
+     */
+    public static void wipeConstruction(long exerciseId, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        Exercise exercise = db.exerciseDao().load(exerciseId);
+        if (exercise != null)
+            ExerciseControl.deleteExercise(exercise, db);
+
+        wipeConstructionJunk(context);
+    }
+
+    /**
+     * Wipe temp-construction-data:
+     *  - Everything in the temp-database.
+     *  - Geo-objects with -1 quiz-reference (which new geo-objects have at a point during post-processing).
+     *
+     * @param context
+     */
+    public static void wipeConstructionJunk(Context context) {
+        AppDatabase.getTempInstance(context).clearAllTables();
+
+        AppDatabase db = AppDatabase.getInstance(context);
+        List<Long> junkGeoObjects = db.geoDao().loadAllWithQuiz(-1);
+        db.geoDao().deleteWithIdIn(junkGeoObjects);
+    }
+
+    //endregion
+
     //endregion
 
     //region delete
@@ -472,8 +518,8 @@ public class ExerciseControl {
      * @param db
      */
     public static void deleteQuiz(Quiz quiz, AppDatabase db) {
-        List<GeoObject> delGeoObjects = db.geoDao().loadWithQuiz(quiz.getId());
-        db.geoDao().delete(delGeoObjects);
+        List<Long> delGeoObjectIds = db.geoDao().loadIdsWithQuiz(quiz.getId());
+        db.geoDao().deleteWithIdIn(delGeoObjectIds);
         db.quizDao().delete(quiz);
     }
 

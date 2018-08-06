@@ -55,7 +55,7 @@ public abstract class AppDatabase extends RoomDatabase {
      */
     public static AppDatabase getTempInstance(Context context) {
         if (TEMP_INSTANCE == null) {
-            TEMP_INSTANCE = Room.databaseBuilder(context, AppDatabase.class, temp_database_name).build();
+            TEMP_INSTANCE = Room.databaseBuilder(context, AppDatabase.class, temp_database_name).allowMainThreadQueries().build();
         }
         return TEMP_INSTANCE;
     }

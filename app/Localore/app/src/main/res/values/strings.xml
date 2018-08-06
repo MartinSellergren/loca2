@@ -7,7 +7,7 @@
     <string name="create_exercise">create exercise</string>
     <string name="loading_new_exercise">Loading new exercise...</string>
     <string name="loading_new_exercise_HEADS_UP">Your exercise is loading.\nRelax, sit back.. this could take some time...</string>
-    <string name="completed_loading_of_new_exercise_HEADS_UP">Alright, that\'s it!</string>
+    <string name="completed_loading_of_new_exercise_HEADS_UP">That\'s it!</string>
     <string name="enter_exercise">enter exercise</string>
     <string name="retry">retry</string>
     <string name="exercice_loading_unspecified_error_HEADS_UP">Hmm.. not working</string>
