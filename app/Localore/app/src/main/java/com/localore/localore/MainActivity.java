@@ -86,8 +86,7 @@ public class MainActivity extends AppCompatActivity {
                 new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        Long result = intent.getLongExtra(CreateExerciseService.REPORT_KEY, -1);
-                        onCreateExerciseServiceDone(result);
+                        onCreateExerciseServiceDone(0);
                     }
                 },
                 new IntentFilter(CreateExerciseService.BROADCAST_ACTION)

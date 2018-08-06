@@ -27,6 +27,11 @@ import java.util.regex.Pattern;
  * instructions for building the geo-objects.
  */
 public class GeoObjInstructionsIter {
+    private static final String[] OVERPASS_ENDPOINTS = new String[]{
+            "https://overpass-api.de/api/interpreter",
+            "http://overpass.openstreetmap.ru/cgi/interpreter",
+            "https://overpass.kumi.systems/api/interpreter"};
+
     private URL url;
     private Scanner scanner = null;
 
@@ -53,22 +58,24 @@ public class GeoObjInstructionsIter {
         query = query.replace("{{poly}}", poly_str);
         query = URLEncoder.encode(query);
 
-        return new URL("https://overpass-api.de/api/interpreter?data=" + query);
+        String endpoint = OVERPASS_ENDPOINTS[2];
+        return new URL(endpoint + "?data=" + query);
     }
 
     /**
      * Call before next().
      */
-    public void open() {
+    public void open() throws IOException {
         try {
-            URLConnection con = url.openConnection();
+            URLConnection con = this.url.openConnection();
             con.setConnectTimeout(0);
             con.setReadTimeout(0);
             InputStream in = con.getInputStream();
             this.scanner = new Scanner(in);
         }
-        catch(IOException e) {
-            throw new RuntimeException(e.toString());
+        catch (IOException e) {
+            Log.d("<ME>", e.toString() + ". URL: " + url.toString());
+            throw e;
         }
     }
 

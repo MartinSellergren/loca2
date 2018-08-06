@@ -15,12 +15,7 @@ import android.widget.TextView;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.NodeShape;
 import com.localore.localore.model.Session;
-import com.localore.localore.model.SessionDao;
 import com.localore.localore.modelManipulation.SessionControl;
-
-import org.w3c.dom.Node;
-
-import java.util.zip.Adler32;
 
 /**
  * Singleton-activity that handles loading of a new exercise.
@@ -48,12 +43,28 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
     //endregion
 
     /**
-     * Use this start loading a new exercise (as opposed to resuming progress).
+     * Starts the activity and begins loading an new exercise.
      * @param name
      * @param workingArea
      */
     public static void freshStart(String name, NodeShape workingArea, Context context) {
         SessionControl.initLoadingOfNewExercise(name, workingArea, AppDatabase.getInstance(context));
+        Intent intent = new Intent(context, LoadingNewExerciseActivity.class);
+        context.startActivity(intent);
+    }
+
+    /**
+     * Starts the activity and resumes construction from a previous state.
+     * Possibilities:
+     * - The construction service is running.
+     * - The construction service is completed.
+     * - The construction service has failed.
+     *
+     * @pre Loading-status in exercise != NOT_STARTED.
+     *
+     * @param context
+     */
+    public static void resumedStart(Context context) {
         Intent intent = new Intent(context, LoadingNewExerciseActivity.class);
         context.startActivity(intent);
     }
@@ -66,26 +77,26 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_loading_new_exercise);
 
-        this.textView_loadingStatus = findViewById(R.id.textView_loadingStatus);
-        this.button_enterOrRetry = findViewById(R.id.button_enterOrRetry);
-
         setTitle(getString(R.string.loading_new_exercise));
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.hide();
+
+        this.textView_loadingStatus = findViewById(R.id.textView_loadingStatus);
+        this.button_enterOrRetry = findViewById(R.id.button_enterOrRetry);
 
         // listen to broadcasts from CreateExerciseService
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        statusBasedControlFlow();
+                        statusBasedUpdate();
                     }
                 },
                 new IntentFilter(CreateExerciseService.BROADCAST_ACTION)
         );
 
         validateLoadingExerciseStatus();
-        statusBasedControlFlow();
+        statusBasedUpdate();
     }
 
     /**
@@ -108,15 +119,15 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
     }
 
     /**
-     * Delegates layout-work based on current status on construction.
+     * Delegates layout-work etc. based on current status of construction.
      * Status read from Session in db.
      *
      * If error-status: also cleans up database by wiping the new data.
      */
-    private void statusBasedControlFlow() {
-        //SessionDao sessionDao = AppDatabase.getInstance(this).sessionDao();
+    private void statusBasedUpdate() {
         Session session = AppDatabase.getInstance(this).sessionDao().load();
         int status = session.getLoadingExerciseStatus();
+
 
         if (status == NOT_STARTED) {
             String name = session.getLoadingExerciseName();
@@ -124,10 +135,10 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
             SessionControl.updateLoadingExerciseStatus(RUNNING, AppDatabase.getInstance(this));
 
             CreateExerciseService.start(name, workingArea, this);
-            workingLayout();
+            runningLayout();
         }
         else if (status == RUNNING) {
-            workingLayout();
+            runningLayout();
         }
         else if (status == COMPLETED) {
             completedLayout();
@@ -138,7 +149,7 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
         }
     }
 
-    private void workingLayout() {
+    private void runningLayout() {
         this.textView_loadingStatus.setText(R.string.loading_new_exercise_HEADS_UP);
         this.button_enterOrRetry.setVisibility(View.INVISIBLE);
     }
@@ -161,6 +172,8 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
             this.textView_loadingStatus.setText(R.string.exercice_loading_too_few_geo_objects_error_HEADS_UP);
         else if (status == DEAD_SERVICE_ERROR)
             this.textView_loadingStatus.setText(R.string.exercice_loading_dead_service_error_HEADS_UP);
+        else
+            throw new RuntimeException("Dead-end");
     }
 
     /**
@@ -177,6 +190,8 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
 
     /**
      * Take action depending on status in session.
+     * - Enter exercise: Exercise loading is complete. Leave loading-activity and enter exercise.
+     * - Retry loading exercise: Error loading exercise, now retry.
      * @param view
      */
     public void onEnterExerciseOrRetryConstruction(View view) {
@@ -200,10 +215,10 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
 
     /**
      * User-action: exit exercise loading.
-     * Clean up and close.
+     * Clean up and go to select-exercise-activity.
      * @param view
      */
-    public void onExit(View view) {
+    public void onExitButton(View view) {
         killService();
         //wait until killed
         wipeConstruction();

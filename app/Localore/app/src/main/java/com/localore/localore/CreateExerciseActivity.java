@@ -118,14 +118,13 @@ public class CreateExerciseActivity extends AppCompatActivity {
      * @return Shape constructed from user-specified nodes in map.
      */
     private NodeShape selectedShape() {
-        //todo
-        return null;
+        return LocaUtils.getWorkingArea();
     }
 
     //region create the exercise (after name and area specified)
 
     /**
-     * Prepares session (in db) and then starts the loading-new-exercise activity.
+     * Starts the loading-new-exercise activity.
      */
     public void startLoadingNewExerciseActivity() {
         String name = this.editText_exerciseName.getText().toString();

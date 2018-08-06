@@ -16,6 +16,7 @@ import com.localore.localore.model.NodeShape;
 import com.localore.localore.model.Quiz;
 import com.localore.localore.model.QuizCategory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,7 +87,7 @@ public class ExerciseControl {
      * @param context For reading conversion-table from file.
      * @return True if database updated as planned. False means network error (etc?).
      */
-    public static boolean acquireGeoObjects(NodeShape workingArea, AppDatabase tempDb, Context context) {
+    public static boolean acquireGeoObjects(NodeShape workingArea, AppDatabase tempDb, Context context)  throws IOException {
         tempDb.clearAllTables();
         JsonObject convTable = openConversionTable(context);
         GeoObjInstructionsIter iter = new GeoObjInstructionsIter(workingArea, context);

@@ -36,7 +36,6 @@
 
     <com.mapbox.mapboxsdk.maps.MapView
         android:id="@+id/mapView_createExercise"
-        mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginBottom="16dp"
@@ -48,6 +47,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText_exerciseName" />
+        app:layout_constraintTop_toBottomOf="@+id/editText_exerciseName"
+        mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets" />
 
 </android.support.constraint.ConstraintLayout>

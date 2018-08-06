@@ -18,6 +18,8 @@ import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.model.NodeShape;
 import com.localore.localore.modelManipulation.SessionControl;
 
+import java.io.IOException;
+
 
 /**
  * Service for creating a new exercise.
@@ -33,12 +35,6 @@ public class CreateExerciseService extends IntentService {
     private static final String EXERCISE_NAME_PARAM_KEY = "com.localore.localore.CreateExerciseService.EXERCISE_NAME_PARAM_KEY";
     private static final String WORKING_AREA_PARAM_KEY = "com.localore.localore.CreateExerciseService.WORKING_AREA_PARAM_KEY";
     public static final String BROADCAST_ACTION = "com.localore.localore.CreateExerciseService.BROADCAST_ACTION";
-
-    //region error-codes
-    public static int UNSPECIFIED_ERROR = -1;
-    public static int NETWORK_ERROR = -2;
-    public static int TOO_FEW_GEO_OBJECTS_ERROR = -3;
-    //endregion
 
     public CreateExerciseService() {
         super("CreateExerciseService");
@@ -126,15 +122,17 @@ public class CreateExerciseService extends IntentService {
         long exerciseId = ExerciseControl.newExercise(userId, exerciseName, workingArea, mainDb);
         SessionControl.setActiveExercise(exerciseId, mainDb);
 
-        boolean ok = ExerciseControl.acquireGeoObjects(workingArea, tempDb, this);
-        Log.i("<ME>", "N.o raw osm's: " + tempDb.geoDao().count());
-        if (tempDb.geoDao().count() < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
-            report(LoadingNewExerciseActivity.TOO_FEW_GEO_OBJECTS_ERROR);
+        try {
+            ExerciseControl.acquireGeoObjects(workingArea, tempDb, this);
+        }
+        catch (IOException e) {
+            report(LoadingNewExerciseActivity.NETWORK_ERROR);
             return;
         }
 
-        if (!ok) {
-            report(LoadingNewExerciseActivity.UNSPECIFIED_ERROR);
+        Log.i("<ME>", "N.o raw osm's: " + tempDb.geoDao().count());
+        if (tempDb.geoDao().count() < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
+            report(LoadingNewExerciseActivity.TOO_FEW_GEO_OBJECTS_ERROR);
             return;
         }
 

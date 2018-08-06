@@ -28,7 +28,8 @@ public class SessionControl {
 
         if (session == null) {
             session = new Session();
-            db.sessionDao().insert(session);
+            long id = db.sessionDao().insert(session);
+            session.setId(id);
         }
 
         return session;
@@ -55,6 +56,7 @@ public class SessionControl {
         Session session = load(db);
         session.setUserId(userId);
         db.sessionDao().update(session);
+        userId = load(db).getUserId();
     }
 
     /**

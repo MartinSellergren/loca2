@@ -27,20 +27,20 @@ public class SelectExerciseActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_select_exercise);
+        setTitle(getString(R.string.select_exercise));
+
         AppDatabase db = AppDatabase.getInstance(this);
         long userId = SessionControl.load(db).getUserId();
         List<Exercise> exercises = db.exerciseDao().loadWithUserOrderedByDisplayIndex(userId);
         List<Integer> exerciseProgresses = ExerciseControl.exerciseProgresses(userId, db);
 
-        RecyclerView recyclerView = findViewById(R.id.recyclerView_exerciseLabel);
+        RecyclerView recyclerView = findViewById(R.id.recyclerView_exerciseLabels);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         //recyclerView.setHasFixedSize(true); //todo: recyclerView fixed size?
         ExerciseLabelAdapter adapter = new ExerciseLabelAdapter(exercises, exerciseProgresses);
         recyclerView.setAdapter(adapter);
-
-        setTitle(getString(R.string.select_exercise));
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_select_exercise);
     }
 
     /**

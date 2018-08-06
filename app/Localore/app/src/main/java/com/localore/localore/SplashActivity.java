@@ -16,7 +16,7 @@ import com.localore.localore.modelManipulation.SessionControl;
  * (based on session in db).
  */
 public class SplashActivity extends AppCompatActivity {
-    private static int DISPLAY_TIME = 2500;
+    private static int DISPLAY_TIME = 1500;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +56,6 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void startLoadingNewExerciseActivity() {
-        Intent intent = new Intent(this, LoadingNewExerciseActivity.class);
-        startActivity(intent);
+        LoadingNewExerciseActivity.resumedStart(this);
     }
 }

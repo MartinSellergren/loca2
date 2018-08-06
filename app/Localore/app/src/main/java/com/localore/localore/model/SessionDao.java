@@ -11,7 +11,7 @@ import android.arch.persistence.room.Update;
 public interface SessionDao {
 
     @Insert
-    public void insert(Session session);
+    public long insert(Session session);
 
     @Update
     public void update(Session session);
