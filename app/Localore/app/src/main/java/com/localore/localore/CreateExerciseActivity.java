@@ -66,7 +66,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
         mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(MapboxMap mapboxMap) {
-                customizeMap(mapboxMap);
+                initializeMap(mapboxMap);
             }
         });
 
@@ -96,7 +96,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
     //endregion
 
     /**
-     * Customize the map.
+     * Initialize the map.
      *
      * - Set to user's location at min allowed zoom.
      * - Make it clickable to insert nodes: select an area.
@@ -108,7 +108,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
      *
      * @param mapboxMap
      */
-    private void customizeMap(MapboxMap mapboxMap) {
+    private void initializeMap(MapboxMap mapboxMap) {
 
     }
 

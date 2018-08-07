@@ -48,6 +48,12 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editText_exerciseName"
-        mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets" />
+        mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets"
+
+        mapbox:mapbox_uiRotateGestures="false"
+        mapbox:mapbox_uiTiltGestures="false"
+        mapbox:mapbox_uiZoomControls="false"
+
+        />
 
 </android.support.constraint.ConstraintLayout>

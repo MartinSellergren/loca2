@@ -321,21 +321,21 @@ public class LocaUtils {
 //                new double[]{17.7456665, 59.8882479}));
 
         //mefjärd
-        return new NodeShape(Arrays.asList(
-                new double[]{-341.5065765+360, 59.0837983},
-                new double[]{-341.5491486+360, 59.0414377},
-                new double[]{-341.5567017+360, 59.0094562},
-                new double[]{-341.5148163+360, 59.0076883},
-                new double[]{-341.5010834+360, 59.061742},
-                new double[]{-341.4571381+360, 59.0807995},
-                new double[]{-341.4835739+360, 59.0915587}));
+//        return new NodeShape(Arrays.asList(
+//                new double[]{-341.5065765+360, 59.0837983},
+//                new double[]{-341.5491486+360, 59.0414377},
+//                new double[]{-341.5567017+360, 59.0094562},
+//                new double[]{-341.5148163+360, 59.0076883},
+//                new double[]{-341.5010834+360, 59.061742},
+//                new double[]{-341.4571381+360, 59.0807995},
+//                new double[]{-341.4835739+360, 59.0915587}));
 
         //sandböte (4 osm-objects)
-//        return new NodeShape(Arrays.asList(
-//                new double[]{18.4603786,59.056049},
-//                new double[]{18.455658,59.0427181},
-//                new double[]{18.4662151,59.0455437},
-//                new double[]{18.4645844,59.0563581}));
+        return new NodeShape(Arrays.asList(
+                new double[]{18.4603786,59.056049},
+                new double[]{18.455658,59.0427181},
+                new double[]{18.4662151,59.0455437},
+                new double[]{18.4645844,59.0563581}));
 
         //nowhere (nothing here)
 //        return new NodeShape(Arrays.asList(
