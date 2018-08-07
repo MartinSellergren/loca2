@@ -4,6 +4,8 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 import android.graphics.drawable.Icon;
 
+import com.localore.localore.R;
+
 /**
  * A quiz-category of a certain exercise.
  */
@@ -13,13 +15,25 @@ public class QuizCategory {
     /**
      * The different types of quiz-categories.
      * Index defines display-order in exercise-view.
+     * String match with strings in json-conversion-table.
      */
-    public static final String[] types = new String[]{
+    public static final String[] TYPES = new String[]{
             "settlements",
             "roads",
             "nature",
             "transport",
             "constructions"};
+
+    /**
+     * Corresponding names but formatted for display.
+     */
+    public static final int[] DISPLAY_TYPES = new int[]{
+            R.string.Settlements,
+            R.string.Roads,
+            R.string.Nature,
+            R.string.Transport,
+            R.string.Constructions};
+
     public static final int SETTLEMENTS = 0;
     public static final int ROADS = 1;
     public static final int NATURE = 2;

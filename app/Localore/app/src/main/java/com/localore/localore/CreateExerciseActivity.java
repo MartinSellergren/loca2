@@ -2,6 +2,8 @@ package com.localore.localore;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
@@ -26,6 +28,9 @@ public class CreateExerciseActivity extends AppCompatActivity {
      */
     private List<String> existingExerciseNames;
 
+    private boolean okExerciseName = false;
+    private boolean okWorkingArea = true; //TODO
+
 
     /**
      * @param savedInstanceState
@@ -37,7 +42,24 @@ public class CreateExerciseActivity extends AppCompatActivity {
         setTitle(getString(R.string.new_exercise));
 
         this.editText_exerciseName = findViewById(R.id.editText_exerciseName);
-        this.menuItem_createExercise = findViewById(R.id.menuItem_createExercise);
+        editText_exerciseName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                okExerciseName = okExerciseName(charSequence.toString());
+                updateCreateExerciseButton();
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
         this.mapView = findViewById(R.id.mapView_createExercise);
 
         mapView.onCreate(savedInstanceState);
@@ -58,6 +80,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.create_exercise_actions, menu);
+        this.menuItem_createExercise = menu.findItem(R.id.menuItem_createExercise);
         return true;
     }
 
@@ -79,7 +102,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
      * - Make it clickable to insert nodes: select an area.
      *   - "Fill area" if >2 nodes (auto-close path).
      *   - Don't allow clicks that make segments crossed.
-     *   - Test updateDoneButton() after each new node.
+     *   - Test updateCreateExerciseButton() after each new node.
      * - If nodes: floating button to delete all nodes.
      * - If too zoomed out: Floating button "zoom in" to allowed zoom + dimmed map.
      *
@@ -91,11 +114,11 @@ public class CreateExerciseActivity extends AppCompatActivity {
 
     /**
      * Enable/disable create-exercise-button based on user-input.
+     * Call after every change.
+     * @pre okExerciseName and okWorkingArea set according to state.
      */
-    private void updateDoneButton() {
-        String exerciseName = this.editText_exerciseName.getText().toString();
-        NodeShape workingArea = selectedShape();
-        this.menuItem_createExercise.setEnabled(okExerciseName(exerciseName) && okWorkingArea(workingArea));
+    private void updateCreateExerciseButton() {
+        this.menuItem_createExercise.setEnabled(okExerciseName && okWorkingArea);
     }
 
     /**
@@ -103,7 +126,9 @@ public class CreateExerciseActivity extends AppCompatActivity {
      * @return True if name is ok for a new exercise (i.e is unique).
      */
     private boolean okExerciseName(String name) {
-        return !this.existingExerciseNames.contains(name);
+        name = name.trim();
+        return !this.existingExerciseNames.contains(name) &&
+                name.length() > 0;
     }
 
     /**
@@ -111,7 +136,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
      * @return True if shape is ok as a working area for a new exercise.
      */
     private boolean okWorkingArea(NodeShape workingArea) {
-        return false;
+        return true;
     }
 
     /**
@@ -127,7 +152,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
      * Starts the loading-new-exercise activity.
      */
     public void startLoadingNewExerciseActivity() {
-        String name = this.editText_exerciseName.getText().toString();
+        String name = this.editText_exerciseName.getText().toString().trim();
         NodeShape workingArea = selectedShape();
 
         LoadingNewExerciseActivity.freshStart(name, workingArea, this);

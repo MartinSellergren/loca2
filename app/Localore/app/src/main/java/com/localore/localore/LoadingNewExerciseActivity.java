@@ -1,16 +1,20 @@
 package com.localore.localore;
 
 import android.app.Application;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.localore.localore.model.AppDatabase;
@@ -34,6 +38,7 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
 
     private TextView textView_loadingStatus;
     private Button button_enterOrRetry;
+    private ImageButton button_exitExerciseLoading;
 
     //region status-codes
     public static final int NOT_STARTED = 0;
@@ -87,6 +92,7 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
 
         this.textView_loadingStatus = findViewById(R.id.textView_loadingStatus);
         this.button_enterOrRetry = findViewById(R.id.button_enterOrRetry);
+        this.button_exitExerciseLoading = findViewById(R.id.button_exitExerciseLoading);
 
         // listen to broadcasts from CreateExerciseService
         LocalBroadcastManager.getInstance(this).registerReceiver(
@@ -102,6 +108,15 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
         validateLoadingExerciseStatus();
         statusBasedUpdate();
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        validateLoadingExerciseStatus();
+        statusBasedUpdate();
+    }
+
 
     /**
      * If Session-status says Working, but service isn't running, the service has been
@@ -131,7 +146,6 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
     private void statusBasedUpdate() {
         Session session = AppDatabase.getInstance(this).sessionDao().load();
         int status = session.getLoadingExerciseStatus();
-
 
         if (status == NOT_STARTED) {
             String name = session.getLoadingExerciseName();
@@ -165,6 +179,7 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
         this.textView_loadingStatus.setText(R.string.completed_loading_of_new_exercise_HEADS_UP);
         this.button_enterOrRetry.setText(R.string.enter_exercise);
         this.button_enterOrRetry.setVisibility(View.VISIBLE);
+        this.button_exitExerciseLoading.setVisibility(View.INVISIBLE);
     }
 
     private void errorLayout(int status) {
@@ -233,6 +248,7 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
      */
     public void leave(boolean successful) {
         SessionControl.finalizeLoadingOfNewExercise(AppDatabase.getInstance(this));
+        NotificationManagerCompat.from(this).cancel(CreateExerciseService.FINAL_NOTIFICATION_ID);
 
         if (successful) {
             ExerciseControl.wipeConstructionJunk(this);
@@ -245,8 +261,21 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
             ExerciseControl.wipeConstruction(exerciseId, this);
 
             SessionControl.setNoActiveExercise(AppDatabase.getInstance(this));
-            Intent intent = new Intent(this, SelectExerciseActivity.class);
+            Intent intent = new Intent(this, CreateExerciseActivity.class);
             startActivity(intent);
         }
+
+        finish();
+    }
+
+    /**
+     * Quit app on back-press.
+     */
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_HOME);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
     }
 }

@@ -29,18 +29,20 @@
 
         <activity
             android:name=".SplashActivity"
-            android:launchMode="singleInstance">
+            android:launchMode="singleTask"
+            android:noHistory="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name=".SelectExerciseActivity"
-            android:launchMode="singleTask"/>
+            android:launchMode="singleTask" />
         <activity
             android:name=".ExerciseActivity"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
             android:parentActivityName=".SelectExerciseActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -48,13 +50,27 @@
         </activity>
         <activity
             android:name=".CreateExerciseActivity"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTask"
             android:parentActivityName=".SelectExerciseActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".SelectExerciseActivity" />
         </activity>
-        <activity android:name=".LoadingNewExerciseActivity"></activity>
+        <activity
+            android:name=".LoadingNewExerciseActivity"
+            android:launchMode="singleTask" />
+        <activity android:name=".TappingActivity"
+            android:parentActivityName=".ExerciseActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExerciseActivity" />
+        </activity>
+        <activity android:name=".QuizActivity"
+            android:parentActivityName=".ExerciseActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExerciseActivity" />
+        </activity>
     </application>
 
 </manifest>

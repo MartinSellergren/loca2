@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
         List<int[]> quizCategoriesData = ExerciseControl.loadQuizCategoriesData(exerciseId, db);
         for (int i = 0; i < quizCategoriesData.size(); i++) {
             int[] quizCategoryData = quizCategoriesData.get(i);
-            Log.i("<VIEW>", "Quiz-category: " + QuizCategory.types[ quizCategoryData[0] ]);
+            Log.i("<VIEW>", "Quiz-category: " + QuizCategory.TYPES[ quizCategoryData[0] ]);
             Log.i("<VIEW>", "  no levels: " + quizCategoryData[1]);
             Log.i("<VIEW>", "  no passed levels: " + quizCategoryData[2]);
             Log.i("<VIEW>", "  no reminders: " + quizCategoryData[3]);

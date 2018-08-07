@@ -1,11 +1,18 @@
 package com.localore.localore;
 
+import android.app.Dialog;
+import android.content.ClipData;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,22 +32,62 @@ import java.util.List;
  */
 public class SelectExerciseActivity extends AppCompatActivity {
 
+    private RecyclerView recyclerView_exerciseLabels;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_exercise);
         setTitle(getString(R.string.select_exercise));
 
+        this.recyclerView_exerciseLabels = findViewById(R.id.recyclerView_exerciseLabels);
+        new ItemTouchHelper(new ItemTouchHelper.Callback() {
+            @Override
+            public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+                int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
+                return makeMovementFlags(dragFlags, swipeFlags);
+            }
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder viewHolder1) {
+
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int dir) {
+                int pos = viewHolder.getAdapterPosition();
+
+                AppDatabase db = AppDatabase.getInstance(SelectExerciseActivity.this);
+                Exercise delExercise = db.exerciseDao().loadWithDisplayIndex(pos);
+                ExerciseControl.deleteExercise(delExercise, db);
+                updateLayout();
+            }
+        }).attachToRecyclerView(recyclerView_exerciseLabels);
+
+        updateLayout();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateLayout();
+    }
+
+    /**
+     * Sets layout based on database-content.
+     */
+    private void updateLayout() {
         AppDatabase db = AppDatabase.getInstance(this);
         long userId = SessionControl.load(db).getUserId();
         List<Exercise> exercises = db.exerciseDao().loadWithUserOrderedByDisplayIndex(userId);
         List<Integer> exerciseProgresses = ExerciseControl.exerciseProgresses(userId, db);
 
-        RecyclerView recyclerView = findViewById(R.id.recyclerView_exerciseLabels);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        //recyclerView.setHasFixedSize(true); //todo: recyclerView fixed size?
+        recyclerView_exerciseLabels.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView_exerciseLabels.setHasFixedSize(true); //todo: recyclerView fixed size?
         ExerciseLabelAdapter adapter = new ExerciseLabelAdapter(exercises, exerciseProgresses);
-        recyclerView.setAdapter(adapter);
+        recyclerView_exerciseLabels.setAdapter(adapter);
     }
 
     /**
@@ -81,7 +128,7 @@ public class SelectExerciseActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return exercises.size();
+            return this.exercises.size();
         }
     }
 
@@ -96,7 +143,7 @@ public class SelectExerciseActivity extends AppCompatActivity {
         public ExerciseLabelHolder(LayoutInflater inflater, ViewGroup parent) {
             super(inflater.inflate(R.layout.listitem_exercise_label, parent, false));
 
-            this.textView = (TextView) itemView.findViewById(R.id.textView_exerciseLabel);
+            this.textView = (TextView)itemView.findViewById(R.id.textView_exerciseLabel);
 
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -112,7 +159,7 @@ public class SelectExerciseActivity extends AppCompatActivity {
         public void bind(Exercise exercise, int progress) {
             this.exercise = exercise;
             this.progress = progress;
-            textView.setText(String.format("%s : %s percent", exercise.getName(), progress));
+            this.textView.setText(String.format("%s : %s percent", exercise.getName(), progress));
         }
     }
 

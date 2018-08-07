@@ -354,8 +354,8 @@ public class ExerciseControl {
      * @param db
      */
     private static void insertGeoObjectQuizzes(long exerciseId, AppDatabase db) {
-        for (int quizCategoryType = 0; quizCategoryType < QuizCategory.types.length; quizCategoryType++) {
-            String supercat = QuizCategory.types[quizCategoryType];
+        for (int quizCategoryType = 0; quizCategoryType < QuizCategory.TYPES.length; quizCategoryType++) {
+            String supercat = QuizCategory.TYPES[quizCategoryType];
             List<Long> ids = db.geoDao().loadQuizlessIdsWithSupercatOrderdByRank(supercat);
 
             if (ids.size() == 0) continue;

@@ -14,4 +14,10 @@
     <string name="exercice_loading_network_error_HEADS_UP">Do you have network access?</string>
     <string name="exercice_loading_too_few_geo_objects_error_HEADS_UP">Specified area doesn\'t contain enough interesting things</string>
     <string name="exercice_loading_dead_service_error_HEADS_UP">Hmm.. try again</string>
+    <string name="Settlements">Settlements</string>
+    <string name="Roads">Roads</string>
+    <string name="Nature">Nature</string>
+    <string name="Transport">Transport</string>
+    <string name="Constructions">Constructions</string>
+    <string name="Level">Level</string>
 </resources>

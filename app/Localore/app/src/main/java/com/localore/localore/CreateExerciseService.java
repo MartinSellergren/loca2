@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.Context;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -35,6 +36,9 @@ public class CreateExerciseService extends IntentService {
     private static final String EXERCISE_NAME_PARAM_KEY = "com.localore.localore.CreateExerciseService.EXERCISE_NAME_PARAM_KEY";
     private static final String WORKING_AREA_PARAM_KEY = "com.localore.localore.CreateExerciseService.WORKING_AREA_PARAM_KEY";
     public static final String BROADCAST_ACTION = "com.localore.localore.CreateExerciseService.BROADCAST_ACTION";
+
+    private static final int RUNNING_NOTIFICATION_ID = 1;
+    public static final int FINAL_NOTIFICATION_ID = 2;
 
 
     public CreateExerciseService() {
@@ -79,8 +83,7 @@ public class CreateExerciseService extends IntentService {
                 .setContentIntent(pendingIntent)
                 .build();
 
-        int NOTIFICATION_ID = 1;
-        startForeground(NOTIFICATION_ID, notification);
+        startForeground(RUNNING_NOTIFICATION_ID, notification);
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -159,6 +162,8 @@ public class CreateExerciseService extends IntentService {
         finally {
             if (!successful)
                 ExerciseControl.wipeConstruction(exerciseId, this);
+
+            finalNotification(successful);
         }
     }
 
@@ -171,5 +176,30 @@ public class CreateExerciseService extends IntentService {
 
         Intent localIntent = new Intent(BROADCAST_ACTION);
         LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+    }
+
+    /**
+     * Adds a final notification that takes user back to this activity.
+     * @param successful
+     */
+    private void finalNotification(boolean successful) {
+        String text = getString(R.string.completed_loading_of_new_exercise_HEADS_UP);
+        if (!successful)
+            text = getString(R.string.exercice_loading_unspecified_error_HEADS_UP);
+
+        Intent intent = new Intent(this, LoadingNewExerciseActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, "default_channel_id")
+                .setSmallIcon(R.drawable.loca_notification_icon)
+                .setContentTitle(text)
+                //.setContentText("Hello World!")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                // Set the intent that will fire when the user taps the notification
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);
+
+        NotificationManagerCompat.from(this).notify(FINAL_NOTIFICATION_ID, mBuilder.build());
     }
 }

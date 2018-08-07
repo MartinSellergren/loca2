@@ -58,7 +58,7 @@ public class GeoObjInstructionsIter {
         query = query.replace("{{poly}}", poly_str);
         query = URLEncoder.encode(query);
 
-        String endpoint = OVERPASS_ENDPOINTS[2];
+        String endpoint = OVERPASS_ENDPOINTS[0];
         return new URL(endpoint + "?data=" + query);
     }
 
