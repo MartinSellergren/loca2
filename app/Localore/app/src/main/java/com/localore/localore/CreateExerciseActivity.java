@@ -2,6 +2,7 @@ package com.localore.localore;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -12,7 +13,6 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -20,7 +20,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.NodeShape;
@@ -35,7 +34,6 @@ import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
-import com.mapbox.mapboxsdk.style.light.Position;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,12 +43,12 @@ public class CreateExerciseActivity extends AppCompatActivity {
     /**
      * Above this level, exercise-creation is not allowed.
      */
-    private static final double MIN_ZOOM_LEVEL_WORKING_AREA = 9;
+    private static final double MIN_WORKING_AREA_ZOOM_LEVEL = 9;
 
     /**
      * Time in ms for flying (moving camera to new pos).
      */
-    private static final int FLY_TIME = 5000;
+    private static final int FLY_TIME = 2500;
 
     private EditText editText_exerciseName;
     private MenuItem menuItem_createExercise;
@@ -63,6 +61,11 @@ public class CreateExerciseActivity extends AppCompatActivity {
      * List of names of existing exercises.
      */
     private List<String> existingExerciseNames;
+
+    /**
+     * Map-tapping-events ignored if set to false.
+     */
+    private static volatile boolean mapTappingEnabled = false;
 
     private boolean okExerciseName = false;
     private boolean okWorkingArea = true; //TODO
@@ -82,25 +85,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
         this.button_clearNodes = findViewById(R.id.button_clearNodes);
         this.button_validZoom = findViewById(R.id.button_validZoom);
 
-        editText_exerciseName.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                okExerciseName = okExerciseName(charSequence.toString());
-                updateCreateExerciseButton();
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-        });
-
-        mapView.onCreate(savedInstanceState);
+        mapView.onCreate(null);
         mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(MapboxMap mapboxMap) {
@@ -120,6 +105,25 @@ public class CreateExerciseActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.create_exercise_actions, menu);
         this.menuItem_createExercise = menu.findItem(R.id.menuItem_createExercise);
+
+        editText_exerciseName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                okExerciseName = okExerciseName(charSequence.toString());
+                updateCreateExerciseButton();
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
         return true;
     }
 
@@ -137,7 +141,6 @@ public class CreateExerciseActivity extends AppCompatActivity {
     /**
      * Initialize the map.
      *
-     * - Set to user's location at min allowed zoom.
      * - Make it clickable to insert nodes: select an area.
      *   - "Fill area" if >2 nodes (auto-close path).
      *   - Don't allow clicks that make segments crossed.
@@ -208,7 +211,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
     private void flyToLocation(Location location) {
         CameraPosition position = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(), location.getLongitude()))
-                .zoom(MIN_ZOOM_LEVEL_WORKING_AREA)
+                .zoom(MIN_WORKING_AREA_ZOOM_LEVEL)
                 .build();
 
         mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), FLY_TIME);
@@ -222,8 +225,15 @@ public class CreateExerciseActivity extends AppCompatActivity {
      */
     private void addWorkingAreaTapping() {
         this.mapboxMap.addOnMapClickListener(new MapboxMap.OnMapClickListener() {
+
+            /**
+             * Called when the user clicks on the map view.
+             * @param point The projected map coordinate the user clicked on.
+             */
             @Override
             public void onMapClick(@NonNull LatLng point) {
+                if (!CreateExerciseActivity.this.mapTappingEnabled) return;
+
                 mapboxMap.addMarker(new MarkerOptions().position(point));
 
                 List<Marker> markers = mapboxMap.getMarkers();
@@ -231,22 +241,21 @@ public class CreateExerciseActivity extends AppCompatActivity {
 
                 if (markers.size() == 1) {
                     button_clearNodes.show();
-                    mapboxMap.getUiSettings().setAllGesturesEnabled(false);
+                    enableGestures(false);
                 }
 
                 if (markers.size() > 1) {
-                    LatLng prevPoint = markers.get( markers.size() - 2 ).getPosition();
+                    LatLng prevPoint = markers.get(markers.size() - 2).getPosition();
                     mapboxMap.addPolyline(new PolylineOptions()
                             .add(prevPoint, point)
                             .color(Color.parseColor("#3bb2d0"))
                             .width(2));
                 }
 
-
                 List<Polyline> polylines = mapboxMap.getPolylines();
 
                 if (markers.size() > 3) {
-                    Polyline prevClosingLine = polylines.get( polylines.size() - 2 );
+                    Polyline prevClosingLine = polylines.get(polylines.size() - 2);
                     mapboxMap.removePolyline(prevClosingLine);
                 }
 
@@ -255,12 +264,21 @@ public class CreateExerciseActivity extends AppCompatActivity {
                     mapboxMap.addPolyline(new PolylineOptions()
                             .add(point, firstPoint)
                             .color(Color.parseColor("#3bb2d0"))
-                            .width(2));
+                            .width(1)
+                            .alpha(0.8f));
                 }
             }
         });
     }
 
+    /**
+     * Enable/disable user-gestures: scrolling/ zooming. (Other gestures disabled in xml).
+     * @param enable
+     */
+    private void enableGestures(boolean enable) {
+        mapboxMap.getUiSettings().setScrollGesturesEnabled(enable);
+        mapboxMap.getUiSettings().setZoomGesturesEnabled(enable);
+    }
 
 
     /**
@@ -287,7 +305,35 @@ public class CreateExerciseActivity extends AppCompatActivity {
      *  - Disable tapping (new nodes).
      */
     private void addZoomControl() {
+        this.mapboxMap.addOnCameraMoveListener(new MapboxMap.OnCameraMoveListener() {
+            @Override
+            public void onCameraMove() {
+                boolean tooZoomedOut = mapboxMap.getCameraPosition().zoom < MIN_WORKING_AREA_ZOOM_LEVEL;
 
+                showValidZoomButton(tooZoomedOut);
+                CreateExerciseActivity.this.mapTappingEnabled = !tooZoomedOut;
+                showDimOverlay(tooZoomedOut);
+            }
+        });
+    }
+
+    /**
+     * Show/hide an dim-overlay covering the whole map.
+     * @param show
+     */
+    private void showDimOverlay(boolean show) {
+        //todo
+    }
+
+    /**
+     * Show or hide the valid-zoom-button.
+     * @param show
+     */
+    private void showValidZoomButton(boolean show) {
+        if (this.button_validZoom != null) {
+            if (show && !button_validZoom.isShown()) button_validZoom.show();
+            else if (!show && button_validZoom.isShown()) button_validZoom.hide();
+        }
     }
 
     /**
@@ -297,7 +343,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
     public void onClearNodesButtonClick(View view) {
         this.mapboxMap.clear();
         this.button_clearNodes.hide();
-        mapboxMap.getUiSettings().setAllGesturesEnabled(true);
+        enableGestures(true);
     }
 
     /**
@@ -306,7 +352,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
      */
     public void onValidZoomButtonClick(View view) {
         CameraPosition position = new CameraPosition.Builder()
-                .zoom(MIN_ZOOM_LEVEL_WORKING_AREA)
+                .zoom(MIN_WORKING_AREA_ZOOM_LEVEL + 1)
                 .build();
 
         this.mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), FLY_TIME);

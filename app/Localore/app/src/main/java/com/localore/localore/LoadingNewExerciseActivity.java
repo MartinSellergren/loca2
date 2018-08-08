@@ -1,7 +1,5 @@
 package com.localore.localore;
 
-import android.app.Application;
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -105,14 +103,15 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
                 new IntentFilter(CreateExerciseService.BROADCAST_ACTION)
         );
 
-        validateLoadingExerciseStatus();
-        statusBasedUpdate();
+//        validateLoadingExerciseStatus();
+//        statusBasedUpdate();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
+        NotificationManagerCompat.from(this).cancel(CreateExerciseService.FINAL_NOTIFICATION_ID);
         validateLoadingExerciseStatus();
         statusBasedUpdate();
     }

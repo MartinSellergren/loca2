@@ -66,7 +66,7 @@ public class SelectExerciseActivity extends AppCompatActivity {
             }
         }).attachToRecyclerView(recyclerView_exerciseLabels);
 
-        updateLayout();
+//        updateLayout();
     }
 
     @Override

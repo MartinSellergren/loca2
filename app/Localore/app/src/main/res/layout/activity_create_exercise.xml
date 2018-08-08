@@ -49,6 +49,9 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editText_exerciseName"
         mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets"
+        mapbox:mapbox_cameraTargetLat="0"
+        mapbox:mapbox_cameraTargetLng="0"
+        mapbox:mapbox_cameraZoom="0"
 
         mapbox:mapbox_uiRotateGestures="false"
         mapbox:mapbox_uiTiltGestures="false"
@@ -67,7 +70,7 @@
         android:layout_marginRight="8dp"
         android:clickable="true"
         android:onClick="onValidZoomButtonClick"
-        android:visibility="invisible"
+        android:visibility="visible"
         app:srcCompat="@android:drawable/ic_menu_zoom"
         mapbox:elevation="5dp"
         mapbox:layout_constraintBottom_toBottomOf="@+id/mapView_createExercise"

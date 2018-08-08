@@ -17,7 +17,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity
+            android:name=".MainActivity">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -33,7 +34,8 @@
         <activity
             android:name=".SplashActivity"
             android:launchMode="singleTask"
-            android:noHistory="true">
+            android:noHistory="true"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -42,10 +44,12 @@
         </activity>
         <activity
             android:name=".SelectExerciseActivity"
-            android:launchMode="singleTask" />
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".ExerciseActivity"
             android:launchMode="singleTask"
+            android:screenOrientation="portrait"
             android:parentActivityName=".SelectExerciseActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -54,6 +58,7 @@
         <activity
             android:name=".CreateExerciseActivity"
             android:launchMode="singleTask"
+            android:screenOrientation="portrait"
             android:parentActivityName=".SelectExerciseActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -61,14 +66,19 @@
         </activity>
         <activity
             android:name=".LoadingNewExerciseActivity"
-            android:launchMode="singleTask" />
-        <activity android:name=".TappingActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".TappingActivity"
+            android:screenOrientation="portrait"
             android:parentActivityName=".ExerciseActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ExerciseActivity" />
         </activity>
-        <activity android:name=".QuizActivity"
+        <activity
+            android:name=".QuizActivity"
+            android:screenOrientation="portrait"
             android:parentActivityName=".ExerciseActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
