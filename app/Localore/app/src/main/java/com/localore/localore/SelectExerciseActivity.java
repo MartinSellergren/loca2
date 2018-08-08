@@ -58,11 +58,30 @@ public class SelectExerciseActivity extends AppCompatActivity {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int dir) {
                 int pos = viewHolder.getAdapterPosition();
-
                 AppDatabase db = AppDatabase.getInstance(SelectExerciseActivity.this);
                 Exercise delExercise = db.exerciseDao().loadWithDisplayIndex(pos);
-                ExerciseControl.deleteExercise(delExercise, db);
-                updateLayout();
+
+                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(SelectExerciseActivity.this);
+                alertBuilder.setTitle("Sure you wanna delete " + delExercise.getName() + "?");
+
+                CharSequence[] dialogOptions = {"Yes", "No"};
+                alertBuilder.setItems(dialogOptions, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int item) {
+                        if (item == 0) ExerciseControl.deleteExercise(delExercise, db);
+                    }
+                });
+
+                alertBuilder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialogInterface) {
+                        updateLayout();
+                    }
+                });
+
+
+                AlertDialog functionDialog = alertBuilder.create();
+                functionDialog.show();
             }
         }).attachToRecyclerView(recyclerView_exerciseLabels);
 

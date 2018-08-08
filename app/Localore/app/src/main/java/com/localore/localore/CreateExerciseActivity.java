@@ -24,8 +24,12 @@ import android.widget.EditText;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.NodeShape;
 import com.localore.localore.modelManipulation.SessionControl;
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.annotations.Polygon;
+import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.annotations.Polyline;
 import com.mapbox.mapboxsdk.annotations.PolylineOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
@@ -63,12 +67,56 @@ public class CreateExerciseActivity extends AppCompatActivity {
     private List<String> existingExerciseNames;
 
     /**
+     * Icons for nodes in working-area.
+     */
+    private Icon WORKING_AREA_NODE_ICON_FRONTIER;
+    private Icon WORKING_AREA_NODE_ICON;
+
+    /**
+     * Color of line-segments.
+     */
+    private static final int LINE_SEGMENTS_COLOR = Color.parseColor("#3bb2d0");
+    //static final int RED_COLOR = Color.parseColor("#AF0000");
+
+    /**
+     * Color fo dim-overlay.
+     */
+    private static final int DIM_OVERLAY_COLOR = Color.parseColor("#c04c4c4c");
+
+
+    /**
+     * Bounds for latitude for web-mercator projection.
+     */
+    private static final double LAT_MAX = 85.051129;
+
+    /**
+     * Points for dim-overlay.
+     */
+    private static final List<LatLng> POLYGON_COORDINATES = new ArrayList<LatLng>() {
+        {
+            add(new LatLng(-LAT_MAX, -180));
+            add(new LatLng(-LAT_MAX, 180));
+            add(new LatLng(LAT_MAX, 180));
+            add(new LatLng(LAT_MAX, -180));
+        }
+    };
+
+    /**
+     * Dim-overlay over whole map.
+     */
+    private static final PolygonOptions DIM_OVERLAY_POLYGON = new PolygonOptions()
+            .addAll(POLYGON_COORDINATES)
+            //.addAllHoles(HOLE_COORDINATES)
+            .fillColor(DIM_OVERLAY_COLOR);
+
+
+    /**
      * Map-tapping-events ignored if set to false.
      */
-    private static volatile boolean mapTappingEnabled = false;
+    private volatile boolean mapTappingEnabled = false;
 
     private boolean okExerciseName = false;
-    private boolean okWorkingArea = true; //TODO
+    private boolean okWorkingArea = false;
 
 
     /**
@@ -76,7 +124,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        super.onCreate(null);
         setContentView(R.layout.activity_create_exercise);
         setTitle(getString(R.string.new_exercise));
 
@@ -84,6 +132,11 @@ public class CreateExerciseActivity extends AppCompatActivity {
         this.mapView = findViewById(R.id.mapView_createExercise);
         this.button_clearNodes = findViewById(R.id.button_clearNodes);
         this.button_validZoom = findViewById(R.id.button_validZoom);
+
+        this.WORKING_AREA_NODE_ICON =
+                IconFactory.getInstance(CreateExerciseActivity.this).fromResource(R.drawable.mapbox_logo_icon);
+        this.WORKING_AREA_NODE_ICON_FRONTIER =
+                IconFactory.getInstance(CreateExerciseActivity.this).fromResource(R.drawable.mapbox_compass_icon);
 
         mapView.onCreate(null);
         mapView.getMapAsync(new OnMapReadyCallback() {
@@ -105,6 +158,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.create_exercise_actions, menu);
         this.menuItem_createExercise = menu.findItem(R.id.menuItem_createExercise);
+        updateCreateExerciseButton();
 
         editText_exerciseName.addTextChangedListener(new TextWatcher() {
             @Override
@@ -234,10 +288,11 @@ public class CreateExerciseActivity extends AppCompatActivity {
             public void onMapClick(@NonNull LatLng point) {
                 if (!CreateExerciseActivity.this.mapTappingEnabled) return;
 
-                mapboxMap.addMarker(new MarkerOptions().position(point));
+                mapboxMap.addMarker(new MarkerOptions()
+                        .icon(WORKING_AREA_NODE_ICON_FRONTIER)
+                        .position(point));
 
                 List<Marker> markers = mapboxMap.getMarkers();
-                okWorkingArea = okWorkingArea(toNodeShape(markers));
 
                 if (markers.size() == 1) {
                     button_clearNodes.show();
@@ -245,10 +300,13 @@ public class CreateExerciseActivity extends AppCompatActivity {
                 }
 
                 if (markers.size() > 1) {
-                    LatLng prevPoint = markers.get(markers.size() - 2).getPosition();
+                    Marker prevMarker = markers.get(markers.size() - 2);
+                    prevMarker.setIcon(WORKING_AREA_NODE_ICON);
+
+                    LatLng prevPoint = prevMarker.getPosition();
                     mapboxMap.addPolyline(new PolylineOptions()
                             .add(prevPoint, point)
-                            .color(Color.parseColor("#3bb2d0"))
+                            .color(LINE_SEGMENTS_COLOR)
                             .width(2));
                 }
 
@@ -263,10 +321,12 @@ public class CreateExerciseActivity extends AppCompatActivity {
                     LatLng firstPoint = markers.get(0).getPosition();
                     mapboxMap.addPolyline(new PolylineOptions()
                             .add(point, firstPoint)
-                            .color(Color.parseColor("#3bb2d0"))
-                            .width(1)
-                            .alpha(0.8f));
+                            .color(LINE_SEGMENTS_COLOR)
+                            .width(2));
                 }
+
+                CreateExerciseActivity.this.okWorkingArea = okWorkingArea(markers);
+                updateCreateExerciseButton();
             }
         });
     }
@@ -280,24 +340,6 @@ public class CreateExerciseActivity extends AppCompatActivity {
         mapboxMap.getUiSettings().setZoomGesturesEnabled(enable);
     }
 
-
-    /**
-     * Markers to node-shape.
-     * @param markers
-     * @return
-     */
-    private NodeShape toNodeShape(List<Marker> markers) {
-        List<double[]> nodes = new ArrayList<>();
-
-        for (Marker marker : markers) {
-            LatLng latLng = marker.getPosition();
-            nodes.add(new double[]{
-                    latLng.getLongitude(),
-                    latLng.getLatitude()});
-        }
-        return new NodeShape(nodes);
-    }
-
     /**
      * Too zoomed out:
      *  - Dim-overlay when too zoomed out too much.
@@ -309,7 +351,6 @@ public class CreateExerciseActivity extends AppCompatActivity {
             @Override
             public void onCameraMove() {
                 boolean tooZoomedOut = mapboxMap.getCameraPosition().zoom < MIN_WORKING_AREA_ZOOM_LEVEL;
-
                 showValidZoomButton(tooZoomedOut);
                 CreateExerciseActivity.this.mapTappingEnabled = !tooZoomedOut;
                 showDimOverlay(tooZoomedOut);
@@ -322,7 +363,14 @@ public class CreateExerciseActivity extends AppCompatActivity {
      * @param show
      */
     private void showDimOverlay(boolean show) {
-        //todo
+        List<Polygon> polygons = this.mapboxMap.getPolygons();
+
+        if (polygons.size() == 0 && show) {
+            mapboxMap.addPolygon(DIM_OVERLAY_POLYGON);
+        }
+        else if (polygons.size() == 1 && !show) {
+            mapboxMap.removePolygon(polygons.get(0));
+        }
     }
 
     /**
@@ -343,6 +391,8 @@ public class CreateExerciseActivity extends AppCompatActivity {
     public void onClearNodesButtonClick(View view) {
         this.mapboxMap.clear();
         this.button_clearNodes.hide();
+        this.okWorkingArea = false;
+        updateCreateExerciseButton();
         enableGestures(true);
     }
 
@@ -352,7 +402,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
      */
     public void onValidZoomButtonClick(View view) {
         CameraPosition position = new CameraPosition.Builder()
-                .zoom(MIN_WORKING_AREA_ZOOM_LEVEL + 1)
+                .zoom(MIN_WORKING_AREA_ZOOM_LEVEL)
                 .build();
 
         this.mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), FLY_TIME);
@@ -364,7 +414,14 @@ public class CreateExerciseActivity extends AppCompatActivity {
      * @pre okExerciseName and okWorkingArea set according to state.
      */
     private void updateCreateExerciseButton() {
-        this.menuItem_createExercise.setEnabled(okExerciseName && okWorkingArea);
+        if (okExerciseName && okWorkingArea) {
+            this.menuItem_createExercise.setEnabled(true);
+            menuItem_createExercise.getIcon().setAlpha(255);
+        }
+        else {
+            this.menuItem_createExercise.setEnabled(false);
+            menuItem_createExercise.getIcon().setAlpha(100);
+        }
     }
 
     /**
@@ -378,19 +435,42 @@ public class CreateExerciseActivity extends AppCompatActivity {
     }
 
     /**
-     * @param workingArea
+     * @param markers
      * @return True if shape is ok as a working area for a new exercise.
      */
-    private boolean okWorkingArea(NodeShape workingArea) {
-        //todo
-        return true;
+    private boolean okWorkingArea(List<Marker> markers) {
+        if (markers.size() < 3) return false;
+        return toNodeShape(markers) != null;
+    }
+
+    /**
+     * Markers to node-shape.
+     * @param markers
+     * @return
+     */
+    private NodeShape toNodeShape(List<Marker> markers) {
+        List<double[]> nodes = new ArrayList<>();
+
+        for (Marker marker : markers) {
+            LatLng latLng = marker.getPosition();
+            nodes.add(new double[]{
+                    latLng.getLongitude(),
+                    latLng.getLatitude()});
+        }
+
+        if (NodeShape.validNodeShapeNodes(nodes)) {
+            return new NodeShape(nodes);
+        }
+        else {
+            return null;
+        }
     }
 
     /**
      * @return Shape constructed from user-specified nodes in map.
      */
     private NodeShape selectedShape() {
-        return LocaUtils.getWorkingArea();
+        return toNodeShape(this.mapboxMap.getMarkers());
     }
 
     //region create the exercise (after name and area specified)
@@ -401,6 +481,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
     public void startLoadingNewExerciseActivity() {
         String name = this.editText_exerciseName.getText().toString().trim();
         NodeShape workingArea = selectedShape();
+        if (workingArea == null) throw new RuntimeException("Dead-end");
 
         LoadingNewExerciseActivity.freshStart(name, workingArea, this);
     }
