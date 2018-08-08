@@ -54,6 +54,38 @@
         mapbox:mapbox_uiTiltGestures="false"
         mapbox:mapbox_uiZoomControls="false"
 
-        />
+        >
+
+    </com.mapbox.mapboxsdk.maps.MapView>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/button_validZoom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:clickable="true"
+        android:onClick="onValidZoomButtonClick"
+        android:visibility="invisible"
+        app:srcCompat="@android:drawable/ic_menu_zoom"
+        mapbox:elevation="5dp"
+        mapbox:layout_constraintBottom_toBottomOf="@+id/mapView_createExercise"
+        mapbox:layout_constraintEnd_toEndOf="@+id/mapView_createExercise" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/button_clearNodes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="8dp"
+        android:clickable="true"
+        android:onClick="onClearNodesButtonClick"
+        android:visibility="invisible"
+        app:srcCompat="@android:drawable/ic_menu_delete"
+        mapbox:elevation="5dp"
+        mapbox:layout_constraintEnd_toEndOf="@+id/mapView_createExercise"
+        mapbox:layout_constraintTop_toTopOf="@+id/mapView_createExercise" />
 
 </android.support.constraint.ConstraintLayout>

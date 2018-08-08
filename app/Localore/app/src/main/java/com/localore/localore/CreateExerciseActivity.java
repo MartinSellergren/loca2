@@ -1,27 +1,63 @@
 package com.localore.localore;
 
-import android.support.v7.app.AppCompatActivity;
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.view.ViewCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.NodeShape;
 import com.localore.localore.modelManipulation.SessionControl;
+import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.annotations.Polyline;
+import com.mapbox.mapboxsdk.annotations.PolylineOptions;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.mapboxsdk.style.light.Position;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CreateExerciseActivity extends AppCompatActivity {
 
-    private MapView mapView;
+    /**
+     * Above this level, exercise-creation is not allowed.
+     */
+    private static final double MIN_ZOOM_LEVEL_WORKING_AREA = 9;
+
+    /**
+     * Time in ms for flying (moving camera to new pos).
+     */
+    private static final int FLY_TIME = 5000;
+
     private EditText editText_exerciseName;
     private MenuItem menuItem_createExercise;
+    private MapView mapView;
+    private MapboxMap mapboxMap;
+    private FloatingActionButton button_clearNodes;
+    private FloatingActionButton button_validZoom;
 
     /**
      * List of names of existing exercises.
@@ -42,6 +78,10 @@ public class CreateExerciseActivity extends AppCompatActivity {
         setTitle(getString(R.string.new_exercise));
 
         this.editText_exerciseName = findViewById(R.id.editText_exerciseName);
+        this.mapView = findViewById(R.id.mapView_createExercise);
+        this.button_clearNodes = findViewById(R.id.button_clearNodes);
+        this.button_validZoom = findViewById(R.id.button_validZoom);
+
         editText_exerciseName.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -60,13 +100,12 @@ public class CreateExerciseActivity extends AppCompatActivity {
             }
         });
 
-        this.mapView = findViewById(R.id.mapView_createExercise);
-
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(MapboxMap mapboxMap) {
-                initializeMap(mapboxMap);
+                CreateExerciseActivity.this.mapboxMap = mapboxMap;
+                initializeMap();
             }
         });
 
@@ -105,11 +144,172 @@ public class CreateExerciseActivity extends AppCompatActivity {
      *   - Test updateCreateExerciseButton() after each new node.
      * - If nodes: floating button to delete all nodes.
      * - If too zoomed out: Floating button "zoom in" to allowed zoom + dimmed map.
-     *
-     * @param mapboxMap
      */
-    private void initializeMap(MapboxMap mapboxMap) {
+    private void initializeMap() {
+        flyToUserLocation();
+        addWorkingAreaTapping();
+        addZoomControl();
+    }
 
+    /**
+     * If possible to obtain current location, fly to it.
+     * - Needs permission (doesn't ask).
+     */
+    private void flyToUserLocation() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions( this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+        }
+
+        try {
+            LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+
+            String locationProvider = LocationManager.GPS_PROVIDER;
+            Location location = locationManager.getLastKnownLocation(locationProvider);
+            if (location != null) {
+                flyToLocation(location);
+                return;
+            }
+
+            locationProvider = LocationManager.NETWORK_PROVIDER;
+            location = locationManager.getLastKnownLocation(locationProvider);
+            if (location != null) {
+                flyToLocation(location);
+                return;
+            }
+
+            LocationListener locationListener = new LocationListener() {
+                public void onLocationChanged(Location location) {
+                    flyToLocation(location);
+                    locationManager.removeUpdates(this);
+                }
+
+                public void onStatusChanged(String provider, int status, Bundle extras) {
+                }
+
+                public void onProviderEnabled(String provider) {
+                }
+
+                public void onProviderDisabled(String provider) {
+                }
+            };
+
+            locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, Integer.MAX_VALUE, Integer.MAX_VALUE, locationListener);
+        }
+        catch (SecurityException e) {}
+    }
+
+    /**
+     * Move camera to new location.
+     * @param location
+     */
+    private void flyToLocation(Location location) {
+        CameraPosition position = new CameraPosition.Builder()
+                .target(new LatLng(location.getLatitude(), location.getLongitude()))
+                .zoom(MIN_ZOOM_LEVEL_WORKING_AREA)
+                .build();
+
+        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), FLY_TIME);
+    }
+
+    /**
+     * Tap on map to create a marker and add this node to the working-area.
+     * - Add a clear-nodes button after first tap (connected with lines).
+     * - Lock gestures after first tap.
+     * - Update okWorkingArea and createExerciseButton after each new node.
+     */
+    private void addWorkingAreaTapping() {
+        this.mapboxMap.addOnMapClickListener(new MapboxMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(@NonNull LatLng point) {
+                mapboxMap.addMarker(new MarkerOptions().position(point));
+
+                List<Marker> markers = mapboxMap.getMarkers();
+                okWorkingArea = okWorkingArea(toNodeShape(markers));
+
+                if (markers.size() == 1) {
+                    button_clearNodes.show();
+                    mapboxMap.getUiSettings().setAllGesturesEnabled(false);
+                }
+
+                if (markers.size() > 1) {
+                    LatLng prevPoint = markers.get( markers.size() - 2 ).getPosition();
+                    mapboxMap.addPolyline(new PolylineOptions()
+                            .add(prevPoint, point)
+                            .color(Color.parseColor("#3bb2d0"))
+                            .width(2));
+                }
+
+
+                List<Polyline> polylines = mapboxMap.getPolylines();
+
+                if (markers.size() > 3) {
+                    Polyline prevClosingLine = polylines.get( polylines.size() - 2 );
+                    mapboxMap.removePolyline(prevClosingLine);
+                }
+
+                if (markers.size() > 2) {
+                    LatLng firstPoint = markers.get(0).getPosition();
+                    mapboxMap.addPolyline(new PolylineOptions()
+                            .add(point, firstPoint)
+                            .color(Color.parseColor("#3bb2d0"))
+                            .width(2));
+                }
+            }
+        });
+    }
+
+
+
+    /**
+     * Markers to node-shape.
+     * @param markers
+     * @return
+     */
+    private NodeShape toNodeShape(List<Marker> markers) {
+        List<double[]> nodes = new ArrayList<>();
+
+        for (Marker marker : markers) {
+            LatLng latLng = marker.getPosition();
+            nodes.add(new double[]{
+                    latLng.getLongitude(),
+                    latLng.getLatitude()});
+        }
+        return new NodeShape(nodes);
+    }
+
+    /**
+     * Too zoomed out:
+     *  - Dim-overlay when too zoomed out too much.
+     *  - Valid-zoom-button.
+     *  - Disable tapping (new nodes).
+     */
+    private void addZoomControl() {
+
+    }
+
+    /**
+     * Clear all nodes in tapped working-area.
+     * @param view
+     */
+    public void onClearNodesButtonClick(View view) {
+        this.mapboxMap.clear();
+        this.button_clearNodes.hide();
+        mapboxMap.getUiSettings().setAllGesturesEnabled(true);
+    }
+
+    /**
+     * Zoom to max valid level (zoom in).
+     * @param view
+     */
+    public void onValidZoomButtonClick(View view) {
+        CameraPosition position = new CameraPosition.Builder()
+                .zoom(MIN_ZOOM_LEVEL_WORKING_AREA)
+                .build();
+
+        this.mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), FLY_TIME);
     }
 
     /**
@@ -136,6 +336,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
      * @return True if shape is ok as a working area for a new exercise.
      */
     private boolean okWorkingArea(NodeShape workingArea) {
+        //todo
         return true;
     }
 

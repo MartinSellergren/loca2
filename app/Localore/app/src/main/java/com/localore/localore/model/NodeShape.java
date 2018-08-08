@@ -18,7 +18,7 @@ public class NodeShape implements Serializable {
     private List<double[]> nodes;
 
     /**
-     * New shape from well-formed list of nodes.
+     * New shape from well-formed list of nodes [lon lat].
      */
     public NodeShape(List<double[]> ns) {
         this.nodes = ns;
