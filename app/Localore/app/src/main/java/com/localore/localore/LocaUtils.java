@@ -14,8 +14,11 @@ import com.localore.localore.model.RunningQuiz;
 import com.localore.localore.model.Session;
 import com.localore.localore.model.User;
 import com.localore.localore.modelManipulation.SessionControl;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -82,6 +85,41 @@ public class LocaUtils {
 
         return dist;
     }
+
+
+    //region LatLng converters
+
+    /**
+     * @param point [lon lat]
+     * @return Converted to LatLng-mapbox-object
+     */
+    public static LatLng toLatLng(double[] point) {
+        return new LatLng(point[1], point[0]);
+    }
+
+    /**
+     *
+     * @param points [lon lat]
+     * @return Converted to LatLng-mapbox-objects
+     */
+    public static List<LatLng> toLatLngs(List<double[]> points) {
+        List<LatLng> latLngs = new ArrayList<>();
+        for (double[] point : points) latLngs.add(toLatLng(point));
+        return latLngs;
+    }
+
+    /**
+     * @param bounds [wsen|
+     * @return Converted to LatLngBounds-mapbox-object.
+     */
+    public static LatLngBounds toLatLngBounds(double[] bounds) {
+        return new LatLngBounds.Builder()
+                .include( new LatLng(bounds[3], bounds[2]) ) // Northeast
+                .include( new LatLng(bounds[1], bounds[0])) // Southwest
+                .build();
+    }
+
+    //endregion
 
 
     //region Logging

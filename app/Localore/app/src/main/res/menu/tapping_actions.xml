@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menuItem_switch_tapping"
+        android:title="past levels / next @string/Level"
+        app:actionLayout="@layout/switch_item"
+        app:showAsAction="always" />
+</menu>

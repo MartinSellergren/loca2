@@ -106,7 +106,28 @@ public class ExerciseActivity extends AppCompatActivity {
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    new QuizCategoryDialog().show(getSupportFragmentManager(), "no_tag");
+                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(ExerciseActivity.this);
+                    alertBuilder.setTitle(QuizCategory.DISPLAY_TYPES[type]);
+
+                    CharSequence[] dialogOptions = {"Tapping", "Level quiz", "Reminder"};
+                    alertBuilder.setItems(dialogOptions, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int item) {
+                            if (item == 0) {
+                                TappingActivity.start(type, ExerciseActivity.this);
+                            }
+                            else if (item == 1) {
+                                Intent intent = new Intent(ExerciseActivity.this, QuizActivity.class);
+                                startActivity(intent);
+                            }
+                            else {
+                                Intent intent = new Intent(ExerciseActivity.this, QuizActivity.class);
+                                startActivity(intent);
+                            }
+                        }
+                    });
+
+                    alertBuilder.create().show();
                 }
             });
         }
@@ -135,45 +156,44 @@ public class ExerciseActivity extends AppCompatActivity {
 
     }
 
-    /**
-     * Dialog shown when user clicks quiz-category.
-     * For starting 1) tapping, 2) exercise-quiz, 3) quiz-category-reminder
-     */
-    public static class QuizCategoryDialog extends DialogFragment {
-
-        @NonNull
-        @Override
-        public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-
-            builder.setNegativeButton("Tapping", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    Intent intent = new Intent(getActivity(), TappingActivity.class);
-                    startActivity(intent);
-                }
-            });
-
-            builder.setNeutralButton("Exercise quiz", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    Intent intent = new Intent(getActivity(), QuizActivity.class);
-                    startActivity(intent);
-                }
-            });
-
-            builder.setPositiveButton("Reminder", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    Intent intent = new Intent(getActivity(), QuizActivity.class);
-                    startActivity(intent);
-                }
-            });
-
-            return builder.create();
-        }
-
-    }
+//    /**
+//     * Dialog shown when user clicks quiz-category.
+//     * For starting 1) tapping, 2) exercise-quiz, 3) quiz-category-reminder
+//     */
+//    public static class QuizCategoryDialog extends DialogFragment {
+//
+//        @NonNull
+//        @Override
+//        public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+//            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+//
+//            builder.setNegativeButton("Tapping", new DialogInterface.OnClickListener() {
+//                @Override
+//                public void onClick(DialogInterface dialogInterface, int i) {
+//                    TappingActivity.start(0, getActivity());
+//                }
+//            });
+//
+//            builder.setNeutralButton("Exercise quiz", new DialogInterface.OnClickListener() {
+//                @Override
+//                public void onClick(DialogInterface dialogInterface, int i) {
+//                    Intent intent = new Intent(getActivity(), QuizActivity.class);
+//                    startActivity(intent);
+//                }
+//            });
+//
+//            builder.setPositiveButton("Reminder", new DialogInterface.OnClickListener() {
+//                @Override
+//                public void onClick(DialogInterface dialogInterface, int i) {
+//                    Intent intent = new Intent(getActivity(), QuizActivity.class);
+//                    startActivity(intent);
+//                }
+//            });
+//
+//            return builder.create();
+//        }
+//
+//    }
 
     //endregion
 

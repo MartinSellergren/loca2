@@ -2,7 +2,6 @@ package com.localore.localore;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -129,7 +128,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
         setTitle(getString(R.string.new_exercise));
 
         this.editText_exerciseName = findViewById(R.id.editText_exerciseName);
-        this.mapView = findViewById(R.id.mapView_createExercise);
+        this.mapView = findViewById(R.id.mapView_tapping);
         this.button_clearNodes = findViewById(R.id.button_clearNodes);
         this.button_validZoom = findViewById(R.id.button_validZoom);
 

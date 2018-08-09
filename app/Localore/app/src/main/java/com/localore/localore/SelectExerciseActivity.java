@@ -62,9 +62,9 @@ public class SelectExerciseActivity extends AppCompatActivity {
                 Exercise delExercise = db.exerciseDao().loadWithDisplayIndex(pos);
 
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(SelectExerciseActivity.this);
-                alertBuilder.setTitle("Sure you wanna delete " + delExercise.getName() + "?");
+                alertBuilder.setTitle(getString(R.string.delete_confirmation_request) + delExercise.getName() + "?");
 
-                CharSequence[] dialogOptions = {"Yes", "No"};
+                CharSequence[] dialogOptions = {getString(R.string.Yes), getString(R.string.No)};
                 alertBuilder.setItems(dialogOptions, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int item) {

@@ -20,4 +20,9 @@
     <string name="Transport">Transport</string>
     <string name="Constructions">Constructions</string>
     <string name="Level">Level</string>
+    <string name="delete_confirmation_request">Sure you wanna delete</string>
+    <string name="Yes">Yes</string>
+    <string name="No">No</string>
+    <string name="past_levels">Past levels</string>
+    <string name="next_level">Next level</string>
 </resources>
