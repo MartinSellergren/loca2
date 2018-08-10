@@ -262,6 +262,10 @@ public class GeoObject {
         return subcat;
     }
 
+    public String getCategory() {
+        return getSubcat();
+    }
+
     public void setSubcat(String subcat) {
         this.subcat = subcat;
     }

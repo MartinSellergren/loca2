@@ -74,39 +74,14 @@ public class CreateExerciseActivity extends AppCompatActivity {
     /**
      * Color of line-segments.
      */
-    private static final int LINE_SEGMENTS_COLOR = Color.parseColor("#3bb2d0");
-    //static final int RED_COLOR = Color.parseColor("#AF0000");
-
-    /**
-     * Color fo dim-overlay.
-     */
-    private static final int DIM_OVERLAY_COLOR = Color.parseColor("#c04c4c4c");
-
-
-    /**
-     * Bounds for latitude for web-mercator projection.
-     */
-    private static final double LAT_MAX = 85.051129;
-
-    /**
-     * Points for dim-overlay.
-     */
-    private static final List<LatLng> POLYGON_COORDINATES = new ArrayList<LatLng>() {
-        {
-            add(new LatLng(-LAT_MAX, -180));
-            add(new LatLng(-LAT_MAX, 180));
-            add(new LatLng(LAT_MAX, 180));
-            add(new LatLng(LAT_MAX, -180));
-        }
-    };
+    private static final int LINE_SEGMENTS_COLOR = LocaUtils.BLUE_COLOR;
 
     /**
      * Dim-overlay over whole map.
      */
     private static final PolygonOptions DIM_OVERLAY_POLYGON = new PolygonOptions()
-            .addAll(POLYGON_COORDINATES)
-            //.addAllHoles(HOLE_COORDINATES)
-            .fillColor(DIM_OVERLAY_COLOR);
+            .addAll(LocaUtils.WORLD_CORNER_COORDINATES)
+            .fillColor(LocaUtils.DIM_OVERLAY_COLOR);
 
 
     /**

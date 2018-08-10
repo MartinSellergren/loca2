@@ -8,6 +8,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
+        android:checked="true"
         android:textOff="@string/past_levels"
         android:textOn="@string/next_level" />
 </RelativeLayout>

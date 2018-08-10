@@ -1,8 +1,12 @@
 package com.localore.localore;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
 import com.localore.localore.model.GeoObject;
@@ -14,8 +18,19 @@ import com.localore.localore.model.RunningQuiz;
 import com.localore.localore.model.Session;
 import com.localore.localore.model.User;
 import com.localore.localore.modelManipulation.SessionControl;
+import com.mapbox.geojson.Feature;
+import com.mapbox.geojson.FeatureCollection;
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.Polygon;
+import com.mapbox.mapboxsdk.annotations.PolygonOptions;
+import com.mapbox.mapboxsdk.annotations.PolylineOptions;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.style.layers.FillLayer;
+import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
+import com.mapbox.mapboxsdk.style.sources.Source;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -23,6 +38,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
+
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.fillColor;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.fillOpacity;
 
 public class LocaUtils {
 
@@ -35,6 +53,118 @@ public class LocaUtils {
     }
 
     private static Random random = new Random();
+
+    public static final int BLUE_COLOR = Color.parseColor("#3bb2d0");
+    public static final int RED_COLOR = Color.parseColor("#AF0000");
+
+
+    /**
+     * Color for dim-overlay.
+     */
+    public static final int DIM_OVERLAY_COLOR = Color.parseColor("#a04c4c4c");
+
+    /**
+     * Latitude-max for web-mercator projection.
+     */
+    private static final double LAT_MAX = 85.051129;
+
+    /**
+     * Points for dim-overlay.
+     */
+    public static final List<LatLng> WORLD_CORNER_COORDINATES = new ArrayList<LatLng>() {
+        {
+            add(new LatLng(-LAT_MAX, -180));
+            add(new LatLng(-LAT_MAX, 180));
+            add(new LatLng(LAT_MAX, 180));
+            add(new LatLng(LAT_MAX, -180));
+        }
+    };
+
+
+    /**
+     * @param mapboxMap
+     * @param workingArea
+     */
+    public static void highlightWorkingArea(MapboxMap mapboxMap, NodeShape workingArea) {
+//        JsonArray tl = new JsonArray(); tl.add(-180); tl.add(-LAT_MAX);
+//        JsonArray tr = new JsonArray(); tr.add(180); tr.add(-LAT_MAX);
+//        JsonArray br = new JsonArray(); br.add(180); br.add(LAT_MAX);
+//        JsonArray bl = new JsonArray(); bl.add(-180); bl.add(LAT_MAX);
+//        JsonArray outerPolygon = new JsonArray();
+//        outerPolygon.add(tl); outerPolygon.add(tr); outerPolygon.add(br); outerPolygon.add(bl);
+//
+//        JsonArray hole = new JsonArray();
+//        for (double[] node : workingArea.asClosed().getNodes()) {
+//            JsonArray holeNode = new JsonArray();
+//            holeNode.add(node[0]);
+//            holeNode.add(node[1]);
+//            hole.add(holeNode);
+//        }
+//
+//
+//        JsonArray coordinates = new JsonArray();
+//        coordinates.add(outerPolygon);
+//        coordinates.add(hole);
+//
+//        JsonObject top = new JsonObject();
+//        top.addProperty("type", "Feature");
+//
+//        JsonObject properties = new JsonObject();
+//        properties.addProperty("name", "GeoObject");
+//        top.add("properties", properties);
+//
+//        JsonObject geometry = new JsonObject();
+//        geometry.addProperty("type", "Polygon");
+//        geometry.add("coordinates", coordinates);
+//        top.add("geometry", geometry);
+//
+//        String geoJson = new Gson().toJson(top);
+//
+//        Feature polygon = Feature.fromJson(geoJson);
+//        FeatureCollection collection = FeatureCollection.fromFeatures(new Feature[]{polygon});
+//
+//        Source geoJsonSource = new GeoJsonSource("poly-source", collection);
+//        mapboxMap.addSource(geoJsonSource);
+//
+//        FillLayer fillLayer = new FillLayer("layerId", "poly-source");
+//        fillLayer.setProperties(
+//                fillColor(DIM_OVERLAY_COLOR)
+//                //fillOpacity(0.7f)
+//        );
+//
+//        mapboxMap.addLayer(fillLayer);
+
+
+        List<LatLng> hole = toLatLngs(workingArea.asClosed().getNodes());
+//        Polygon polygon = mapboxMap.addPolygon(new PolygonOptions()
+//                .addAll(LocaUtils.WORLD_CORNER_COORDINATES)
+//                .addHole(hole)
+//                .fillColor(LocaUtils.DIM_OVERLAY_COLOR));
+
+        mapboxMap.addPolyline(new PolylineOptions()
+                .addAll(hole)
+                .color(LocaUtils.BLUE_COLOR));
+    }
+
+    /**
+     * @param color
+     * @param context
+     * @return Icon for a one-node geo-objects.
+     */
+    public static Icon nodeGeoObjectIcon(int color, Context context) {
+        //todo color icon
+        return IconFactory.getInstance(context).fromResource(R.drawable.mapbox_marker_icon_default);
+    }
+
+    /**
+     * @param rank
+     * @return Color based on rank..
+     */
+    public static int rankBasedColor(double rank) {
+        //todo: color based on rank
+        int color = Color.argb(255, randi(256), randi(256), randi(256));
+        return color;
+    }
 
     /**
      * @param lowerBound

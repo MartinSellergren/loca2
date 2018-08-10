@@ -20,10 +20,9 @@ public class NodeShape implements Serializable {
 
     /**
      * New shape from well-formed list of nodes [lon lat].
-     * Throws exception if nodes cross.
      */
     public NodeShape(List<double[]> ns) {
-        this.nodes = ns;
+        this.nodes = new ArrayList<>(ns);
     }
 
     /**
@@ -52,7 +51,7 @@ public class NodeShape implements Serializable {
      */
     public boolean isClosed() {
         double endPointsDist = distance(getFirst(), getLast());
-        return endPointsDist < 0.0001;
+        return endPointsDist < 0.00000001;
     }
 
     /**
@@ -287,6 +286,14 @@ public class NodeShape implements Serializable {
         return new double[]{ A[0][0]*b[0] + A[0][1]*b[1],
                 A[1][0]*b[0] + A[1][1]*b[1] };
     }
-
     //endregion
+
+
+    public NodeShape asClosed() {
+        NodeShape nodeShape = new NodeShape(this.getNodes());
+        //if (!nodeShape.isClosed()) {
+            nodeShape.nodes.add( nodeShape.nodes.get(0) );
+        //}
+        return nodeShape;
+    }
 }

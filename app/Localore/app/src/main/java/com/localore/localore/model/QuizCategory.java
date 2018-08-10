@@ -2,6 +2,7 @@ package com.localore.localore.model;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
+import android.content.Context;
 import android.graphics.drawable.Icon;
 
 import com.localore.localore.R;
@@ -80,6 +81,13 @@ public class QuizCategory {
             case 4: return null;
             default: throw new RuntimeException("Deda-end");
         }
+    }
+
+    /**
+     * @return Type (name) of this category, formatted nicely.
+     */
+    public String getDisplayType(Context context) {
+        return context.getResources().getString(DISPLAY_TYPES[ getType() ]);
     }
 
     public long getId() {

@@ -2,12 +2,11 @@ package com.localore.localore;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.RelativeLayout;
 import android.widget.Switch;
@@ -21,20 +20,20 @@ import com.localore.localore.model.Quiz;
 import com.localore.localore.model.QuizCategory;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.SessionControl;
+import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.annotations.Polyline;
 import com.mapbox.mapboxsdk.annotations.PolylineOptions;
-import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
-import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
-import com.mapbox.mapboxsdk.maps.MapboxMapOptions;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
 public class TappingActivity extends AppCompatActivity {
 
@@ -55,9 +54,15 @@ public class TappingActivity extends AppCompatActivity {
      */
     private Exercise exercise;
 
-
     private MapView mapView;
     private MapboxMap mapboxMap;
+
+
+    /**
+     * Mapping marker/polyline id to geo-object id.
+     */
+    private Map<Long, Long> markersMap = new HashMap<>();
+    private Map<Long, Long> polylinesMap = new HashMap<>();
 
 
     /**
@@ -84,7 +89,7 @@ public class TappingActivity extends AppCompatActivity {
         setTitle(exercise.getName());
 
         this.mapView = findViewById(R.id.mapView_tapping);
-        mapView.onCreate(savedInstanceState);
+        mapView.onCreate(null);
     }
 
     //region create exercise-button
@@ -103,20 +108,51 @@ public class TappingActivity extends AppCompatActivity {
             public void onMapReady(MapboxMap mapboxMap) {
                 TappingActivity.this.mapboxMap = mapboxMap;
                 initCameraView();
-                setGeoObjects(nextLevelObjects);
+                updateMap(nextLevelObjects);
+
+                mapboxMap.setOnMarkerClickListener(new MapboxMap.OnMarkerClickListener() {
+                    @Override
+                    public boolean onMarkerClick(@NonNull Marker marker) {
+                        Long geoObjectId = markersMap.get(marker.getId());
+                        if (geoObjectId != null) onGeoObjectClick(geoObjectId);
+                        return true;
+                    }
+                });
+
+                mapboxMap.setOnPolylineClickListener(new MapboxMap.OnPolylineClickListener() {
+                    @Override
+                    public void onPolylineClick(@NonNull Polyline polyline) {
+                        Long geoObjectId = polylinesMap.get(polyline.getId());
+                        if (geoObjectId != null) onGeoObjectClick(geoObjectId);
+                    }
+                });
             }
         });
-
 
         switch_tapping.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 boolean nextLevelObjects = isChecked;
-                setGeoObjects(nextLevelObjects);
+                updateMap(nextLevelObjects);
             }
         });
 
         return true;
+    }
+
+    /**
+     * Display toast on clicked geo-object.
+     * @param geoObjectId
+     */
+    public void onGeoObjectClick(long geoObjectId) {
+        AppDatabase db = AppDatabase.getInstance(this);
+        GeoObject geoObject = db.geoDao().load(geoObjectId);
+
+//        String str = String.format("%s (%s)",
+//                geoObject.getName(),
+//                geoObject.getCategory());
+        String str = geoObject.toString();
+        Toast.makeText(TappingActivity.this, str, Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -132,9 +168,8 @@ public class TappingActivity extends AppCompatActivity {
     /**
      * @param nextLevelObjects Next vs pasts level objects.
      */
-    private void setGeoObjects(boolean nextLevelObjects) {
+    private void updateMap(boolean nextLevelObjects) {
         AppDatabase db = AppDatabase.getInstance(this);
-
         List<GeoObject> geoObjects = ExerciseControl.loadGeoObjectsForTapping(
                 exercise.getId(), quizCategoryType, nextLevelObjects, db);
 
@@ -149,7 +184,11 @@ public class TappingActivity extends AppCompatActivity {
             }
         }
 
-        mapboxMap.clear();
+        this.mapboxMap.clear();
+        this.markersMap.clear();
+        this.polylinesMap.clear();
+
+        LocaUtils.highlightWorkingArea(mapboxMap, exercise.getWorkingArea());
         addGeoObjects(geoObjects);
 
         if (nextLevelObjects)
@@ -159,7 +198,7 @@ public class TappingActivity extends AppCompatActivity {
     }
 
     /**
-     * All all geo-objects to the map.
+     * Adds geo-objects to the map (markers and polylines). Also updates id-maps.
      * @param geoObjects
      */
     private void addGeoObjects(List<GeoObject> geoObjects) {
@@ -167,18 +206,18 @@ public class TappingActivity extends AppCompatActivity {
     }
 
     /**
-     * Add a geo-object to the map.
+     * Adds a geo-object to the map. Also updates id-map.
      * @param geoObject
      */
     private void addGeoObject(GeoObject geoObject) {
-        int color = Color.argb(255, LocaUtils.randi(256), LocaUtils.randi(256), LocaUtils.randi(256)); //todo: color of geo-objects
+        int color = LocaUtils.rankBasedColor(geoObject.getRank());
 
         for (NodeShape nodeShape : geoObject.getShapes()) {
             if (nodeShape.getNodes().size() == 1) {
-                addMarker(nodeShape.getNodes().get(0), geoObject.getName(), color);
+                addMarker(nodeShape.getNodes().get(0), geoObject.getId(), color);
             }
             else {
-                addPolyline(nodeShape.getNodes(), geoObject.getName(), color);
+                addPolyline(nodeShape.getNodes(), geoObject.getId(), color);
             }
         }
     }
@@ -186,26 +225,30 @@ public class TappingActivity extends AppCompatActivity {
     /**
      * Adds a clickable marker. Show name on click.
      * @param node
-     * @param name
+     * @param geoObjectId
      * @param color
      */
-    private void addMarker(double[] node, String name, int color) {
-        this.mapboxMap.addMarker(new MarkerOptions()
-                //.icon(WORKING_AREA_NODE_ICON_FRONTIER)
+    private void addMarker(double[] node, long geoObjectId, int color) {
+        Marker marker = this.mapboxMap.addMarker(new MarkerOptions()
+                .icon(LocaUtils.nodeGeoObjectIcon(color, this))
                 .position(LocaUtils.toLatLng(node)));
+
+        this.markersMap.put(marker.getId(), geoObjectId);
     }
 
     /**
      * Adds a clickable polyline. Show name on click.
      * @param nodes
-     * @param name
+     * @param geoObjectId
      * @param color
      */
-    private void addPolyline(List<double[]> nodes, String name, int color) {
-        this.mapboxMap.addPolyline(new PolylineOptions()
+    private void addPolyline(List<double[]> nodes, long geoObjectId, int color) {
+        Polyline polyline = this.mapboxMap.addPolyline(new PolylineOptions()
                 .addAll(LocaUtils.toLatLngs(nodes))
                 .color(color)
                 .width(2));
+
+        this.polylinesMap.put(polyline.getId(), geoObjectId);
     }
 
     //region handle mapView's lifecycle

@@ -78,7 +78,7 @@ public abstract class GeoObjectDao {
     @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = :quizId")
     public abstract List<Long> loadIdsWithQuiz(long quizId);
 
-    @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = :quizId ORDER BY rank")
+    @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = :quizId ORDER BY rank DESC")
     public abstract List<Long> loadIdsWithQuizOrderedByRank(long quizId);
 
     @Transaction @Query("SELECT id FROM geoobject WHERE quizId = :quizId")
@@ -87,7 +87,7 @@ public abstract class GeoObjectDao {
     @Transaction @Query("SELECT id FROM geoobject WHERE quizId IN (:quizIds)")
     public abstract List<Long> loadIdsWithQuizIn(List<Long> quizIds);
 
-    @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = -1 AND supercat = :supercat ORDER BY rank")
+    @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = -1 AND supercat = :supercat ORDER BY rank DESC")
     public abstract List<Long> loadQuizlessIdsWithSupercatOrderdByRank(String supercat);
 
     @Query("SELECT count(*) FROM GeoObject")
