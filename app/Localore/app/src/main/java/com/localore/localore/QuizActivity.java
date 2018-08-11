@@ -126,17 +126,6 @@ public class QuizActivity extends AppCompatActivity {
 
 
     /**
-     * Quit app on back-press.
-     */
-    @Override
-    public void onBackPressed() {
-        Intent intent = new Intent(Intent.ACTION_MAIN);
-        intent.addCategory(Intent.CATEGORY_HOME);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
-    }
-
-    /**
      * Starts a new quiz by creating a running-quiz in db and starts the activity.
      * Loads the first question.
      *
@@ -182,5 +171,13 @@ public class QuizActivity extends AppCompatActivity {
     public static void resumedStart(Context context) {
         Intent intent = new Intent(context, QuizActivity.class);
         context.startActivity(intent);
+    }
+
+    /**
+     * Quit app on back-press.
+     */
+    @Override
+    public void onBackPressed() {
+        LocaUtils.quitSecondTime(this);
     }
 }

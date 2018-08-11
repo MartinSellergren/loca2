@@ -84,7 +84,6 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_loading_new_exercise);
 
-        setTitle(getString(R.string.loading_new_exercise));
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.hide();
 
@@ -260,8 +259,7 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
             ExerciseControl.wipeConstruction(exerciseId, this);
 
             SessionControl.setNoActiveExercise(AppDatabase.getInstance(this));
-            Intent intent = new Intent(this, CreateExerciseActivity.class);
-            startActivity(intent);
+            CreateExerciseActivity.start(this);
         }
 
         finish();
@@ -272,9 +270,6 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
      */
     @Override
     public void onBackPressed() {
-        Intent intent = new Intent(Intent.ACTION_MAIN);
-        intent.addCategory(Intent.CATEGORY_HOME);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
+        LocaUtils.quitSecondTime(this);
     }
 }

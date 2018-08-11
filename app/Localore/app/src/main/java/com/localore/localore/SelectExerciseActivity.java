@@ -1,12 +1,9 @@
 package com.localore.localore;
 
-import android.app.Dialog;
-import android.content.ClipData;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,8 +11,12 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.TextView;
 
 import com.localore.localore.model.AppDatabase;
@@ -38,7 +39,12 @@ public class SelectExerciseActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_exercise);
-        setTitle(getString(R.string.select_exercise));
+        invalidateOptionsMenu();
+
+        View container = findViewById(R.id.layout_selectExercise);
+        Animation loadAnimation = AnimationUtils.loadAnimation(getApplicationContext(), android.R.anim.fade_in);
+        loadAnimation.setDuration(1000);
+        container.startAnimation(loadAnimation);
 
         this.recyclerView_exerciseLabels = findViewById(R.id.recyclerView_exerciseLabels);
         new ItemTouchHelper(new ItemTouchHelper.Callback() {
@@ -94,6 +100,30 @@ public class SelectExerciseActivity extends AppCompatActivity {
         updateLayout();
     }
 
+    //region options-menu
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.exercise_actions, menu);
+
+        menu.findItem(R.id.menuItem_exerciseProgress).setVisible(false);
+        menu.findItem(R.id.menuItem_selectExercise).setVisible(false);
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.menuItem_about) {
+            AboutActivity.start(SelectExerciseActivity.this);
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    //endregion
+
+
     /**
      * Sets layout based on database-content.
      */
@@ -107,14 +137,6 @@ public class SelectExerciseActivity extends AppCompatActivity {
         recyclerView_exerciseLabels.setHasFixedSize(true); //todo: recyclerView fixed size?
         ExerciseLabelAdapter adapter = new ExerciseLabelAdapter(exercises, exerciseProgresses);
         recyclerView_exerciseLabels.setAdapter(adapter);
-    }
-
-    /**
-     * @param v Button that initiated the request.
-     */
-    public void startCreateExerciseActivity(View v) {
-        Intent intent = new Intent(this, CreateExerciseActivity.class);
-        startActivity(intent);
     }
 
 
@@ -167,10 +189,7 @@ public class SelectExerciseActivity extends AppCompatActivity {
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    AppDatabase db = AppDatabase.getInstance(SelectExerciseActivity.this);
-                    SessionControl.setActiveExercise(exercise.getId(), db);
-                    Intent intent = new Intent(SelectExerciseActivity.this, ExerciseActivity.class);
-                    startActivity(intent);
+                    ExerciseActivity.start(exercise.getId(), SelectExerciseActivity.this);
                 }
             });
         }
@@ -183,4 +202,27 @@ public class SelectExerciseActivity extends AppCompatActivity {
     }
 
     //endregion
+
+    /**
+     * Start the select-exercise activity.
+     * @param v
+     */
+    public void onCreateExercise(View v) {
+        CreateExerciseActivity.start(this);
+    }
+
+    /**
+     * Starts the activity.
+     */
+    public static void start(Context context) {
+        LocaUtils.startActivity(SelectExerciseActivity.class, context);
+    }
+
+    /**
+     * Quit app on second back-press.
+     */
+    @Override
+    public void onBackPressed() {
+        LocaUtils.quitSecondTime(this);
+    }
 }

@@ -1,5 +1,6 @@
 package com.localore.localore;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -9,6 +10,8 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -51,6 +54,27 @@ public class ExerciseActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
     }
 
+    //region options-menu
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.exercise_actions, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.menuItem_selectExercise) {
+            SelectExerciseActivity.start(ExerciseActivity.this);
+        }
+        else if (item.getItemId() == R.id.menuItem_about) {
+            AboutActivity.start(ExerciseActivity.this);
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    //endregion
 
     //region quiz-categories RecyclerView
 
@@ -189,9 +213,22 @@ public class ExerciseActivity extends AppCompatActivity {
 
     //endregion
 
+    /**
+     * Starts the activity.
+     * @param context
+     */
+    public static void start(long exerciseId, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        SessionControl.setActiveExercise(exerciseId, db);
+
+        LocaUtils.startActivity(ExerciseActivity.class, context);
+    }
+
+    /**
+     * Quit app on second back-press.
+     */
     @Override
     public void onBackPressed() {
-        Intent intent = new Intent(this, SelectExerciseActivity.class);
-        startActivity(intent);
+        LocaUtils.quitSecondTime(this);
     }
 }

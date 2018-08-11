@@ -79,6 +79,7 @@ public class TappingActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tapping);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         this.quizCategoryType = getIntent().getIntExtra(QUIZ_CATEGORY_TYPE_PARAM_KEY, -1);
         if (quizCategoryType == -1) throw new RuntimeException("Start activity with freshStart()");
@@ -138,6 +139,16 @@ public class TappingActivity extends AppCompatActivity {
 
         return true;
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
 
     /**
      * Display toast on clicked geo-object.

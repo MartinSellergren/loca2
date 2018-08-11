@@ -5,5 +5,12 @@
     <item
         android:id="@+id/menuItem_exerciseProgress"
         android:title="0%"
-        app:showAsAction="always|withText" />
+        app:showAsAction="ifRoom|withText" />
+    <item
+        android:id="@+id/menuItem_selectExercise"
+        android:title="@string/select_exercise"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menuItem_about"
+        android:title="@string/about" />
 </menu>

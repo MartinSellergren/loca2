@@ -4,8 +4,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!--<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />-->
+    <!-- <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
     <uses-feature android:name="android.hardware.location.network" />
     <uses-feature android:name="android.hardware.location.gps" />
 
@@ -17,15 +18,17 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity
-            android:name=".MainActivity">
 
-            <!-- <intent-filter> -->
-            <!-- <action android:name="android.intent.action.MAIN" /> -->
-            <!--  -->
-            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
-            <!-- </intent-filter> -->
-        </activity>
+        <!-- <activity -->
+        <!-- android:name=".MainActivity"> -->
+
+
+        <!-- <intent-filter> -->
+        <!-- <action android:name="android.intent.action.MAIN" /> -->
+        <!--  -->
+        <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+        <!-- </intent-filter> -->
+        <!-- </activity> -->
 
         <service
             android:name=".CreateExerciseService"
@@ -35,7 +38,7 @@
             android:name=".SplashActivity"
             android:launchMode="singleTask"
             android:noHistory="true"
-            android:screenOrientation="portrait" >
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -44,41 +47,36 @@
         </activity>
         <activity
             android:name=".SelectExerciseActivity"
+            android:label="@string/select_exercise"
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />
         <activity
             android:name=".ExerciseActivity"
             android:launchMode="singleTask"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".SelectExerciseActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".SelectExerciseActivity" />
-        </activity>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".CreateExerciseActivity"
+            android:label="@string/new_exercise"
             android:launchMode="singleTask"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".SelectExerciseActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".SelectExerciseActivity" />
+            android:screenOrientation="portrait">
         </activity>
         <activity
             android:name=".LoadingNewExerciseActivity"
+            android:label="@string/loading_exercise"
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />
         <activity
             android:name=".TappingActivity"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".ExerciseActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".ExerciseActivity" />
+            android:screenOrientation="portrait">
         </activity>
         <activity
             android:name=".QuizActivity"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".AboutActivity"
+            android:label="@string/about"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>

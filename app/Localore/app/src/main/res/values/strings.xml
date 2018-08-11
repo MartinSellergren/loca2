@@ -28,4 +28,6 @@
     <string name="name_it">Name it</string>
     <string name="place_it">Place it</string>
     <string name="pair_it">Pair it</string>
+    <string name="loading_exercise">Loading exercise</string>
+    <string name="about">About</string>
 </resources>

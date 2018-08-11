@@ -3,6 +3,7 @@ package com.localore.localore;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -23,6 +24,8 @@ public class SplashActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) actionBar.hide();
 
         new Handler().postDelayed(new Runnable(){
             @Override
@@ -37,15 +40,13 @@ public class SplashActivity extends AppCompatActivity {
                     LoadingNewExerciseActivity.resumedStart(SplashActivity.this);
                 }
                 else if (session.getExerciseId() == -1) {
-                    Intent intent = new Intent(SplashActivity.this, SelectExerciseActivity.class);
-                    startActivity(intent);
+                    SelectExerciseActivity.start(SplashActivity.this);
                 }
                 else if (RunningQuizControl.isCurrentlyRunning(db)) {
                     QuizActivity.resumedStart(SplashActivity.this);
                 }
                 else {
-                    Intent intent = new Intent(SplashActivity.this, ExerciseActivity.class);
-                    startActivity(intent);
+                    ExerciseActivity.start(session.getExerciseId(), SplashActivity.this);
                 }
             }
         }, DISPLAY_TIME);

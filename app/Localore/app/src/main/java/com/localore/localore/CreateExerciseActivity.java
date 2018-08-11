@@ -99,7 +99,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(null);
         setContentView(R.layout.activity_create_exercise);
-        setTitle(getString(R.string.new_exercise));
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         this.editText_exerciseName = findViewById(R.id.editText_exerciseName);
         this.mapView = findViewById(R.id.mapView_nameIt);
@@ -154,10 +154,14 @@ public class CreateExerciseActivity extends AppCompatActivity {
         return true;
     }
 
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.menuItem_createExercise) {
             startLoadingNewExerciseActivity();
+        }
+        else if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
         }
 
         return super.onOptionsItemSelected(item);
@@ -498,4 +502,12 @@ public class CreateExerciseActivity extends AppCompatActivity {
         mapView.onDestroy();
     }
     //endregion
+
+    /**
+     * Start the activity.
+     * @param context
+     */
+    public static void start(Context context) {
+        LocaUtils.startActivity(CreateExerciseActivity.class, context);
+    }
 }

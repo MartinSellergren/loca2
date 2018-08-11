@@ -1,8 +1,13 @@
 package com.localore.localore;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
+import android.os.Bundle;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.util.Log;
+import android.view.View;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -69,6 +74,16 @@ public class LocaUtils {
     private static final double LAT_MAX = 85.051129;
 
     /**
+     * Time when quitSecondTime() is called first time.
+     */
+    private static long firstQuitRequestTime;
+
+    /**
+     * quitSecondTime() quits app if second call arrives before this time (in ms) after the previous.
+     */
+    private static final int MAX_TIME_BETWEEN_QUIT_REQUESTS = 1900;
+
+    /**
      * Points for dim-overlay.
      */
     public static final List<LatLng> WORLD_CORNER_COORDINATES = new ArrayList<LatLng>() {
@@ -80,6 +95,31 @@ public class LocaUtils {
         }
     };
 
+    /**
+     * Quit app if two calls are made within certain max-time.
+     */
+    public static void quitSecondTime(Context context) {
+        if (firstQuitRequestTime + MAX_TIME_BETWEEN_QUIT_REQUESTS > System.currentTimeMillis()) {
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_HOME);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        }
+        else {
+            Toast.makeText(context, "Press once again to exit!", Toast.LENGTH_SHORT).show();
+            firstQuitRequestTime = System.currentTimeMillis();
+        }
+    }
+
+    /**
+     * Start a new activity..
+     * @param activityClass
+     * @param context
+     */
+    public static void startActivity(Class<?> activityClass, Context context) {
+        Intent intent = new Intent(context, activityClass);
+        context.startActivity(intent);
+    }
 
     /**
      * @param mapboxMap
