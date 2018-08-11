@@ -25,4 +25,7 @@
     <string name="No">No</string>
     <string name="past_levels">Past levels</string>
     <string name="next_level">Next level</string>
+    <string name="name_it">Name it</string>
+    <string name="place_it">Place it</string>
+    <string name="pair_it">Pair it</string>
 </resources>

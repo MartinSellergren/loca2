@@ -1,21 +1,14 @@
 package com.localore.localore;
 
-import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.NavUtils;
-import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.DialogTitle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -24,6 +17,7 @@ import android.widget.TextView;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
 import com.localore.localore.model.QuizCategory;
+import com.localore.localore.model.RunningQuiz;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.SessionControl;
 
@@ -87,7 +81,7 @@ public class ExerciseActivity extends AppCompatActivity {
     }
 
     private class QuizCategoryHolder extends RecyclerView.ViewHolder {
-        private int type;
+        private int quizCategoryType;
         private int totalNoLevels;
         private int nextLevel;
         private int noRequiredReminders;
@@ -107,22 +101,20 @@ public class ExerciseActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View view) {
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(ExerciseActivity.this);
-                    alertBuilder.setTitle(QuizCategory.DISPLAY_TYPES[type]);
+                    alertBuilder.setTitle(QuizCategory.DISPLAY_TYPES[quizCategoryType]);
 
                     CharSequence[] dialogOptions = {"Tapping", "Level quiz", "Reminder"};
                     alertBuilder.setItems(dialogOptions, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int item) {
                             if (item == 0) {
-                                TappingActivity.start(type, ExerciseActivity.this);
+                                TappingActivity.start(quizCategoryType, ExerciseActivity.this);
                             }
                             else if (item == 1) {
-                                Intent intent = new Intent(ExerciseActivity.this, QuizActivity.class);
-                                startActivity(intent);
+                                QuizActivity.freshStart(RunningQuiz.LEVEL_QUIZ, quizCategoryType, ExerciseActivity.this);
                             }
                             else {
-                                Intent intent = new Intent(ExerciseActivity.this, QuizActivity.class);
-                                startActivity(intent);
+                                QuizActivity.freshStart(RunningQuiz.QUIZ_CATEGORY_REMINDER, quizCategoryType, ExerciseActivity.this);
                             }
                         }
                     });
@@ -140,13 +132,13 @@ public class ExerciseActivity extends AppCompatActivity {
                 throw new RuntimeException("Bad quiz-category-data");
             }
 
-            this.type = quizCategoryData[0];
+            this.quizCategoryType = quizCategoryData[0];
             this.totalNoLevels = quizCategoryData[1];
             this.nextLevel = quizCategoryData[2];
             this.noRequiredReminders = quizCategoryData[3];
 
             this.quizCategoryIcon.setImageResource(R.drawable.mapbox_compass_icon);
-            this.quizCategoryName.setText( getString(QuizCategory.DISPLAY_TYPES[type]) );
+            this.quizCategoryName.setText( getString(QuizCategory.DISPLAY_TYPES[quizCategoryType]) );
 
             String levelString = String.format("%s %s / %s",
                     getString(R.string.Level), nextLevel, totalNoLevels);
@@ -170,7 +162,7 @@ public class ExerciseActivity extends AppCompatActivity {
 //            builder.setNegativeButton("Tapping", new DialogInterface.OnClickListener() {
 //                @Override
 //                public void onClick(DialogInterface dialogInterface, int i) {
-//                    TappingActivity.start(0, getActivity());
+//                    TappingActivity.freshStart(0, getActivity());
 //                }
 //            });
 //

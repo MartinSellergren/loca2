@@ -25,9 +25,9 @@ import com.localore.localore.modelManipulation.SessionControl;
 /**
  * Singleton-activity that handles loading of a new exercise.
  *
- * Before start:
+ * Before freshStart:
  *  - New exercise name and working-area stored in Session (in db).
- *  - Set loading-exercise's not-started-status in Session for a fresh start of the loading-process.
+ *  - Set loading-exercise's not-started-status in Session for a fresh freshStart of the loading-process.
  *
  *  Before leave:
  *   - Set exercise-creation's not-started-status in Session (restarted).

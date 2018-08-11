@@ -9,6 +9,7 @@ import android.os.Bundle;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Session;
 import com.localore.localore.model.SessionDao;
+import com.localore.localore.modelManipulation.RunningQuizControl;
 import com.localore.localore.modelManipulation.SessionControl;
 
 /**
@@ -26,36 +27,27 @@ public class SplashActivity extends AppCompatActivity {
         new Handler().postDelayed(new Runnable(){
             @Override
             public void run(){
-                Session session = SessionControl.load(AppDatabase.getInstance(SplashActivity.this));
+                AppDatabase db = AppDatabase.getInstance(SplashActivity.this);
+                Session session = SessionControl.load(db);
 
                 if (session.getUserId() == -1) {
                     //log-in / sign-up
                 }
                 else if (session.getLoadingExerciseStatus() != LoadingNewExerciseActivity.NOT_STARTED) {
-                    startLoadingNewExerciseActivity();
+                    LoadingNewExerciseActivity.resumedStart(SplashActivity.this);
                 }
                 else if (session.getExerciseId() == -1) {
-                    startSelectExerciseActivity();
+                    Intent intent = new Intent(SplashActivity.this, SelectExerciseActivity.class);
+                    startActivity(intent);
+                }
+                else if (RunningQuizControl.isCurrentlyRunning(db)) {
+                    QuizActivity.resumedStart(SplashActivity.this);
                 }
                 else {
-                    //startExerciseActivity();
-                    startSelectExerciseActivity();
+                    Intent intent = new Intent(SplashActivity.this, ExerciseActivity.class);
+                    startActivity(intent);
                 }
             }
         }, DISPLAY_TIME);
-    }
-
-    private void startSelectExerciseActivity() {
-        Intent intent = new Intent(this, SelectExerciseActivity.class);
-        startActivity(intent);
-    }
-
-    private void startExerciseActivity() {
-        Intent intent = new Intent(this, ExerciseActivity.class);
-        startActivity(intent);
-    }
-
-    private void startLoadingNewExerciseActivity() {
-        LoadingNewExerciseActivity.resumedStart(this);
     }
 }

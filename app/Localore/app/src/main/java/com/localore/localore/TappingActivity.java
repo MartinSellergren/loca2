@@ -17,7 +17,6 @@ import com.localore.localore.model.Exercise;
 import com.localore.localore.model.GeoObject;
 import com.localore.localore.model.NodeShape;
 import com.localore.localore.model.Quiz;
-import com.localore.localore.model.QuizCategory;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.SessionControl;
 import com.mapbox.mapboxsdk.annotations.Marker;
@@ -82,13 +81,13 @@ public class TappingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_tapping);
 
         this.quizCategoryType = getIntent().getIntExtra(QUIZ_CATEGORY_TYPE_PARAM_KEY, -1);
-        if (quizCategoryType == -1) throw new RuntimeException("Start activity with start()");
+        if (quizCategoryType == -1) throw new RuntimeException("Start activity with freshStart()");
 
         AppDatabase db = AppDatabase.getInstance(this);
         this.exercise = SessionControl.loadExercise(db);
         setTitle(exercise.getName());
 
-        this.mapView = findViewById(R.id.mapView_tapping);
+        this.mapView = findViewById(R.id.mapView_nameIt);
         mapView.onCreate(null);
     }
 

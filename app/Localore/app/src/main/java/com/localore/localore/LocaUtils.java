@@ -61,7 +61,7 @@ public class LocaUtils {
     /**
      * Color for dim-overlay.
      */
-    public static final int DIM_OVERLAY_COLOR = Color.parseColor("#a04c4c4c");
+    public static final int DIM_OVERLAY_COLOR = Color.parseColor("#804c4c4c");
 
     /**
      * Latitude-max for web-mercator projection.
@@ -143,7 +143,8 @@ public class LocaUtils {
 
         mapboxMap.addPolyline(new PolylineOptions()
                 .addAll(hole)
-                .color(LocaUtils.BLUE_COLOR));
+                .width(1)
+                .color(LocaUtils.DIM_OVERLAY_COLOR));
     }
 
     /**

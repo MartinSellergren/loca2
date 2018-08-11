@@ -35,7 +35,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <com.mapbox.mapboxsdk.maps.MapView
-        android:id="@+id/mapView_tapping"
+        android:id="@+id/mapView_nameIt"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginBottom="16dp"
@@ -73,8 +73,8 @@
         android:visibility="visible"
         app:srcCompat="@android:drawable/ic_menu_zoom"
         mapbox:elevation="5dp"
-        mapbox:layout_constraintBottom_toBottomOf="@+id/mapView_tapping"
-        mapbox:layout_constraintEnd_toEndOf="@+id/mapView_tapping" />
+        mapbox:layout_constraintBottom_toBottomOf="@+id/mapView_nameIt"
+        mapbox:layout_constraintEnd_toEndOf="@+id/mapView_nameIt" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/button_clearNodes"
@@ -88,7 +88,7 @@
         android:visibility="invisible"
         app:srcCompat="@android:drawable/ic_menu_delete"
         mapbox:elevation="5dp"
-        mapbox:layout_constraintEnd_toEndOf="@+id/mapView_tapping"
-        mapbox:layout_constraintTop_toTopOf="@+id/mapView_tapping" />
+        mapbox:layout_constraintEnd_toEndOf="@+id/mapView_nameIt"
+        mapbox:layout_constraintTop_toTopOf="@+id/mapView_nameIt" />
 
 </android.support.constraint.ConstraintLayout>

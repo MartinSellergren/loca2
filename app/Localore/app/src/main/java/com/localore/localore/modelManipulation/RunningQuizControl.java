@@ -46,10 +46,29 @@ public class RunningQuizControl {
 
     //region shortcuts
 
+    /**
+     * Loads a running-quiz.
+     * @param db
+     * @return Running-quiz or NULL.
+     */
     public static RunningQuiz load(AppDatabase db) {
         return db.runningQuizDao().loadOne();
     }
 
+    /**
+     *
+     * @param db
+     * @return True if a quiz is running (exists in db).
+     */
+    public static boolean isCurrentlyRunning(AppDatabase db) {
+        return load(db) != null;
+    }
+
+    /**
+     * @param question
+     * @param db
+     * @return Geo-object of question.
+     */
     public static GeoObject loadGeoObjectFromQuestion(Question question, AppDatabase db) {
         return db.geoDao().load(question.getGeoObjectId());
     }
@@ -213,7 +232,7 @@ public class RunningQuizControl {
      * Deleted running-quiz from database (including underlying questions), if one exists.
      * @param db
      */
-    private static void deleteRunningQuiz(AppDatabase db) {
+    public static void deleteRunningQuiz(AppDatabase db) {
         RunningQuiz runningQuiz = load(db);
         if (runningQuiz == null) return;
 
@@ -314,7 +333,7 @@ public class RunningQuizControl {
     }
 
     /**
-     * Call to start quiz, and to progress to next question.
+     * Call to freshStart quiz, and to progress to next question.
      *
      * - Returns next question in a quiz-run (NULL if no more).
      * - Db-update: current question in running-quiz.
@@ -338,6 +357,7 @@ public class RunningQuizControl {
 
     /**
      * Call when a quiz is finished. Updates database based on quiz-type and result.
+     * Removes running-quiz from db.
      *
      * Level-quiz: If satisfactory result: Set passed and increment level, and set required reminders.
      * Follow-up: Update nothing.
@@ -370,6 +390,7 @@ public class RunningQuizControl {
             decrementNoRequiredExerciseReminders(exercise, db);
         }
 
+        deleteRunningQuiz(db);
         return feedback(successRate);
     }
 

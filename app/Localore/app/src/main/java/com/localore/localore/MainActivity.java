@@ -180,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
         Log.i("<VIEW>", nextLevelGeoObjects.toString());
     }
 
-    //region start level quiz
+    //region freshStart level quiz
 
     public void onLevelQuiz_settlements(View v) {
         AppDatabase db = AppDatabase.getInstance(this);
@@ -233,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
 
     //endregion
 
-    //region start quiz-reminder
+    //region freshStart quiz-reminder
     public void onLevelCategoryReminder_settlements(View v) {
         AppDatabase db = AppDatabase.getInstance(this);
         RunningQuizControl.newLevelReminder(
