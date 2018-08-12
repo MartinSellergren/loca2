@@ -20,16 +20,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TableLayout
-        android:id="@+id/tableLayout_pairIt"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recyclerView_pairIt"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView_pairIt">
-
-    </TableLayout>
+        app:layout_constraintTop_toBottomOf="@+id/textView_pairIt" />
 
     <com.mapbox.mapboxsdk.maps.MapView
         android:id="@+id/mapView_pairIt"
@@ -42,12 +40,12 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
+
         app:layout_constraintEnd_toEndOf="parent"
-
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tableLayout_pairIt"
-        mapbox:mapbox_cameraTargetLat="0"
 
+        app:layout_constraintTop_toBottomOf="@+id/recyclerView_pairIt"
+        mapbox:mapbox_cameraTargetLat="0"
         mapbox:mapbox_cameraTargetLng="0"
         mapbox:mapbox_cameraZoom="0"
         mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets"

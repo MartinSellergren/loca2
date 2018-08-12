@@ -1,23 +1,25 @@
 package com.localore.localore;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.graphics.Color;
-import android.support.constraint.ConstraintLayout;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import com.localore.localore.model.AppDatabase;
+import com.localore.localore.model.Exercise;
 import com.localore.localore.model.GeoObject;
 import com.localore.localore.model.Question;
 import com.localore.localore.model.QuizCategory;
@@ -28,32 +30,40 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class QuizActivity extends AppCompatActivity {
+
+    /**
+     * Defines tags for different zoom-levels: overall working area vs zoomed in question.
+     */
+    private static final int WORKING_AREA_ZOOM = 0;
+    private static final int QUESTION_ZOOM = 1;
 
     private Activity activity;
     private ProgressBar progressBar;
     private ViewFlipper flipper;
     private FloatingActionButton button_nextQuestion;
+    private FloatingActionButton button_toggleZoom;
 
     private ImageView imageView_nameItIcon;
     private TextView textView_nameIt;
     private MapView mapView_nameIt;
-    private TableLayout tableLayout_nameItAlternatives;
+    private RecyclerView recyclerView_nameItAlternatives;
 
     private ImageView imageView_placeItIcon;
     private TextView textView_placeIt;
     private MapView mapView_placeIt;
 
     private TextView textView_pairIt;
-    private TableLayout tableLayout_pairIt;
+    private RecyclerView recyclerView_pairIt;
     private MapView mapView_pairIt;
 
     private MapboxMap mapboxMap_nameIt;
     private MapboxMap mapboxMap_placeIt;
     private MapboxMap mapboxMap_pairIt;
+
+    private Exercise exercise;
 
 
     @Override
@@ -67,23 +77,26 @@ public class QuizActivity extends AppCompatActivity {
         this.progressBar = findViewById(R.id.progressBar_quiz);
         this.flipper = findViewById(R.id.viewFlipper_questions);
         this.button_nextQuestion = findViewById(R.id.button_nextQuestion);
+        this.button_toggleZoom = findViewById(R.id.button_toggleZoom);
 
         this.imageView_nameItIcon = findViewById(R.id.imageView_nameItIcon);
         this.textView_nameIt = findViewById(R.id.textView_nameIt);
         this.mapView_nameIt = findViewById(R.id.mapView_nameIt);
-        this.tableLayout_nameItAlternatives = findViewById(R.id.tableLayout_nameItAlternatives);
+        this.recyclerView_nameItAlternatives = findViewById(R.id.recyclerView_nameItAlternatives);
 
         this.imageView_placeItIcon = findViewById(R.id.imageView_placeItIcon);
         this.textView_placeIt = findViewById(R.id.textView_placeIt);
         this.mapView_placeIt = findViewById(R.id.mapView_placeIt);
 
         this.textView_pairIt = findViewById(R.id.textView_pairIt);
-        this.tableLayout_pairIt = findViewById(R.id.tableLayout_pairIt);
+        this.recyclerView_pairIt = findViewById(R.id.recyclerView_pairIt);
         this.mapView_pairIt = findViewById(R.id.mapView_pairIt);
 
         mapView_nameIt.onCreate(savedInstanceState);
         mapView_placeIt.onCreate(savedInstanceState);
         mapView_pairIt.onCreate(savedInstanceState);
+
+        this.exercise = SessionControl.loadExercise(AppDatabase.getInstance(this));
 
         updateLayout();
     }
@@ -160,7 +173,6 @@ public class QuizActivity extends AppCompatActivity {
         else updateMap_nameIt(geoObject);
 
         updateAlternatives_nameIt(geoObject, question.getContent());
-
         this.flipper.setDisplayedChild(Question.NAME_IT);
     }
 
@@ -184,47 +196,119 @@ public class QuizActivity extends AppCompatActivity {
      */
     private void updateMap_nameIt(GeoObject geoObject) {
         LocaUtils.addGeoObject(geoObject, this.mapboxMap_nameIt, this);
+
+        LocaUtils.flyToFitShape(this.exercise.getWorkingArea(), this.mapboxMap_nameIt);
+
+        setToggleZoomButton(WORKING_AREA_ZOOM);
+        button_toggleZoom.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int currentZoomLevelTag = (int)button_toggleZoom.getTag();
+
+                if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
+                    setToggleZoomButton(QUESTION_ZOOM);
+                    LocaUtils.flyToFitBounds(geoObject.getBounds(), mapboxMap_nameIt);
+                }
+                else if (currentZoomLevelTag == QUESTION_ZOOM) {
+                    setToggleZoomButton(WORKING_AREA_ZOOM);
+                    LocaUtils.flyToFitShape(exercise.getWorkingArea(), mapboxMap_nameIt);
+                }
+                else {
+                    throw new RuntimeException("Dead end");
+                }
+            }
+        });
+    }
+
+    /**
+     *
+     * @param currentZoomLevelTag
+     */
+    private void setToggleZoomButton(int currentZoomLevelTag) {
+        if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
+            button_toggleZoom.setImageResource(R.drawable.mapbox_compass_icon); //zoom to element icon
+            button_toggleZoom.setTag(WORKING_AREA_ZOOM);
+        }
+        else if (currentZoomLevelTag == QUESTION_ZOOM) {
+            button_toggleZoom.setImageResource(R.drawable.mapbox_info_icon_default); //overview zoom icon
+            button_toggleZoom.setTag(QUESTION_ZOOM);
+        }
+        else {
+            throw new RuntimeException("Dead end");
+        }
     }
 
     /**
      * Updates the alternatives section of the layout.
      * Enables user-interactions (select alternative).
-     * @param geoObject
+     * @param correct
      * @param alternatives
      */
-    private void updateAlternatives_nameIt(GeoObject geoObject, List<GeoObject> alternatives) {
-        for (int i = 0; i < alternatives.size(); i += 2) {
-            TableRow tableRow = new TableRow(this);
+    private void updateAlternatives_nameIt(GeoObject correct, List<GeoObject> alternatives) {
+        this.recyclerView_nameItAlternatives.setLayoutManager(new GridLayoutManager(this, 2));
+        AlternativesAdapter alternativesAdapter = new AlternativesAdapter(alternatives, correct);
+        recyclerView_nameItAlternatives.setAdapter(alternativesAdapter);
+    }
 
-            //tableRow.setId(-1);
-            //tableRow.setBackgroundColor(Color.GRAY);
-//            tableRow.setLayoutParams(new TableLayout.LayoutParams(
-//                    TableLayout.LayoutParams.MATCH_PARENT,
-//                    TableLayout.LayoutParams.WRAP_CONTENT));
+    private class AlternativesAdapter extends RecyclerView.Adapter<AlternativeHolder> {
+        private List<GeoObject> geoObjectAlternatives;
+        private GeoObject geoObjectCorrect;
 
-            TextView alt0 = new TextView(this);
-            //alt0.setId(-1);
-            alt0.setText(alternatives.get(i).getName());
-            alt0.setTextColor(Color.WHITE);
-            alt0.setPadding(8, 8, 8, 8);
-//            alt0.setLayoutParams(new TableRow.LayoutParams(
-//                    TableRow.LayoutParams.WRAP_CONTENT,
-//                    TableRow.LayoutParams.WRAP_CONTENT));
-            tableRow.addView(alt0);
-
-            TextView alt1 = new TextView(this);
-            //alt1.setId(-1);
-            alt1.setText(alternatives.get(i+1).getName());
-            alt1.setTextColor(Color.WHITE);
-            alt1.setPadding(8, 8, 8, 8);
-//            alt1.setLayoutParams(new TableRow.LayoutParams(
-//                    TableRow.LayoutParams.WRAP_CONTENT,
-//                    TableRow.LayoutParams.WRAP_CONTENT));
-            tableRow.addView(alt1);
-
-            this.tableLayout_nameItAlternatives.addView(tableRow);
+        public AlternativesAdapter(List<GeoObject> geoObjectAlternatives, GeoObject geoObjectCorrect) {
+            this.geoObjectAlternatives = geoObjectAlternatives;
+            this.geoObjectCorrect = geoObjectCorrect;
         }
 
+        @NonNull
+        @Override
+        public AlternativeHolder onCreateViewHolder(@NonNull ViewGroup parent, int i) {
+            LayoutInflater inflater = LayoutInflater.from(QuizActivity.this);
+            return new AlternativeHolder(inflater, parent);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull AlternativeHolder holder, int position) {
+            GeoObject geoObjectAlternative = this.geoObjectAlternatives.get(position);
+            holder.bind(geoObjectAlternative, this.geoObjectCorrect);
+        }
+
+        @Override
+        public int getItemCount() {
+            return this.geoObjectAlternatives.size();
+        }
+    }
+
+    private class AlternativeHolder extends RecyclerView.ViewHolder {
+        private GeoObject geoObjectAlternative;
+        private Button button_alternative;
+
+        /**
+         * For checking answer on click.
+         */
+        private GeoObject geoObjectCorrect;
+
+
+        public AlternativeHolder(LayoutInflater inflater, ViewGroup parent) {
+            super(inflater.inflate(R.layout.listitem_question_alternative, parent, false));
+
+            this.button_alternative = super.itemView.findViewById(R.id.button_alternative);
+
+            button_alternative.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (geoObjectAlternative.equals(geoObjectCorrect))
+                        Toast.makeText(QuizActivity.this, "correct", Toast.LENGTH_SHORT).show();
+                    else
+                        Toast.makeText(QuizActivity.this, "incorrect", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        public void bind(GeoObject geoObjectAlternative, GeoObject geoObjectCorrect) {
+            this.geoObjectAlternative = geoObjectAlternative;
+            this.geoObjectCorrect = geoObjectCorrect;
+            this.button_alternative.setText(geoObjectAlternative.getName());
+        }
     }
 
     //endregion

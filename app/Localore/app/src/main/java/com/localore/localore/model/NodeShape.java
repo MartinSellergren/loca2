@@ -62,6 +62,13 @@ public class NodeShape implements Serializable {
     }
 
     /**
+     * @return True if shape is a node.
+     */
+    public boolean isNode() {
+        return size() == 1;
+    }
+
+    /**
      * @return Sum of all segment-lengths.
      */
     public double getLength() {

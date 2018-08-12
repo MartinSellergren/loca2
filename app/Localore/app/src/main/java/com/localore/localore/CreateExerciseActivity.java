@@ -48,11 +48,6 @@ public class CreateExerciseActivity extends AppCompatActivity {
      */
     private static final double MIN_WORKING_AREA_ZOOM_LEVEL = 9;
 
-    /**
-     * Time in ms for flying (moving camera to new pos).
-     */
-    private static final int FLY_TIME = 2500;
-
     private EditText editText_exerciseName;
     private MenuItem menuItem_createExercise;
     private MapView mapView;
@@ -192,9 +187,10 @@ public class CreateExerciseActivity extends AppCompatActivity {
         addZoomControl();
     }
 
+    //region fly to user's current location
+
     /**
-     * If possible to obtain current location, fly to it.
-     * - Needs permission (doesn't ask).
+     * Requests permission and flies to user location if granted or already have it.
      */
     private void flyToUserLocation() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -203,26 +199,33 @@ public class CreateExerciseActivity extends AppCompatActivity {
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
         }
 
+        flyToUserLocation_();
+    }
+
+    /**
+     * Flies to user location. Does nothing if can't access user-location.
+     */
+    private void flyToUserLocation_() {
         try {
             LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
             String locationProvider = LocationManager.GPS_PROVIDER;
             Location location = locationManager.getLastKnownLocation(locationProvider);
             if (location != null) {
-                flyToLocation(location);
+                LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL, mapboxMap);
                 return;
             }
 
             locationProvider = LocationManager.NETWORK_PROVIDER;
             location = locationManager.getLastKnownLocation(locationProvider);
             if (location != null) {
-                flyToLocation(location);
+                LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL, mapboxMap);
                 return;
             }
 
             LocationListener locationListener = new LocationListener() {
                 public void onLocationChanged(Location location) {
-                    flyToLocation(location);
+                    LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL, mapboxMap);
                     locationManager.removeUpdates(this);
                 }
 
@@ -243,17 +246,18 @@ public class CreateExerciseActivity extends AppCompatActivity {
     }
 
     /**
-     * Move camera to new location.
-     * @param location
+     * Called when answer from the permission-request of current location.
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
      */
-    private void flyToLocation(Location location) {
-        CameraPosition position = new CameraPosition.Builder()
-                .target(new LatLng(location.getLatitude(), location.getLongitude()))
-                .zoom(MIN_WORKING_AREA_ZOOM_LEVEL)
-                .build();
-
-        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), FLY_TIME);
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            flyToUserLocation_();
     }
+
+    //endregion
 
     /**
      * Tap on map to create a marker and add this node to the working-area.
@@ -389,7 +393,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
                 .zoom(MIN_WORKING_AREA_ZOOM_LEVEL)
                 .build();
 
-        this.mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), FLY_TIME);
+        this.mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), LocaUtils.FLY_TIME);
     }
 
     /**

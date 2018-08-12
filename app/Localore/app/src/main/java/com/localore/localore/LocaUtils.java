@@ -4,17 +4,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.os.Bundle;
-import android.support.v4.app.ActivityOptionsCompat;
+import android.location.Location;
 import android.util.Log;
-import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
 import com.localore.localore.model.GeoObject;
@@ -26,22 +19,18 @@ import com.localore.localore.model.RunningQuiz;
 import com.localore.localore.model.Session;
 import com.localore.localore.model.User;
 import com.localore.localore.modelManipulation.SessionControl;
-import com.mapbox.geojson.Feature;
-import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
-import com.mapbox.mapboxsdk.annotations.Polygon;
-import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.annotations.Polyline;
 import com.mapbox.mapboxsdk.annotations.PolylineOptions;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdate;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
-import com.mapbox.mapboxsdk.style.layers.FillLayer;
-import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
-import com.mapbox.mapboxsdk.style.sources.Source;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -390,6 +379,75 @@ public class LocaUtils {
                 .width(2));
 
         if (polylinesMap != null) polylinesMap.put(polyline.getId(), geoObjectId);
+    }
+
+    //endregion
+
+    //region Map-camera motion
+
+    /**
+     * Time in ms for flying (moving camera to new pos).
+     */
+    public static final int FLY_TIME = 2500;
+
+    /**
+     * When fitting camera to shape, don't zoom more than this.
+     */
+    private static final double CAMERA_FITTING_MAX_ZOOM = 18;
+
+    /**
+     * Padding around working area for the initial camera-view.
+     */
+    private static final int CAMERA_FITTING_PADDING = 50;
+
+    /**
+     * Move camera gradually to fit shape including padding.
+     * @param shape
+     * @param map
+     */
+    public static void flyToFitShape(NodeShape shape, MapboxMap map) {
+//        if (shape.isNode()) {
+//            flyToLocation(toLatLng(shape.getFirst()), CAMERA_FITTING_MAX_ZOOM, map);
+//        }
+//        else {
+        flyToFitBounds(shape.getBounds(), map);
+        //}
+    }
+
+    /**
+     * Move camera gradually to fit the bounds including padding.
+     * @param bs
+     * @param map
+     */
+    public static void flyToFitBounds(double[] bs, MapboxMap map) {
+        LatLngBounds latLngBounds = toLatLngBounds(bs);
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(latLngBounds, CAMERA_FITTING_PADDING);
+        CameraPosition cameraPosition = cameraUpdate.getCameraPosition(map);
+
+        if (cameraPosition.zoom > CAMERA_FITTING_MAX_ZOOM) {
+            flyToLocation(cameraPosition.target, CAMERA_FITTING_MAX_ZOOM, map);
+        }
+        else {
+            map.animateCamera(cameraUpdate, FLY_TIME);
+        }
+    }
+
+    /**
+     * Move camera gradually to new location.
+     * @param latLng
+     * @param map
+     */
+    public static void flyToLocation(LatLng latLng, double zoom, MapboxMap map) {
+        CameraPosition position = new CameraPosition.Builder()
+                .target(latLng)
+                .zoom(zoom)
+                .build();
+
+        map.animateCamera(CameraUpdateFactory.newCameraPosition(position), FLY_TIME);
+    }
+    public static void flyToLocation(Location location, double zoom, MapboxMap map) {
+        LatLng latLng = toLatLng(new double[]{location.getLongitude(), location.getLatitude()});
+        flyToLocation(latLng, zoom, map);
     }
 
     //endregion

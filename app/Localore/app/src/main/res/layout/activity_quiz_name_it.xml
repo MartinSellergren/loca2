@@ -35,37 +35,34 @@
         android:id="@+id/mapView_nameIt"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="8dp"
         android:layout_marginEnd="16dp"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="24dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/recyclerView_nameItAlternatives"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+
         app:layout_constraintTop_toBottomOf="@+id/textView_nameIt"
         mapbox:mapbox_cameraTargetLat="0"
-
         mapbox:mapbox_cameraTargetLng="0"
+
         mapbox:mapbox_cameraZoom="0"
         mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets"
-
         mapbox:mapbox_uiRotateGestures="false"
         mapbox:mapbox_uiTiltGestures="false"
         mapbox:mapbox_uiZoomControls="false">
 
     </com.mapbox.mapboxsdk.maps.MapView>
 
-    <TableLayout
-        android:id="@+id/tableLayout_nameItAlternatives"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recyclerView_nameItAlternatives"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:stretchColumns="*"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-    </TableLayout>
+        app:layout_constraintStart_toStartOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

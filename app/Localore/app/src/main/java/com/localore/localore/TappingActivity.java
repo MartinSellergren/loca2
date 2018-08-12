@@ -40,11 +40,6 @@ public class TappingActivity extends AppCompatActivity {
     private static final String QUIZ_CATEGORY_TYPE_PARAM_KEY = "com.localore.localore.CreateExerciseService.QUIZ_CATEGORY_TYPE_PARAM_KEY";
 
     /**
-     * Padding around working area for the initial camera-view.
-     */
-    private static final int WORKING_AREA_CAMERA_PADDING = 50;
-
-    /**
      * Quiz-category-type of all geo-objects.
      */
     private int quizCategoryType;
@@ -108,7 +103,7 @@ public class TappingActivity extends AppCompatActivity {
             @Override
             public void onMapReady(MapboxMap mapboxMap) {
                 TappingActivity.this.mapboxMap = mapboxMap;
-                initCameraView();
+                LocaUtils.flyToFitShape(exercise.getWorkingArea(), mapboxMap);
                 updateMap(nextLevelObjects);
 
                 mapboxMap.setOnMarkerClickListener(new MapboxMap.OnMarkerClickListener() {
@@ -166,15 +161,6 @@ public class TappingActivity extends AppCompatActivity {
         Toast.makeText(TappingActivity.this, str, Toast.LENGTH_SHORT).show();
     }
 
-    /**
-     * Set camera view to fit working area of exercise.
-     */
-    private void initCameraView() {
-        double[] workingAreaBounds = this.exercise.getWorkingArea().getBounds();
-        LatLngBounds latLngBounds = LocaUtils.toLatLngBounds(workingAreaBounds);
-        this.mapboxMap.moveCamera(CameraUpdateFactory
-                .newLatLngBounds(latLngBounds, WORKING_AREA_CAMERA_PADDING));
-    }
 
     /**
      * @param nextLevelObjects Next vs pasts level objects.
