@@ -263,7 +263,7 @@ public class GeoObject {
     }
 
     public String getCategory() {
-        return getSubcat();
+        return getSubcat().substring(0, 1).toUpperCase() + getSubcat().substring(1);
     }
 
     public void setSubcat(String subcat) {

@@ -1,5 +1,6 @@
 package com.localore.localore;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -40,11 +41,6 @@ public class SelectExerciseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_exercise);
         invalidateOptionsMenu();
-
-        View container = findViewById(R.id.layout_selectExercise);
-        Animation loadAnimation = AnimationUtils.loadAnimation(getApplicationContext(), android.R.anim.fade_in);
-        loadAnimation.setDuration(1000);
-        container.startAnimation(loadAnimation);
 
         this.recyclerView_exerciseLabels = findViewById(R.id.recyclerView_exerciseLabels);
         new ItemTouchHelper(new ItemTouchHelper.Callback() {
@@ -90,8 +86,6 @@ public class SelectExerciseActivity extends AppCompatActivity {
                 functionDialog.show();
             }
         }).attachToRecyclerView(recyclerView_exerciseLabels);
-
-//        updateLayout();
     }
 
     @Override
@@ -190,6 +184,7 @@ public class SelectExerciseActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View view) {
                     ExerciseActivity.start(exercise.getId(), SelectExerciseActivity.this);
+                    SelectExerciseActivity.this.finish();
                 }
             });
         }
@@ -213,9 +208,10 @@ public class SelectExerciseActivity extends AppCompatActivity {
 
     /**
      * Starts the activity.
+     * @param oldActivity
      */
-    public static void start(Context context) {
-        LocaUtils.startActivity(SelectExerciseActivity.class, context);
+    public static void start(Activity oldActivity) {
+        LocaUtils.fadeInActivity(SelectExerciseActivity.class, oldActivity);
     }
 
     /**

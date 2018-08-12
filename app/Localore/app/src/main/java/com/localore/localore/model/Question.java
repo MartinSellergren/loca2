@@ -55,8 +55,8 @@ public class Question {
     private int type;
 
     /**
-     * - For name-it: even number of alternatives (including correct one)
-     * - For place-it: >2 alternatives (including correct one)
+     * - For name-it: even number of alternatives (including correct one).
+     * - For place-it: >2 alternatives (including correct one).
      * - For pair-it: even number of geo-objects to pair.
      */
     private List<GeoObject> content;

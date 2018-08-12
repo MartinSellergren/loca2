@@ -72,14 +72,14 @@ public class QuizCategory {
     /**
      * @return Icon representing category.
      */
-    public Icon getIcon() {
+    public int getIconResource() {
         switch(this.type) {
-            case 0: return null;
-            case 1: return null;
-            case 2: return null;
-            case 3: return null;
-            case 4: return null;
-            default: throw new RuntimeException("Deda-end");
+            case SETTLEMENTS: return R.drawable.loca_notification_icon;
+            case ROADS: return R.drawable.mapbox_compass_icon;
+            case NATURE: return R.drawable.mapbox_marker_icon_default;
+            case TRANSPORT: return R.drawable.mapbox_marker_icon_default;
+            case CONSTRUCTIONS: return R.drawable.mapbox_marker_icon_default;
+            default: throw new RuntimeException("Dead end");
         }
     }
 

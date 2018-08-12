@@ -67,10 +67,11 @@
             android:screenOrientation="portrait" />
         <activity
             android:name=".TappingActivity"
-            android:screenOrientation="portrait">
-        </activity>
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".QuizActivity"
+            android:launchMode="singleTask"
             android:screenOrientation="portrait" />
         <activity
             android:name=".AboutActivity"

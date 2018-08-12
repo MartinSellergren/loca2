@@ -1,5 +1,6 @@
 package com.localore.localore;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -56,7 +57,6 @@ public class TappingActivity extends AppCompatActivity {
     private MapView mapView;
     private MapboxMap mapboxMap;
 
-
     /**
      * Mapping marker/polyline id to geo-object id.
      */
@@ -67,12 +67,13 @@ public class TappingActivity extends AppCompatActivity {
     /**
      * Start activity through this to pass quiz-category correctly.
      * @param quizCategoryType
-     * @param context
+     * @param oldActivity
      */
-    public static void start(int quizCategoryType, Context context) {
-        Intent intent = new Intent(context, TappingActivity.class);
+    public static void start(int quizCategoryType, Activity oldActivity) {
+        Intent intent = new Intent(oldActivity, TappingActivity.class);
         intent.putExtra(QUIZ_CATEGORY_TYPE_PARAM_KEY, quizCategoryType);
-        context.startActivity(intent);
+        oldActivity.startActivity(intent);
+        oldActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
     @Override
@@ -183,7 +184,7 @@ public class TappingActivity extends AppCompatActivity {
         List<GeoObject> geoObjects = ExerciseControl.loadGeoObjectsForTapping(
                 exercise.getId(), quizCategoryType, nextLevelObjects, db);
 
-        //for fun
+        //todo: remove
         if (nextLevelObjects == false) {
             List<Quiz> quizzes = ExerciseControl.loadQuizzesInExercise(exercise.getId(), db);
             geoObjects = new ArrayList<>();
@@ -198,67 +199,13 @@ public class TappingActivity extends AppCompatActivity {
         this.markersMap.clear();
         this.polylinesMap.clear();
 
-        LocaUtils.highlightWorkingArea(mapboxMap, exercise.getWorkingArea());
-        addGeoObjects(geoObjects);
+        //LocaUtils.highlightWorkingArea(mapboxMap, exercise.getWorkingArea());
+        LocaUtils.addGeoObjects(geoObjects, mapboxMap, markersMap, polylinesMap, this);
 
         if (nextLevelObjects)
             Toast.makeText(TappingActivity.this, "Next level", Toast.LENGTH_SHORT).show();
         else
             Toast.makeText(TappingActivity.this, "Past levels", Toast.LENGTH_SHORT).show();
-    }
-
-    /**
-     * Adds geo-objects to the map (markers and polylines). Also updates id-maps.
-     * @param geoObjects
-     */
-    private void addGeoObjects(List<GeoObject> geoObjects) {
-        for (GeoObject geoObject : geoObjects) addGeoObject(geoObject);
-    }
-
-    /**
-     * Adds a geo-object to the map. Also updates id-map.
-     * @param geoObject
-     */
-    private void addGeoObject(GeoObject geoObject) {
-        int color = LocaUtils.rankBasedColor(geoObject.getRank());
-
-        for (NodeShape nodeShape : geoObject.getShapes()) {
-            if (nodeShape.getNodes().size() == 1) {
-                addMarker(nodeShape.getNodes().get(0), geoObject.getId(), color);
-            }
-            else {
-                addPolyline(nodeShape.getNodes(), geoObject.getId(), color);
-            }
-        }
-    }
-
-    /**
-     * Adds a clickable marker. Show name on click.
-     * @param node
-     * @param geoObjectId
-     * @param color
-     */
-    private void addMarker(double[] node, long geoObjectId, int color) {
-        Marker marker = this.mapboxMap.addMarker(new MarkerOptions()
-                .icon(LocaUtils.nodeGeoObjectIcon(color, this))
-                .position(LocaUtils.toLatLng(node)));
-
-        this.markersMap.put(marker.getId(), geoObjectId);
-    }
-
-    /**
-     * Adds a clickable polyline. Show name on click.
-     * @param nodes
-     * @param geoObjectId
-     * @param color
-     */
-    private void addPolyline(List<double[]> nodes, long geoObjectId, int color) {
-        Polyline polyline = this.mapboxMap.addPolyline(new PolylineOptions()
-                .addAll(LocaUtils.toLatLngs(nodes))
-                .color(color)
-                .width(2));
-
-        this.polylinesMap.put(polyline.getId(), geoObjectId);
     }
 
     //region handle mapView's lifecycle

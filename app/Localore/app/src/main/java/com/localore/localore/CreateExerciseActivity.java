@@ -1,6 +1,7 @@
 package com.localore.localore;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -119,6 +120,12 @@ public class CreateExerciseActivity extends AppCompatActivity {
                 initializeMap();
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapView.onResume();
 
         AppDatabase db = AppDatabase.getInstance(this);
         long userId = SessionControl.load(db).getUserId();
@@ -472,11 +479,6 @@ public class CreateExerciseActivity extends AppCompatActivity {
         mapView.onStart();
     }
     @Override
-    protected void onResume() {
-        super.onResume();
-        mapView.onResume();
-    }
-    @Override
     protected void onPause() {
         super.onPause();
         mapView.onPause();
@@ -505,9 +507,9 @@ public class CreateExerciseActivity extends AppCompatActivity {
 
     /**
      * Start the activity.
-     * @param context
+     * @param oldActivity
      */
-    public static void start(Context context) {
-        LocaUtils.startActivity(CreateExerciseActivity.class, context);
+    public static void start(Activity oldActivity) {
+        LocaUtils.fadeInActivity(CreateExerciseActivity.class, oldActivity);
     }
 }

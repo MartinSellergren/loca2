@@ -79,6 +79,8 @@ public class SessionControl {
         Session session = load(db);
         session.setExerciseId(exerciseId);
         db.sessionDao().update(session);
+
+        session = load(db);
     }
 
     /**

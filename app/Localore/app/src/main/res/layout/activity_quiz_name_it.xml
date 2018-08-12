@@ -61,6 +61,7 @@
         android:id="@+id/tableLayout_nameItAlternatives"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:stretchColumns="*"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">

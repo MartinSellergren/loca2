@@ -237,8 +237,7 @@ public class RunningQuizControl {
         if (runningQuiz == null) return;
 
         List<Question> questions =
-                db.questionDao()
-                        .loadWithRunningQuiz(runningQuiz.getId());
+                db.questionDao().loadWithRunningQuiz(runningQuiz.getId());
 
         db.questionDao().delete(questions);
         db.runningQuizDao().delete(runningQuiz);

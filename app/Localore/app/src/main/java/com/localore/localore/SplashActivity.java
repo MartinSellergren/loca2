@@ -48,7 +48,10 @@ public class SplashActivity extends AppCompatActivity {
                 else {
                     ExerciseActivity.start(session.getExerciseId(), SplashActivity.this);
                 }
+
+                SplashActivity.this.finish();
             }
+
         }, DISPLAY_TIME);
     }
 }

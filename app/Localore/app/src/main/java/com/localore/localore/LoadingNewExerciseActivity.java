@@ -1,5 +1,6 @@
 package com.localore.localore;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -53,11 +54,11 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
      * Starts the activity and begins loading an new exercise.
      * @param name
      * @param workingArea
+     * @param oldActivity
      */
-    public static void freshStart(String name, NodeShape workingArea, Context context) {
-        SessionControl.initLoadingOfNewExercise(name, workingArea, AppDatabase.getInstance(context));
-        Intent intent = new Intent(context, LoadingNewExerciseActivity.class);
-        context.startActivity(intent);
+    public static void freshStart(String name, NodeShape workingArea, Activity oldActivity) {
+        SessionControl.initLoadingOfNewExercise(name, workingArea, AppDatabase.getInstance(oldActivity));
+        LocaUtils.fadeInActivity(LoadingNewExerciseActivity.class, oldActivity);
     }
 
     /**
@@ -69,11 +70,10 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
      *
      * @pre Loading-status in exercise != NOT_STARTED.
      *
-     * @param context
+     * @param oldActivity
      */
-    public static void resumedStart(Context context) {
-        Intent intent = new Intent(context, LoadingNewExerciseActivity.class);
-        context.startActivity(intent);
+    public static void resumedStart(Activity oldActivity) {
+        LocaUtils.fadeInActivity(LoadingNewExerciseActivity.class, oldActivity);
     }
 
     /**
@@ -83,7 +83,6 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_loading_new_exercise);
-
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.hide();
 
@@ -250,8 +249,7 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
 
         if (successful) {
             ExerciseControl.wipeConstructionJunk(this);
-            Intent intent = new Intent(this, ExerciseActivity.class);
-            startActivity(intent);
+            ExerciseActivity.start(SessionControl.load(AppDatabase.getInstance(this)).getExerciseId(), this);
         }
         else {
             AppDatabase db = AppDatabase.getInstance(this);

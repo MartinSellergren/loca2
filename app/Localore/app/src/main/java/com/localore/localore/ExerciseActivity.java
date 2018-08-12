@@ -1,5 +1,6 @@
 package com.localore.localore;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -37,6 +38,11 @@ public class ExerciseActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_exercise);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
 
         AppDatabase db = AppDatabase.getInstance(this);
         Exercise exercise = SessionControl.loadExercise(db);
@@ -66,6 +72,7 @@ public class ExerciseActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.menuItem_selectExercise) {
             SelectExerciseActivity.start(ExerciseActivity.this);
+            finish();
         }
         else if (item.getItemId() == R.id.menuItem_about) {
             AboutActivity.start(ExerciseActivity.this);
@@ -136,9 +143,11 @@ public class ExerciseActivity extends AppCompatActivity {
                             }
                             else if (item == 1) {
                                 QuizActivity.freshStart(RunningQuiz.LEVEL_QUIZ, quizCategoryType, ExerciseActivity.this);
+                                ExerciseActivity.this.finish();
                             }
                             else {
                                 QuizActivity.freshStart(RunningQuiz.QUIZ_CATEGORY_REMINDER, quizCategoryType, ExerciseActivity.this);
+                                ExerciseActivity.this.finish();
                             }
                         }
                     });
@@ -172,56 +181,18 @@ public class ExerciseActivity extends AppCompatActivity {
 
     }
 
-//    /**
-//     * Dialog shown when user clicks quiz-category.
-//     * For starting 1) tapping, 2) exercise-quiz, 3) quiz-category-reminder
-//     */
-//    public static class QuizCategoryDialog extends DialogFragment {
-//
-//        @NonNull
-//        @Override
-//        public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-//            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-//
-//            builder.setNegativeButton("Tapping", new DialogInterface.OnClickListener() {
-//                @Override
-//                public void onClick(DialogInterface dialogInterface, int i) {
-//                    TappingActivity.freshStart(0, getActivity());
-//                }
-//            });
-//
-//            builder.setNeutralButton("Exercise quiz", new DialogInterface.OnClickListener() {
-//                @Override
-//                public void onClick(DialogInterface dialogInterface, int i) {
-//                    Intent intent = new Intent(getActivity(), QuizActivity.class);
-//                    startActivity(intent);
-//                }
-//            });
-//
-//            builder.setPositiveButton("Reminder", new DialogInterface.OnClickListener() {
-//                @Override
-//                public void onClick(DialogInterface dialogInterface, int i) {
-//                    Intent intent = new Intent(getActivity(), QuizActivity.class);
-//                    startActivity(intent);
-//                }
-//            });
-//
-//            return builder.create();
-//        }
-//
-//    }
-
-    //endregion
 
     /**
      * Starts the activity.
-     * @param context
+     * @param oldActivity
+     *
+     * @pre exerciseId in session.
      */
-    public static void start(long exerciseId, Context context) {
-        AppDatabase db = AppDatabase.getInstance(context);
+    public static void start(long exerciseId, Activity oldActivity) {
+        AppDatabase db = AppDatabase.getInstance(oldActivity);
         SessionControl.setActiveExercise(exerciseId, db);
 
-        LocaUtils.startActivity(ExerciseActivity.class, context);
+        LocaUtils.fadeInActivity(ExerciseActivity.class, oldActivity);
     }
 
     /**

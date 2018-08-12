@@ -1,5 +1,6 @@
 package com.localore.localore;
 
+import android.app.Activity;
 import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -18,10 +19,10 @@ public class AboutActivity extends AppCompatActivity {
     /**
      * Starts the activity.
      *
-     * @param context
+     * @param oldActivity
      */
-    public static void start(Context context) {
-        LocaUtils.startActivity(AboutActivity.class, context);
+    public static void start(Activity oldActivity) {
+        LocaUtils.fadeInActivity(AboutActivity.class, oldActivity);
     }
 
     @Override

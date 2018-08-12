@@ -1,5 +1,6 @@
 package com.localore.localore;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -7,6 +8,8 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
@@ -27,8 +30,11 @@ import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.Polygon;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
+import com.mapbox.mapboxsdk.annotations.Polyline;
 import com.mapbox.mapboxsdk.annotations.PolylineOptions;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
@@ -41,6 +47,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -106,20 +113,22 @@ public class LocaUtils {
             context.startActivity(intent);
         }
         else {
-            Toast.makeText(context, "Press once again to exit!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.press_once_again_to_exit, Toast.LENGTH_SHORT).show();
             firstQuitRequestTime = System.currentTimeMillis();
         }
     }
 
     /**
-     * Start a new activity..
-     * @param activityClass
-     * @param context
+     * Fade out old activity, start new new and fade it in.
+     * @param newActivityClass
+     * @param oldActivity
      */
-    public static void startActivity(Class<?> activityClass, Context context) {
-        Intent intent = new Intent(context, activityClass);
-        context.startActivity(intent);
+    public static void fadeInActivity(Class<?> newActivityClass, Activity oldActivity) {
+        Intent intent = new Intent(oldActivity, newActivityClass);
+        oldActivity.startActivity(intent);
+        oldActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
+
 
     /**
      * @param mapboxMap
@@ -183,7 +192,7 @@ public class LocaUtils {
 
         mapboxMap.addPolyline(new PolylineOptions()
                 .addAll(hole)
-                .width(1)
+                .width(5)
                 .color(LocaUtils.DIM_OVERLAY_COLOR));
     }
 
@@ -292,6 +301,98 @@ public class LocaUtils {
 
     //endregion
 
+    //region Draw geo-objects on map
+
+
+    /**
+     * Adds geo-objects to the map (markers and polylines). Also updates id-maps.
+     *
+     * @param geoObjects
+     * @param mapboxMap
+     * @param markersMap Updated with mappings: markerId -> geoObjectId. May be null.
+     * @param polylinesMap Updated with mappings: polylineId -> geoObjectId. May be null.
+     */
+    public static void addGeoObjects(List<GeoObject> geoObjects, MapboxMap mapboxMap,
+                              Map<Long,Long> markersMap, Map<Long,Long> polylinesMap, Context context) {
+        for (GeoObject geoObject : geoObjects)
+            addGeoObject(geoObject, mapboxMap, markersMap, polylinesMap, context);
+    }
+
+    /**
+     * Adds geo-objects to the map (markers and polylines).
+     *
+     * @param geoObjects
+     * @param mapboxMap
+     */
+    public static void addGeoObjects(List<GeoObject> geoObjects, MapboxMap mapboxMap, Context context) {
+        addGeoObjects(geoObjects, mapboxMap, null, null, context);
+    }
+
+    /**
+     * Adds a geo-object to the map. Also updates id-maps if not null.
+     * @param geoObject
+     * @param mapboxMap
+     * @param markersMap
+     * @param polylinesMap
+     * @param context
+     */
+    public static void addGeoObject(GeoObject geoObject, MapboxMap mapboxMap,
+                              Map<Long,Long> markersMap, Map<Long,Long> polylinesMap, Context context) {
+        int color = LocaUtils.rankBasedColor(geoObject.getRank());
+
+        for (NodeShape nodeShape : geoObject.getShapes()) {
+            if (nodeShape.getNodes().size() == 1) {
+                addMarker(nodeShape.getNodes().get(0), geoObject.getId(), color, mapboxMap, markersMap, context);
+            }
+            else {
+                addPolyline(nodeShape.getNodes(), geoObject.getId(), color, mapboxMap, polylinesMap);
+            }
+        }
+    }
+
+    /**
+     * Adds a geo-object to the map.
+     * @param geoObject
+     * @param mapboxMap
+     * @param context
+     */
+    public static void addGeoObject(GeoObject geoObject, MapboxMap mapboxMap, Context context) {
+        addGeoObject(geoObject, mapboxMap, null, null, context);
+    }
+
+
+    /**
+     * Adds a marker. Updates id-map if not null.
+     * @param node
+     * @param geoObjectId
+     * @param color
+     */
+    private static void addMarker(double[] node, long geoObjectId, int color, MapboxMap mapboxMap,
+                           Map<Long,Long> markersMap, Context context) {
+        Marker marker = mapboxMap.addMarker(new MarkerOptions()
+                .icon(LocaUtils.nodeGeoObjectIcon(color, context))
+                .position(LocaUtils.toLatLng(node)));
+
+        if (markersMap != null) markersMap.put(marker.getId(), geoObjectId);
+    }
+
+    /**
+     * Adds a polyline. Updates id-map if not null.
+     * @param nodes
+     * @param geoObjectId
+     * @param color
+     */
+    private static void addPolyline(List<double[]> nodes, long geoObjectId, int color, MapboxMap mapboxMap,
+                             Map<Long,Long> polylinesMap) {
+        Polyline polyline = mapboxMap.addPolyline(new PolylineOptions()
+                .addAll(LocaUtils.toLatLngs(nodes))
+                .color(color)
+                .width(2));
+
+        if (polylinesMap != null) polylinesMap.put(polyline.getId(), geoObjectId);
+    }
+
+    //endregion
 
     //region Logging
 
