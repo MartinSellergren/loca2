@@ -2,98 +2,139 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/layout_quiz"
+    xmlns:mapbox="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".QuizActivity">
 
     <android.support.constraint.ConstraintLayout
-        android:id="@+id/constraintLayout"
+        android:id="@+id/layout_quiz_topContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/mapbox_blue"
+        android:background="?android:attr/colorBackground"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-            android:id="@+id/button_exit"
+        <ImageButton
+            android:id="@+id/imageButton_quiz_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
-            android:layout_marginStart="8dp"
-            android:onClick="onExitQuiz"
+            android:layout_marginBottom="4dp"
+            android:layout_marginLeft="2dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="2dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
+            mapbox:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
 
         <ProgressBar
             android:id="@+id/progressBar_quiz"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="32dp"
-            android:layout_marginLeft="32dp"
-            android:layout_marginRight="32dp"
-            android:layout_marginStart="32dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginEnd="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginStart="16dp"
+            app:layout_constraintBottom_toBottomOf="@+id/imageButton_quiz_close"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/button_exit"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintStart_toEndOf="@+id/imageButton_quiz_close"
+            app:layout_constraintTop_toTopOf="@+id/imageButton_quiz_close" />
 
     </android.support.constraint.ConstraintLayout>
 
-    <ViewFlipper
-        android:id="@+id/viewFlipper_questions"
+    <TextView
+        android:id="@+id/textView_quiz"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/name_it"
+        android:textAppearance="@android:style/TextAppearance.Large"
+        app:layout_constraintStart_toEndOf="@+id/imageView_quiz_questionCategoryIcon"
+        app:layout_constraintTop_toBottomOf="@+id/layout_quiz_topContainer" />
+
+    <ImageView
+        android:id="@+id/imageView_quiz_questionCategoryIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/textView_quiz"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textView_quiz"
+        app:srcCompat="@drawable/mapbox_info_bg_selector" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recyclerView_quiz_top"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/constraintLayout">
+        app:layout_constraintTop_toBottomOf="@+id/textView_quiz" />
 
+    <com.mapbox.mapboxsdk.maps.MapView
+        android:id="@+id/mapView_quiz"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginStart="16dp"
 
-        <include
-            layout="@layout/activity_quiz_name_it"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+        android:layout_marginTop="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/recyclerView_bottom"
+        app:layout_constraintEnd_toEndOf="parent"
 
-        <include
-            layout="@layout/activity_quiz_place_it"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/recyclerView_quiz_top"
+        mapbox:mapbox_cameraTargetLat="0"
+        mapbox:mapbox_cameraTargetLng="0"
+        mapbox:mapbox_cameraZoom="0"
+        mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets"
+        mapbox:mapbox_uiRotateGestures="false"
+        mapbox:mapbox_uiTiltGestures="false"
+        mapbox:mapbox_uiZoomControls="false">
 
-        <include
-            layout="@layout/activity_quiz_pair_it"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+    </com.mapbox.mapboxsdk.maps.MapView>
 
-    </ViewFlipper>
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recyclerView_bottom"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/button_toggleZoom"
+        android:id="@+id/button_quiz_toggleZoom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginTop="8dp"
         android:clickable="true"
-        app:layout_constraintEnd_toEndOf="@+id/viewFlipper_questions"
-        app:layout_constraintTop_toTopOf="@+id/viewFlipper_questions"
+        app:layout_constraintEnd_toEndOf="@+id/mapView_quiz"
+        app:layout_constraintTop_toTopOf="@+id/mapView_quiz"
         app:srcCompat="@android:drawable/ic_menu_zoom" />
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/button_nextQuestion"
+        android:id="@+id/button_quiz_nextQuestion"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
         android:clickable="true"
-        android:onClick="onNextQuestion"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/mapView_quiz"
+        app:layout_constraintEnd_toEndOf="@+id/mapView_quiz"
         app:srcCompat="@android:drawable/ic_media_next" />
 
 </android.support.constraint.ConstraintLayout>

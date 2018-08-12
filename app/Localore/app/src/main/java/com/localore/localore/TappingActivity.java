@@ -1,7 +1,6 @@
 package com.localore.localore;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -16,16 +15,11 @@ import android.widget.Toast;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
 import com.localore.localore.model.GeoObject;
-import com.localore.localore.model.NodeShape;
 import com.localore.localore.model.Quiz;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.SessionControl;
 import com.mapbox.mapboxsdk.annotations.Marker;
-import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.Polyline;
-import com.mapbox.mapboxsdk.annotations.PolylineOptions;
-import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
-import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
@@ -80,11 +74,10 @@ public class TappingActivity extends AppCompatActivity {
         this.quizCategoryType = getIntent().getIntExtra(QUIZ_CATEGORY_TYPE_PARAM_KEY, -1);
         if (quizCategoryType == -1) throw new RuntimeException("Start activity with freshStart()");
 
-        AppDatabase db = AppDatabase.getInstance(this);
-        this.exercise = SessionControl.loadExercise(db);
+        this.exercise = SessionControl.loadExercise(this);
         setTitle(exercise.getName());
 
-        this.mapView = findViewById(R.id.mapView_nameIt);
+        this.mapView = findViewById(R.id.mapView_quiz);
         mapView.onCreate(null);
     }
 
@@ -103,7 +96,7 @@ public class TappingActivity extends AppCompatActivity {
             @Override
             public void onMapReady(MapboxMap mapboxMap) {
                 TappingActivity.this.mapboxMap = mapboxMap;
-                LocaUtils.flyToFitShape(exercise.getWorkingArea(), mapboxMap);
+                LocaUtils.flyToFitShape(exercise.getWorkingArea(), mapboxMap, LocaUtils.LONG_FLY_TIME);
                 updateMap(nextLevelObjects);
 
                 mapboxMap.setOnMarkerClickListener(new MapboxMap.OnMarkerClickListener() {

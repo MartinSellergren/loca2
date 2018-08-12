@@ -1,5 +1,7 @@
 package com.localore.localore.modelManipulation;
 
+import android.content.Context;
+
 import com.localore.localore.LocaUtils;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
@@ -48,44 +50,48 @@ public class RunningQuizControl {
 
     /**
      * Loads a running-quiz.
-     * @param db
+     * @param context
      * @return Running-quiz or NULL.
      */
-    public static RunningQuiz load(AppDatabase db) {
+    public static RunningQuiz load(Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
         return db.runningQuizDao().loadOne();
     }
 
     /**
      *
-     * @param db
+     * @param context
      * @return True if a quiz is running (exists in db).
      */
-    public static boolean isCurrentlyRunning(AppDatabase db) {
-        return load(db) != null;
+    public static boolean isCurrentlyRunning(Context context) {
+        return load(context) != null;
     }
 
     /**
      * @param question
-     * @param db
+     * @param context
      * @return Geo-object of question.
      */
-    public static GeoObject loadGeoObjectFromQuestion(Question question, AppDatabase db) {
+    public static GeoObject loadGeoObjectFromQuestion(Question question, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
         return db.geoDao().load(question.getGeoObjectId());
     }
 
     /**
      * @param runningQuiz
-     * @param db
+     * @param context
      * @return Underlying quiz-data of running quiz.
      */
-    public static Quiz loadQuizFromRunningQuiz(RunningQuiz runningQuiz, AppDatabase db) {
+    public static Quiz loadQuizFromRunningQuiz(RunningQuiz runningQuiz, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
         Question question = db.questionDao().loadWithRunningQuiz(runningQuiz.getId()).get(0);
-        GeoObject geoObject = loadGeoObjectFromQuestion(question, db);
+        GeoObject geoObject = loadGeoObjectFromQuestion(question, context);
         return db.quizDao().load(geoObject.getQuizId());
     }
 
-    public static QuizCategory loadQuizCategoryFromRunningQuiz(RunningQuiz runningQuiz, AppDatabase db) {
-        Quiz quiz = loadQuizFromRunningQuiz(runningQuiz, db);
+    public static QuizCategory loadQuizCategoryFromRunningQuiz(RunningQuiz runningQuiz, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        Quiz quiz = loadQuizFromRunningQuiz(runningQuiz, context);
         return db.quizCategoryDao().load(quiz.getQuizCategoryId());
     }
 
@@ -101,13 +107,26 @@ public class RunningQuizControl {
     }
 
     /**
-     * @param db
+     * @param context
      * @return Number of questions in current running-quiz.
      */
-    public static int noQuestions(AppDatabase db) {
-        RunningQuiz runningQuiz = load(db);
+    public static int noQuestions(Context context) {
+        RunningQuiz runningQuiz = load(context);
         if (runningQuiz == null) return 0;
-        return db.questionDao().countWithRunningQuiz(runningQuiz.getId());
+        return AppDatabase.getInstance(context).questionDao().countWithRunningQuiz(runningQuiz.getId());
+    }
+
+    public static Question loadCurrentQuestion(Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        RunningQuiz runningQuiz = RunningQuizControl.load(context);
+        int currentQuestionIndex = runningQuiz.getCurrentQuestionIndex();
+        return db.questionDao().loadWithRunningQuizAndIndex(runningQuiz.getId(), currentQuestionIndex);
+    }
+
+    public static GeoObject loadGeoObjectOfCurrentQuestion(Context context) {
+        Question currentQuestion = loadCurrentQuestion(context);
+        return AppDatabase.getInstance(context).geoDao()
+                .load(currentQuestion.getGeoObjectId());
     }
 
     //endregion
@@ -118,11 +137,12 @@ public class RunningQuizControl {
      * Set running-quiz to a new level-quiz (constructed from db quiz-data of exercise).
      * @param exerciseId
      * @param quizCategoryType
-     * @param db
+     * @param context
      */
-    public static void newLevelQuiz(long exerciseId, int quizCategoryType, AppDatabase db) {
+    public static void newLevelQuiz(long exerciseId, int quizCategoryType, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
         int runningQuizType = 0;
-        long runningQuizId = newRunningQuiz(runningQuizType, db);
+        long runningQuizId = newRunningQuiz(runningQuizType, context);
 
         Quiz quizData = ExerciseControl.loadNextLevelQuiz(exerciseId, quizCategoryType, db);
         if (quizData == null) return;
@@ -133,16 +153,17 @@ public class RunningQuizControl {
 
     /**
      * Set running-quiz to a new follow-up-quiz (constructed from db running-quiz).
-     * @param db
+     * @param context
      * @pre A running-quiz in db.
      */
-    public static void newFollowUpQuiz(AppDatabase db) {
-        long runningQuizId = load(db).getId();
-        List<Question> incorrectQuestions =
-                db.questionDao().loadIncorrectWithRunningQuizOrderedByIndex(runningQuizId);
+    public static void newFollowUpQuiz(Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        long runningQuizId = load(context).getId();
+        List<Question> incorrectQuestions = db.questionDao()
+                        .loadIncorrectWithRunningQuizOrderedByIndex(runningQuizId);
 
         int runningQuizType = 1;
-        runningQuizId = newRunningQuiz(runningQuizType, db);
+        runningQuizId = newRunningQuiz(runningQuizType, context);
 
         List<Question> newQuestions = new ArrayList<>();
         for (int i = 0; i < incorrectQuestions.size(); i++) {
@@ -160,11 +181,12 @@ public class RunningQuizControl {
      *
      * @param exerciseId
      * @param quizCategoryType
-     * @param db
+     * @param context
      */
-    public static void newLevelReminder(long exerciseId, int quizCategoryType, AppDatabase db) {
+    public static void newLevelReminder(long exerciseId, int quizCategoryType, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
         int runningQuizType = 2;
-        long runningQuizId = newRunningQuiz(runningQuizType, db);
+        long runningQuizId = newRunningQuiz(runningQuizType, context);
 
         QuizCategory quizCategory = db.quizCategoryDao().loadWithExerciseAndType(exerciseId, quizCategoryType);
         List<Long> quizIds = db.quizDao().loadPassedIdsWithQuizCategory(quizCategory.getId());
@@ -179,11 +201,12 @@ public class RunningQuizControl {
      * from geo-object-stats of exercise).
      *
      * @param exerciseId
-     * @param db
+     * @param context
      */
-    public static void newExerciseReminder(long exerciseId, AppDatabase db) {
+    public static void newExerciseReminder(long exerciseId, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
         int runningQuizType = 3;
-        long runningQuizId = newRunningQuiz(runningQuizType, db);
+        long runningQuizId = newRunningQuiz(runningQuizType, context);
 
         List<Long> geoObjectCandidateIds = loadIdOfGeoObjectsInPassedQuizzesInExercise(exerciseId, db);
         List<GeoObject> geoObjects = pickReminderQuizGeoObjects(geoObjectCandidateIds, db);
@@ -217,11 +240,12 @@ public class RunningQuizControl {
     /**
      * Replace current running-quiz in database with new one.
      * @param runningQuizType
-     * @param db
+     * @param context
      * @return Id of new running-quiz.
      */
-    private static long newRunningQuiz(int runningQuizType, AppDatabase db) {
-        deleteRunningQuiz(db);
+    private static long newRunningQuiz(int runningQuizType, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        deleteRunningQuiz(context);
         RunningQuiz runningQuiz = new RunningQuiz(runningQuizType);
         long runningQuizId = db.runningQuizDao().insert(runningQuiz);
 
@@ -230,10 +254,11 @@ public class RunningQuizControl {
 
     /**
      * Deleted running-quiz from database (including underlying questions), if one exists.
-     * @param db
+     * @param context
      */
-    public static void deleteRunningQuiz(AppDatabase db) {
-        RunningQuiz runningQuiz = load(db);
+    public static void deleteRunningQuiz(Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        RunningQuiz runningQuiz = load(context);
         if (runningQuiz == null) return;
 
         List<Question> questions =
@@ -303,25 +328,29 @@ public class RunningQuizControl {
     //region question-operations
 
     /**
-     * Report result of question in running quiz. Depends on type of running-quiz.
-     * For a Pair-it question: call this multiple times.
-     * Db-updates: Question in running-quiz, and Geo-object (defining question) stats.
+     * Report result of question in running quiz. Does nothing if question already reported.
+     * Don't report pair-it questions.
+     * Db-updates: Question (answered/correct) in running-quiz, and Geo-object (defining question) stats.
      *
      * @param question
      * @param correct
-     * @param db
+     * @param context
      */
-    public static void reportQuestionResult(Question question, boolean correct, AppDatabase db) {
+    public static void reportQuestionResult(Question question, boolean correct, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        Question dbQuestion = db.questionDao().load(question.getId());
+        if (dbQuestion.isAnswered()) return;
+
+        question.setAnswered(true);
         if (correct) question.setAnsweredCorrectly(true);
         else question.setAnsweredCorrectly(false);
         db.questionDao().update(question);
 
-        RunningQuiz runningQuiz = load(db);
+        RunningQuiz runningQuiz = load(context);
         double askWeight = 1;
-        if (question.getType() == Question.PAIR_IT) askWeight *= 0.5;
         if (runningQuiz.getType() == RunningQuiz.FOLLOW_UP_QUIZ) askWeight *= 0.5;
 
-        GeoObject geoObject = loadGeoObjectFromQuestion(question, db);
+        GeoObject geoObject = loadGeoObjectFromQuestion(question, context);
         geoObject.setTimesAsked( geoObject.getTimesAsked() + askWeight );
         if (correct) {
             geoObject.setNoCorrectAnswers(geoObject.getNoCorrectAnswers() + askWeight);
@@ -337,11 +366,12 @@ public class RunningQuizControl {
      * - Returns next question in a quiz-run (NULL if no more).
      * - Db-update: current question in running-quiz.
      *
-     * @param db
+     * @param context
      * @return Next question, or NULL if quiz is done.
      */
-    public static Question nextQuestion(AppDatabase db) {
-        RunningQuiz runningQuiz = load(db);
+    public static Question nextQuestion(Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        RunningQuiz runningQuiz = load(context);
         int nextQuestionIndex = runningQuiz.getCurrentQuestionIndex() + 1;
         runningQuiz.setCurrentQuestionIndex(nextQuestionIndex);
         db.runningQuizDao().update(runningQuiz);
@@ -363,13 +393,14 @@ public class RunningQuizControl {
      * Reminders: Decrement number of required reminders.
      *
      * @param exercise
-     * @param db
+     * @param context
      * @return Brief feedback.
      */
-    public static String onFinishedRunningQuiz(Exercise exercise, AppDatabase db) {
-        RunningQuiz runningQuiz = load(db);
-        Quiz quiz = loadQuizFromRunningQuiz(runningQuiz, db);
-        QuizCategory quizCategory = loadQuizCategoryFromRunningQuiz(runningQuiz, db);
+    public static String onFinishedRunningQuiz(Exercise exercise, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        RunningQuiz runningQuiz = load(context);
+        Quiz quiz = loadQuizFromRunningQuiz(runningQuiz, context);
+        QuizCategory quizCategory = loadQuizCategoryFromRunningQuiz(runningQuiz, context);
 
         List<Question> questions =
                 db.questionDao()
@@ -389,7 +420,7 @@ public class RunningQuizControl {
             decrementNoRequiredExerciseReminders(exercise, db);
         }
 
-        deleteRunningQuiz(db);
+        deleteRunningQuiz(context);
         return feedback(successRate);
     }
 

@@ -42,7 +42,7 @@ public class SplashActivity extends AppCompatActivity {
                 else if (session.getExerciseId() == -1) {
                     SelectExerciseActivity.start(SplashActivity.this);
                 }
-                else if (RunningQuizControl.isCurrentlyRunning(db)) {
+                else if (RunningQuizControl.isCurrentlyRunning(SplashActivity.this)) {
                     QuizActivity.resumedStart(SplashActivity.this);
                 }
                 else {

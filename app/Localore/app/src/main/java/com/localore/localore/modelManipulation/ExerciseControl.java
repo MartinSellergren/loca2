@@ -655,5 +655,16 @@ public class ExerciseControl {
                 .loadLowestLevelNotYetDoneInQuizCategory(quizCategory.getId());
     }
 
+    /**
+     * @param geoObject
+     * @param context
+     * @return Geo-object's quiz-category.
+     */
+    public static QuizCategory loadQuizCategoryOfGeoObject(GeoObject geoObject, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        Quiz quiz = db.quizDao().load(geoObject.getQuizId());
+        return db.quizCategoryDao().load(quiz.getQuizCategoryId());
+    }
+
     //endregion
 }

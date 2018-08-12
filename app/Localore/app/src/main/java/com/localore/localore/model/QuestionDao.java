@@ -28,6 +28,9 @@ public interface QuestionDao {
     @Update
     public void update(Question question);
 
+    @Query("SELECT * from question WHERE id = :id")
+    public Question load(long id);
+
     @Query("SELECT * FROM question WHERE runningQuizId = :runningQuizId AND `index` = :index")
     public Question loadWithRunningQuizAndIndex(long runningQuizId, int index);
 

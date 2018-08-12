@@ -60,7 +60,7 @@
 
   "constructions": [
     [
-      "leisure|fritid",
+      "leisure",
       "amenity=casino",
       "amenity=swimming_pool",
       "tourism=aquarium",
@@ -180,7 +180,7 @@
       "historic=monastery"
     ],
     [
-      "lodging|logi",
+      "lodging",
       "tourism=hotel",
       "tourism=guest_house",
       "tourism=hostel",
@@ -481,7 +481,7 @@
       "landuse=residential"
     ],
     [
-      "cultivation|odling",
+      "cultivation",
       "landuse=orchard",
       "landuse=vineyard",
       "place=allotments",

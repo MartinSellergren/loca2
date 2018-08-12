@@ -1,9 +1,12 @@
 package com.localore.localore;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -12,18 +15,20 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ViewFlipper;
 
 import com.localore.localore.model.AppDatabase;
-import com.localore.localore.model.Exercise;
 import com.localore.localore.model.GeoObject;
+import com.localore.localore.model.NodeShape;
 import com.localore.localore.model.Question;
 import com.localore.localore.model.QuizCategory;
 import com.localore.localore.model.RunningQuiz;
+import com.localore.localore.model.SessionDao;
+import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.RunningQuizControl;
 import com.localore.localore.modelManipulation.SessionControl;
 import com.mapbox.mapboxsdk.maps.MapView;
@@ -41,30 +46,21 @@ public class QuizActivity extends AppCompatActivity {
     private static final int QUESTION_ZOOM = 1;
 
     private Activity activity;
+
+    private ConstraintLayout topContainer;
+    private ImageButton exitButton;
     private ProgressBar progressBar;
-    private ViewFlipper flipper;
-    private FloatingActionButton button_nextQuestion;
-    private FloatingActionButton button_toggleZoom;
 
-    private ImageView imageView_nameItIcon;
-    private TextView textView_nameIt;
-    private MapView mapView_nameIt;
-    private RecyclerView recyclerView_nameItAlternatives;
+    private TextView textView;
+    private ImageView questionCategoryIcon;
+    private RecyclerView topRecycler;
+    private MapView mapView;
+    private RecyclerView bottomRecycler;
 
-    private ImageView imageView_placeItIcon;
-    private TextView textView_placeIt;
-    private MapView mapView_placeIt;
+    private FloatingActionButton nextQuestionButton;
+    private FloatingActionButton toggleZoomButton;
 
-    private TextView textView_pairIt;
-    private RecyclerView recyclerView_pairIt;
-    private MapView mapView_pairIt;
-
-    private MapboxMap mapboxMap_nameIt;
-    private MapboxMap mapboxMap_placeIt;
-    private MapboxMap mapboxMap_pairIt;
-
-    private Exercise exercise;
-
+    private MapboxMap mapboxMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,75 +70,67 @@ public class QuizActivity extends AppCompatActivity {
         if (actionBar != null) actionBar.hide();
 
         this.activity = this;
+        this.topContainer = findViewById(R.id.layout_quiz_topContainer);
+        this.exitButton = findViewById(R.id.imageButton_quiz_close);
         this.progressBar = findViewById(R.id.progressBar_quiz);
-        this.flipper = findViewById(R.id.viewFlipper_questions);
-        this.button_nextQuestion = findViewById(R.id.button_nextQuestion);
-        this.button_toggleZoom = findViewById(R.id.button_toggleZoom);
 
-        this.imageView_nameItIcon = findViewById(R.id.imageView_nameItIcon);
-        this.textView_nameIt = findViewById(R.id.textView_nameIt);
-        this.mapView_nameIt = findViewById(R.id.mapView_nameIt);
-        this.recyclerView_nameItAlternatives = findViewById(R.id.recyclerView_nameItAlternatives);
+        this.nextQuestionButton = findViewById(R.id.button_quiz_nextQuestion);
+        this.toggleZoomButton = findViewById(R.id.button_quiz_toggleZoom);
 
-        this.imageView_placeItIcon = findViewById(R.id.imageView_placeItIcon);
-        this.textView_placeIt = findViewById(R.id.textView_placeIt);
-        this.mapView_placeIt = findViewById(R.id.mapView_placeIt);
+        this.textView = findViewById(R.id.textView_quiz);
+        this.questionCategoryIcon = findViewById(R.id.imageView_quiz_questionCategoryIcon);
+        this.topRecycler = findViewById(R.id.recyclerView_quiz_top);
+        this.mapView = findViewById(R.id.mapView_quiz);
+        this.bottomRecycler = findViewById(R.id.recyclerView_bottom);
 
-        this.textView_pairIt = findViewById(R.id.textView_pairIt);
-        this.recyclerView_pairIt = findViewById(R.id.recyclerView_pairIt);
-        this.mapView_pairIt = findViewById(R.id.mapView_pairIt);
+        mapView.getMapAsync(new OnMapReadyCallback() {
+            @Override
+            public void onMapReady(MapboxMap mapboxMap) {
+                QuizActivity.this.mapboxMap = mapboxMap;
+                update();
+            }
+        });
 
-        mapView_nameIt.onCreate(savedInstanceState);
-        mapView_placeIt.onCreate(savedInstanceState);
-        mapView_pairIt.onCreate(savedInstanceState);
-
-        this.exercise = SessionControl.loadExercise(AppDatabase.getInstance(this));
-
-        updateLayout();
+        exitButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                exitQuiz();
+            }
+        });
     }
 
     /**
-     * Sets layout based on current question in running-quiz.
-     * Calls setContentView() with xml-layout based on question.
+     * Update quiz (layout etc) based on db.
      */
-    private void updateLayout() {
-        AppDatabase db = AppDatabase.getInstance(this);
-        RunningQuiz runningQuiz = RunningQuizControl.load(db);
+    private void update() {
+        Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
+        updateProgressBar();
+        this.mapboxMap.clear();
 
-        int currentQuestionIndex = runningQuiz.getCurrentQuestionIndex();
-        int noQuestions = RunningQuizControl.noQuestions(db);
-        updateProgressBar(currentQuestionIndex, noQuestions);
-
-        Question question =
-                db.questionDao().loadWithRunningQuizAndIndex(runningQuiz.getId(), currentQuestionIndex);
-        QuizCategory quizCategory =
-                RunningQuizControl.loadQuizCategoryFromRunningQuiz(runningQuiz, db);
-
-        switch (question.getType()) {
+        switch (currentQuestion.getType()) {
             case Question.NAME_IT:
-                updateLayout_nameIt(question, quizCategory);
+                update_nameIt();
                 break;
             case Question.PLACE_IT:
-                updateLayout_placeIt(question, quizCategory);
+                updateLayout_placeIt();
                 break;
             case Question.PAIR_IT:
-                updateLayout_pairIt(question);
+                updateLayout_pairIt();
                 break;
             default:
                 throw new RuntimeException("Dead end");
         }
 
-        if (question.isAnsweredCorrectly())
-            this.button_nextQuestion.show();
-        else
-            this.button_nextQuestion.hide();
+        updateNextQuestionButton();
     }
 
     /**
-     * @param currentIndex [0, tot)
-     * @param tot
+     * Update progress-bar based on current progress.
      */
-    private void updateProgressBar(int currentIndex, int tot) {
+    private void updateProgressBar() {
+        int currentIndex = RunningQuizControl.load(this).getCurrentQuestionIndex();
+        int tot = RunningQuizControl.noQuestions(this);
+
         int progress = 0;
         if (tot == 0) progress = 0;
         else if (tot == 1 && currentIndex == 0) progress = 0;
@@ -153,65 +141,62 @@ public class QuizActivity extends AppCompatActivity {
         this.progressBar.setProgress(progress);
     }
 
-    //region name-it
-
     /**
-     * Icon, header, map and alternatives.
-     *
-     * @param question
-     * @param quizCategory
+     * Hide/show depending on current question result.
      */
-    private void updateLayout_nameIt(Question question, QuizCategory quizCategory) {
-        AppDatabase db = AppDatabase.getInstance(this);
-        GeoObject geoObject = RunningQuizControl.loadGeoObjectFromQuestion(question, db);
-
-        this.imageView_nameItIcon.setImageResource( quizCategory.getIconResource() );
-        this.textView_nameIt.setText(
-                String.format("%s:\n%s", getString(R.string.name_it), geoObject.getCategory()));
-
-        if (mapboxMap_nameIt == null) loadAndUpdateMap_nameIt(geoObject);
-        else updateMap_nameIt(geoObject);
-
-        updateAlternatives_nameIt(geoObject, question.getContent());
-        this.flipper.setDisplayedChild(Question.NAME_IT);
+    private void updateNextQuestionButton() {
+        Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
+        if (currentQuestion.isAnsweredCorrectly())
+            this.nextQuestionButton.show();
+        else
+            this.nextQuestionButton.hide();
     }
 
+    //region Name-it
+
     /**
-     * Loads the map and then update.
-     * @param geoObject
+     * Icon, text, map and alternatives.
      */
-    private void loadAndUpdateMap_nameIt(GeoObject geoObject) {
-        this.mapView_nameIt.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(MapboxMap mapboxMap) {
-                QuizActivity.this.mapboxMap_nameIt = mapboxMap;
-                updateMap_nameIt(geoObject);
-            }
-        });
+    private void update_nameIt() {
+        this.topRecycler.setVisibility(View.GONE);
+        this.bottomRecycler.setVisibility(View.VISIBLE);
+
+        Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
+        GeoObject geoObject = RunningQuizControl.loadGeoObjectFromQuestion(currentQuestion, this);
+        QuizCategory quizCategory = ExerciseControl.loadQuizCategoryOfGeoObject(geoObject, this);
+
+        this.questionCategoryIcon.setImageResource( quizCategory.getIconResource() );
+        this.textView.setText(
+                String.format("%s:\n%s", getString(R.string.name_it), geoObject.getCategory()));
+
+        updateMap_nameIt(geoObject);
+        updateAlternatives_nameIt(geoObject, currentQuestion.getContent());
     }
 
     /**
      * Updates the map: add a geo-object.
+     * Fly to working area. Specify toggle-zoom-button action.
      * @param geoObject
      */
     private void updateMap_nameIt(GeoObject geoObject) {
-        LocaUtils.addGeoObject(geoObject, this.mapboxMap_nameIt, this);
+        NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
 
-        LocaUtils.flyToFitShape(this.exercise.getWorkingArea(), this.mapboxMap_nameIt);
+        LocaUtils.addGeoObject(geoObject, this.mapboxMap, this);
+        LocaUtils.flyToFitShape(workingArea, this.mapboxMap, LocaUtils.LONG_FLY_TIME);
 
         setToggleZoomButton(WORKING_AREA_ZOOM);
-        button_toggleZoom.setOnClickListener(new View.OnClickListener() {
+        toggleZoomButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int currentZoomLevelTag = (int)button_toggleZoom.getTag();
+                int currentZoomLevelTag = (int)toggleZoomButton.getTag();
 
                 if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
                     setToggleZoomButton(QUESTION_ZOOM);
-                    LocaUtils.flyToFitBounds(geoObject.getBounds(), mapboxMap_nameIt);
+                    LocaUtils.flyToFitBounds(geoObject.getBounds(), mapboxMap, LocaUtils.SHORT_FLY_TIME);
                 }
                 else if (currentZoomLevelTag == QUESTION_ZOOM) {
                     setToggleZoomButton(WORKING_AREA_ZOOM);
-                    LocaUtils.flyToFitShape(exercise.getWorkingArea(), mapboxMap_nameIt);
+                    LocaUtils.flyToFitShape(workingArea, mapboxMap, LocaUtils.SHORT_FLY_TIME);
                 }
                 else {
                     throw new RuntimeException("Dead end");
@@ -226,12 +211,12 @@ public class QuizActivity extends AppCompatActivity {
      */
     private void setToggleZoomButton(int currentZoomLevelTag) {
         if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
-            button_toggleZoom.setImageResource(R.drawable.mapbox_compass_icon); //zoom to element icon
-            button_toggleZoom.setTag(WORKING_AREA_ZOOM);
+            toggleZoomButton.setImageResource(R.drawable.mapbox_compass_icon); //zoom to element icon
+            toggleZoomButton.setTag(WORKING_AREA_ZOOM);
         }
         else if (currentZoomLevelTag == QUESTION_ZOOM) {
-            button_toggleZoom.setImageResource(R.drawable.mapbox_info_icon_default); //overview zoom icon
-            button_toggleZoom.setTag(QUESTION_ZOOM);
+            toggleZoomButton.setImageResource(R.drawable.mapbox_info_icon_default); //overview zoom icon
+            toggleZoomButton.setTag(QUESTION_ZOOM);
         }
         else {
             throw new RuntimeException("Dead end");
@@ -245,18 +230,16 @@ public class QuizActivity extends AppCompatActivity {
      * @param alternatives
      */
     private void updateAlternatives_nameIt(GeoObject correct, List<GeoObject> alternatives) {
-        this.recyclerView_nameItAlternatives.setLayoutManager(new GridLayoutManager(this, 2));
-        AlternativesAdapter alternativesAdapter = new AlternativesAdapter(alternatives, correct);
-        recyclerView_nameItAlternatives.setAdapter(alternativesAdapter);
+        this.bottomRecycler.setLayoutManager(new GridLayoutManager(this, 2));
+        AlternativesAdapter alternativesAdapter = new AlternativesAdapter(alternatives);
+        bottomRecycler.setAdapter(alternativesAdapter);
     }
 
     private class AlternativesAdapter extends RecyclerView.Adapter<AlternativeHolder> {
         private List<GeoObject> geoObjectAlternatives;
-        private GeoObject geoObjectCorrect;
 
-        public AlternativesAdapter(List<GeoObject> geoObjectAlternatives, GeoObject geoObjectCorrect) {
+        public AlternativesAdapter(List<GeoObject> geoObjectAlternatives) {
             this.geoObjectAlternatives = geoObjectAlternatives;
-            this.geoObjectCorrect = geoObjectCorrect;
         }
 
         @NonNull
@@ -269,7 +252,7 @@ public class QuizActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull AlternativeHolder holder, int position) {
             GeoObject geoObjectAlternative = this.geoObjectAlternatives.get(position);
-            holder.bind(geoObjectAlternative, this.geoObjectCorrect);
+            holder.bind(geoObjectAlternative);
         }
 
         @Override
@@ -282,60 +265,74 @@ public class QuizActivity extends AppCompatActivity {
         private GeoObject geoObjectAlternative;
         private Button button_alternative;
 
-        /**
-         * For checking answer on click.
-         */
-        private GeoObject geoObjectCorrect;
-
-
         public AlternativeHolder(LayoutInflater inflater, ViewGroup parent) {
             super(inflater.inflate(R.layout.listitem_question_alternative, parent, false));
 
             this.button_alternative = super.itemView.findViewById(R.id.button_alternative);
-
             button_alternative.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    if (geoObjectAlternative.equals(geoObjectCorrect))
-                        Toast.makeText(QuizActivity.this, "correct", Toast.LENGTH_SHORT).show();
-                    else
-                        Toast.makeText(QuizActivity.this, "incorrect", Toast.LENGTH_SHORT).show();
+                    alternativeClicked_nameIt(geoObjectAlternative);
                 }
             });
         }
 
-        public void bind(GeoObject geoObjectAlternative, GeoObject geoObjectCorrect) {
+        public void bind(GeoObject geoObjectAlternative) {
             this.geoObjectAlternative = geoObjectAlternative;
-            this.geoObjectCorrect = geoObjectCorrect;
             this.button_alternative.setText(geoObjectAlternative.getName());
+        }
+    }
+
+    /**
+     * @param geoObjectAlternative
+     */
+    private void alternativeClicked_nameIt(GeoObject geoObjectAlternative) {
+        GeoObject geoObjectCorrect = RunningQuizControl.loadGeoObjectOfCurrentQuestion(this);
+
+        if (geoObjectAlternative.equals(geoObjectCorrect)) {
+            Toast.makeText(QuizActivity.this, "correct", Toast.LENGTH_SHORT).show();
+        }
+        else {
+            Toast.makeText(QuizActivity.this, "incorrect", Toast.LENGTH_SHORT).show();
         }
     }
 
     //endregion
 
     /**
-     * @param question
-     * @param quizCategory
+     *
      */
-    private void updateLayout_placeIt(Question question, QuizCategory quizCategory) {
-        this.flipper.setDisplayedChild(Question.PLACE_IT);
+    private void updateLayout_placeIt() {
+
     }
 
     /**
      *
-     * @param question
      */
-    private void updateLayout_pairIt(Question question) {
-        this.flipper.setDisplayedChild(Question.PAIR_IT);
+    private void updateLayout_pairIt() {
+
     }
 
     /**
-     * Called when user clicks next-question button.
-     * Next question or done?
-     *
-     * @param view
+     * Report result and progress to next question, or quiz done.
+     * @param correct True if the answer was correct.
      */
-    public void onNextQuestion(View view) {
+    public void nextQuestion(Question question, boolean correct) {
+        RunningQuizControl.reportQuestionResult(question, correct, this);
+        Question nextQuestion = RunningQuizControl.nextQuestion(this);
+        if (nextQuestion == null) {
+            quizDone();
+        }
+        else {
+            update();
+        }
+    }
+
+    /**
+     * If quiz not a follow-up quiz: start one.
+     * If follow-up: exit.
+     */
+    public void quizDone() {
 
     }
 
@@ -347,66 +344,39 @@ public class QuizActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        mapView_nameIt.onResume();
-        mapView_placeIt.onResume();
-        mapView_pairIt.onResume();
+        mapView.onResume();
     }
     @Override
     protected void onStart() {
         super.onStart();
-        mapView_nameIt.onStart();
-        mapView_placeIt.onStart();
-        mapView_pairIt.onStart();
+        mapView.onStart();
     }
     @Override
     protected void onPause() {
         super.onPause();
-        mapView_nameIt.onPause();
-        mapView_placeIt.onPause();
-        mapView_pairIt.onPause();
+        mapView.onPause();
     }
     @Override
     protected void onStop() {
         super.onStop();
-        mapView_nameIt.onStop();
-        mapView_placeIt.onStop();
-        mapView_pairIt.onStop();
+        mapView.onStop();
     }
     @Override
     protected void onSaveInstanceState(Bundle bundle) {
         super.onSaveInstanceState(bundle);
-        mapView_nameIt.onSaveInstanceState(bundle);
-        mapView_placeIt.onSaveInstanceState(bundle);
-        mapView_pairIt.onSaveInstanceState(bundle);
+        mapView.onSaveInstanceState(bundle);
     }
     @Override
     public void onLowMemory() {
         super.onLowMemory();
-        mapView_nameIt.onLowMemory();
-        mapView_placeIt.onLowMemory();
-        mapView_pairIt.onLowMemory();
+        mapView.onLowMemory();
     }
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mapView_nameIt.onDestroy();
-        mapView_placeIt.onDestroy();
-        mapView_pairIt.onDestroy();
+        mapView.onDestroy();
     }
     //endregion
-
-    /**
-     * Called when user clicks exit-button.
-     * Only way out!
-     * @param view
-     */
-    public void onExitQuiz(View view) {
-        AppDatabase db = AppDatabase.getInstance(this);
-        RunningQuizControl.deleteRunningQuiz(db);
-        ExerciseActivity.start(SessionControl.load(db).getExerciseId(), this);
-        finish();
-    }
-
 
     /**
      * Starts a new quiz by creating a running-quiz in db and starts the activity.
@@ -425,23 +395,23 @@ public class QuizActivity extends AppCompatActivity {
 
         switch (quizType) {
             case RunningQuiz.LEVEL_QUIZ:
-                RunningQuizControl.newLevelQuiz(exerciseId, quizCategory, db);
+                RunningQuizControl.newLevelQuiz(exerciseId, quizCategory, oldActivity);
                 break;
             case RunningQuiz.FOLLOW_UP_QUIZ:
-                RunningQuizControl.newFollowUpQuiz(db);
+                RunningQuizControl.newFollowUpQuiz(oldActivity);
                 break;
 
             case RunningQuiz.QUIZ_CATEGORY_REMINDER:
-                RunningQuizControl.newLevelReminder(exerciseId, quizCategory, db);
+                RunningQuizControl.newLevelReminder(exerciseId, quizCategory, oldActivity);
                 break;
             case RunningQuiz.EXERCISE_REMINDER:
-                RunningQuizControl.newExerciseReminder(exerciseId, db);
+                RunningQuizControl.newExerciseReminder(exerciseId, oldActivity);
                 break;
             default:
                 throw new RuntimeException("Dead end");
         }
 
-        RunningQuizControl.nextQuestion(db);
+        RunningQuizControl.nextQuestion(oldActivity);
 
         LocaUtils.fadeInActivity(QuizActivity.class, oldActivity);
     }
@@ -452,6 +422,32 @@ public class QuizActivity extends AppCompatActivity {
      */
     public static void resumedStart(Activity oldActivity) {
         LocaUtils.fadeInActivity(QuizActivity.class, oldActivity);
+    }
+
+
+    /**
+     * Called when user clicks exit-button.
+     * Only way out!
+     */
+    public void exitQuiz() {
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
+        alertBuilder.setTitle(R.string.quit_confirmation_request);
+
+        CharSequence[] dialogOptions = {getString(R.string.Yes), getString(R.string.No)};
+        alertBuilder.setItems(dialogOptions, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int item) {
+                if (item == 0) {
+                    AppDatabase db = AppDatabase.getInstance(activity);
+                    RunningQuizControl.deleteRunningQuiz(activity);
+                    ExerciseActivity.start(SessionControl.load(db).getExerciseId(), activity);
+                    QuizActivity.this.finish();
+                }
+            }
+        });
+
+        AlertDialog functionDialog = alertBuilder.create();
+        functionDialog.show();
     }
 
     /**

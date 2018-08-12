@@ -50,6 +50,11 @@ public class Question {
     private boolean answeredCorrectly = false;
 
     /**
+     * True if question has been answered in quiz-run.
+     */
+    private boolean answered = false;
+
+    /**
      * Question-type.
      */
     private int type;
@@ -269,6 +274,14 @@ public class Question {
 
     public void setAnsweredCorrectly(boolean answeredCorrectly) {
         this.answeredCorrectly = answeredCorrectly;
+    }
+
+    public boolean isAnswered() {
+        return answered;
+    }
+
+    public void setAnswered(boolean answered) {
+        this.answered = answered;
     }
 
     public int getType() {

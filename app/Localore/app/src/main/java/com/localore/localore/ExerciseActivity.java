@@ -45,9 +45,9 @@ public class ExerciseActivity extends AppCompatActivity {
         super.onResume();
 
         AppDatabase db = AppDatabase.getInstance(this);
-        Exercise exercise = SessionControl.loadExercise(db);
+        Exercise exercise = SessionControl.loadExercise(this);
         int progress = ExerciseControl.progressOfExercise(exercise.getId(), db);
-        int requiredNoExerciseReminders = SessionControl.loadExercise(db).getNoRequiredExerciseReminders();
+        int requiredNoExerciseReminders = SessionControl.loadExercise(this).getNoRequiredExerciseReminders();
         int noPassedLevels = ExerciseControl.loadPassedQuizzesInExercise(exercise.getId(), db).size();
         List<int[]> quizCategoriesData = ExerciseControl.loadQuizCategoriesData(exercise.getId(), db);
 

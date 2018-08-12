@@ -98,7 +98,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         this.editText_exerciseName = findViewById(R.id.editText_exerciseName);
-        this.mapView = findViewById(R.id.mapView_nameIt);
+        this.mapView = findViewById(R.id.mapView_quiz);
         this.button_clearNodes = findViewById(R.id.button_clearNodes);
         this.button_validZoom = findViewById(R.id.button_validZoom);
 
@@ -182,9 +182,9 @@ public class CreateExerciseActivity extends AppCompatActivity {
      * - If too zoomed out: Floating button "zoom in" to allowed zoom + dimmed map.
      */
     private void initializeMap() {
+        addZoomControl();
         flyToUserLocation();
         addWorkingAreaTapping();
-        addZoomControl();
     }
 
     //region fly to user's current location
@@ -212,20 +212,20 @@ public class CreateExerciseActivity extends AppCompatActivity {
             String locationProvider = LocationManager.GPS_PROVIDER;
             Location location = locationManager.getLastKnownLocation(locationProvider);
             if (location != null) {
-                LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL, mapboxMap);
+                LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL + 0.001, mapboxMap, LocaUtils.LONG_FLY_TIME);
                 return;
             }
 
             locationProvider = LocationManager.NETWORK_PROVIDER;
             location = locationManager.getLastKnownLocation(locationProvider);
             if (location != null) {
-                LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL, mapboxMap);
+                LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL + 0.001, mapboxMap, LocaUtils.LONG_FLY_TIME);
                 return;
             }
 
             LocationListener locationListener = new LocationListener() {
                 public void onLocationChanged(Location location) {
-                    LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL, mapboxMap);
+                    LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL + 0.001, mapboxMap, LocaUtils.LONG_FLY_TIME);
                     locationManager.removeUpdates(this);
                 }
 
@@ -390,10 +390,10 @@ public class CreateExerciseActivity extends AppCompatActivity {
      */
     public void onValidZoomButtonClick(View view) {
         CameraPosition position = new CameraPosition.Builder()
-                .zoom(MIN_WORKING_AREA_ZOOM_LEVEL)
+                .zoom(MIN_WORKING_AREA_ZOOM_LEVEL + 0.001)
                 .build();
 
-        this.mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), LocaUtils.FLY_TIME);
+        this.mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), LocaUtils.SHORT_FLY_TIME);
     }
 
     /**

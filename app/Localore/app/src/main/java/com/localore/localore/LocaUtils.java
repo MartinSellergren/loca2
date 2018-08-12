@@ -388,7 +388,8 @@ public class LocaUtils {
     /**
      * Time in ms for flying (moving camera to new pos).
      */
-    public static final int FLY_TIME = 2500;
+    public static final int SHORT_FLY_TIME = 2000;
+    public static final int LONG_FLY_TIME = 5000;
 
     /**
      * When fitting camera to shape, don't zoom more than this.
@@ -404,13 +405,14 @@ public class LocaUtils {
      * Move camera gradually to fit shape including padding.
      * @param shape
      * @param map
+     * @param flyTime
      */
-    public static void flyToFitShape(NodeShape shape, MapboxMap map) {
+    public static void flyToFitShape(NodeShape shape, MapboxMap map, int flyTime) {
 //        if (shape.isNode()) {
 //            flyToLocation(toLatLng(shape.getFirst()), CAMERA_FITTING_MAX_ZOOM, map);
 //        }
 //        else {
-        flyToFitBounds(shape.getBounds(), map);
+        flyToFitBounds(shape.getBounds(), map, flyTime);
         //}
     }
 
@@ -418,17 +420,18 @@ public class LocaUtils {
      * Move camera gradually to fit the bounds including padding.
      * @param bs
      * @param map
+     * @param flyTime
      */
-    public static void flyToFitBounds(double[] bs, MapboxMap map) {
+    public static void flyToFitBounds(double[] bs, MapboxMap map, int flyTime) {
         LatLngBounds latLngBounds = toLatLngBounds(bs);
         CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(latLngBounds, CAMERA_FITTING_PADDING);
         CameraPosition cameraPosition = cameraUpdate.getCameraPosition(map);
 
         if (cameraPosition.zoom > CAMERA_FITTING_MAX_ZOOM) {
-            flyToLocation(cameraPosition.target, CAMERA_FITTING_MAX_ZOOM, map);
+            flyToLocation(cameraPosition.target, CAMERA_FITTING_MAX_ZOOM, map, flyTime);
         }
         else {
-            map.animateCamera(cameraUpdate, FLY_TIME);
+            map.animateCamera(cameraUpdate, flyTime);
         }
     }
 
@@ -437,17 +440,17 @@ public class LocaUtils {
      * @param latLng
      * @param map
      */
-    public static void flyToLocation(LatLng latLng, double zoom, MapboxMap map) {
+    public static void flyToLocation(LatLng latLng, double zoom, MapboxMap map, int flyTime) {
         CameraPosition position = new CameraPosition.Builder()
                 .target(latLng)
                 .zoom(zoom)
                 .build();
 
-        map.animateCamera(CameraUpdateFactory.newCameraPosition(position), FLY_TIME);
+        map.animateCamera(CameraUpdateFactory.newCameraPosition(position), flyTime);
     }
-    public static void flyToLocation(Location location, double zoom, MapboxMap map) {
+    public static void flyToLocation(Location location, double zoom, MapboxMap map, int flyTime) {
         LatLng latLng = toLatLng(new double[]{location.getLongitude(), location.getLatitude()});
-        flyToLocation(latLng, zoom, map);
+        flyToLocation(latLng, zoom, map, flyTime);
     }
 
     //endregion
