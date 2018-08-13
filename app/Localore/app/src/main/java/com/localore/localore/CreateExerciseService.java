@@ -69,6 +69,9 @@ public class CreateExerciseService extends IntentService {
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        String exerciseName = intent.getStringExtra(EXERCISE_NAME_PARAM_KEY);
+        if (exerciseName == null) return super.onStartCommand(intent, flags, startId); //if exerciseName explicitly set to null
+
         // request foreground
         Intent notificationIntent = new Intent(this, LoadingNewExerciseActivity.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -146,11 +149,11 @@ public class CreateExerciseService extends IntentService {
 
             if (noGeoObjects < ExerciseControl.MIN_NO_GEO_OBJECTS_IN_AN_EXERCISE) {
                 report(LoadingNewExerciseActivity.TOO_FEW_GEO_OBJECTS_ERROR);
-                return;
             }
-
-            successful = true;
-            report(LoadingNewExerciseActivity.COMPLETED);
+            else {
+                successful = true;
+                report(LoadingNewExerciseActivity.COMPLETED);
+            }
 
         }
         catch (LocaUtils.WorkInterruptedException e) {
@@ -164,6 +167,7 @@ public class CreateExerciseService extends IntentService {
                 ExerciseControl.wipeConstruction(exerciseId, this);
 
             finalNotification(successful);
+            stopForeground(true);
         }
     }
 

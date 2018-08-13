@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.location.Location;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.localore.localore.model.AppDatabase;
@@ -118,6 +119,40 @@ public class LocaUtils {
         oldActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
+//
+//    /**
+//     * Disables clicking of the view, and changes the appearance to reflect this.
+//     * @param button
+//     */
+//    public static void disableButton(View button) {
+//        button.setEnabled(false);
+//        button.setAlpha(1f);
+//    }
+//
+//    /**
+//     * Undo disableButton()
+//     * @param button
+//     */
+//    public static void enableButton(View button) {
+//        button.setEnabled(true);
+//        button.setAlpha(0.4f);
+//    }
+
+    /**
+     * Adds a border around a view.
+     * @param view
+     * @param color
+     */
+    public static void addBorder(View view, int color) {
+
+    }
+
+    /**
+     * @param view
+     */
+    public static void removeBorder(View view) {
+
+    }
 
     /**
      * @param mapboxMap

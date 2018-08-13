@@ -3,6 +3,7 @@ package com.localore.localore;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -515,5 +516,13 @@ public class CreateExerciseActivity extends AppCompatActivity {
      */
     public static void start(Activity oldActivity) {
         LocaUtils.fadeInActivity(CreateExerciseActivity.class, oldActivity);
+    }
+
+    /**
+     * Need to start select-activity again because it might not exist.
+     */
+    @Override
+    public void onBackPressed() {
+        SelectExerciseActivity.start(this);
     }
 }

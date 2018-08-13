@@ -51,6 +51,7 @@ public class Question {
 
     /**
      * True if question has been answered in quiz-run.
+     * True even if sub-answer given (pair-it).
      */
     private boolean answered = false;
 
@@ -98,7 +99,7 @@ public class Question {
         this.runningQuizId = runningQuizId;
         this.geoObjectId = geoObject.getId();
         this.index = index;
-        this.type = LocaUtils.randi(3);
+        this.type = 0;//LocaUtils.randi(3);
 
         if (difficulty > RunningQuizControl.DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT)
             difficulty = RunningQuizControl.DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT;

@@ -361,6 +361,79 @@ public class RunningQuizControl {
     }
 
     /**
+     * Call after an answer to a name-it or pair-it question.
+     * Does nothing if answer incorrect already reported.
+     * Don't call if correct answer already reported.
+     *  - Updates question (is-correctly-answered.., for follow-quiz spec).
+     *  - Updates regarded geo-object-stats (for reminder-selections).
+     *
+     * @param contentIndex
+     * @param context
+     * @return True if correct answer.
+     */
+    public static boolean reportNameItPlaceItAnswer(int contentIndex, Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        Question question = loadCurrentQuestion(context);
+        if (question.getType() != Question.NAME_IT && question.getType() != Question.PLACE_IT) {
+            throw new RuntimeException("Illegal call");
+        }
+
+        if (question.isAnswered()) return question.isAnsweredCorrectly();
+
+        question.setAnswered(true);
+        question.setAnsweredCorrectly( checkNameItPlaceItAnswer(question, contentIndex) );
+        db.questionDao().update(question);
+
+        //report geo-obj stats
+        RunningQuiz runningQuiz = load(context);
+        double askWeight = 1;
+        if (runningQuiz.getType() == RunningQuiz.FOLLOW_UP_QUIZ) askWeight *= 0.5;
+
+        GeoObject geoObject = loadGeoObjectFromQuestion(question, context);
+        geoObject.setTimesAsked( geoObject.getTimesAsked() + askWeight );
+        if (question.isAnsweredCorrectly()) {
+            geoObject.setNoCorrectAnswers(geoObject.getNoCorrectAnswers() + askWeight);
+            geoObject.setTimeOfPreviousCorrectAnswer(System.currentTimeMillis());
+        }
+        db.geoDao().update(geoObject);
+
+        return question.isAnsweredCorrectly();
+    }
+
+    /**
+     * @param question
+     * @param contentIndex Answer
+     * @return True if correct answer.
+     */
+    private static boolean checkNameItPlaceItAnswer(Question question, int contentIndex) {
+        long correctId = question.getGeoObjectId();
+        long answerId = question.getContent().get(contentIndex).getId();
+        return correctId == answerId;
+    }
+
+
+    /**
+     * Call after an answer to a pair-it question (multiple times per question).
+     * A already reported answer might go from correct to incorrect (not other way).
+     * No object-stats reported.
+     *
+     * @param correctAnswer
+     * @param context
+     */
+    public static void reportPairItAnswer(boolean correctAnswer, Context context) {
+        Question question = loadCurrentQuestion(context);
+        if (question.getType() != Question.PAIR_IT) {
+            throw new RuntimeException("Illegal call");
+        }
+
+        if (!question.isAnswered()) question.setAnsweredCorrectly(correctAnswer);
+        else if (!correctAnswer) question.setAnsweredCorrectly(false);
+
+        question.setAnswered(true);
+        AppDatabase.getInstance(context).questionDao().update(question);
+    }
+
+    /**
      * Call to freshStart quiz, and to progress to next question.
      *
      * - Returns next question in a quiz-run (NULL if no more).

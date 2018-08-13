@@ -2,6 +2,7 @@ package com.localore.localore;
 
 import android.app.Activity;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -272,7 +273,7 @@ public class QuizActivity extends AppCompatActivity {
             button_alternative.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    alternativeClicked_nameIt(geoObjectAlternative);
+                    alternativeClicked_nameIt(getAdapterPosition());
                 }
             });
         }
@@ -281,19 +282,47 @@ public class QuizActivity extends AppCompatActivity {
             this.geoObjectAlternative = geoObjectAlternative;
             this.button_alternative.setText(geoObjectAlternative.getName());
         }
+
+        public GeoObject getGeoObject() {
+            return geoObjectAlternative;
+        }
+
+        /**
+         * Graphically show that this is the correct answer.
+         */
+        public void setCorrect() {
+            button_alternative.setClickable(false);
+            //button_alternative.setVisibility(View.INVISIBLE);
+        }
+
+        /**
+         * Graphically show that this is an incorrect answer.
+         */
+        public void setIncorrect() {
+            button_alternative.setEnabled(false);
+        }
     }
 
     /**
-     * @param geoObjectAlternative
+     * @param clickedIndex
      */
-    private void alternativeClicked_nameIt(GeoObject geoObjectAlternative) {
-        GeoObject geoObjectCorrect = RunningQuizControl.loadGeoObjectOfCurrentQuestion(this);
+    private void alternativeClicked_nameIt(int clickedIndex) {
+        boolean correct = RunningQuizControl.reportNameItPlaceItAnswer(clickedIndex, this);
+        View clickedView = bottomRecycler.getChildAt(clickedIndex);
+        AlternativeHolder clickedHolder = (AlternativeHolder) bottomRecycler.getChildViewHolder(clickedView);
 
-        if (geoObjectAlternative.equals(geoObjectCorrect)) {
-            Toast.makeText(QuizActivity.this, "correct", Toast.LENGTH_SHORT).show();
+        if (correct) {
+            for (int i = 0; i < bottomRecycler.getChildCount(); i++) {
+                if (i != clickedIndex) {
+                    View holder = bottomRecycler.getChildAt(i);
+                    holder.setVisibility(View.INVISIBLE);
+                }
+            }
+            clickedHolder.setCorrect();
         }
         else {
-            Toast.makeText(QuizActivity.this, "incorrect", Toast.LENGTH_SHORT).show();
+            clickedHolder.setIncorrect();
+            //flashGeoObject(clickedHolder.getGeoObject());
         }
     }
 
@@ -336,8 +365,6 @@ public class QuizActivity extends AppCompatActivity {
 
     }
 
-
-    //endregion
 
     //region handle mapView's lifecycle
 
