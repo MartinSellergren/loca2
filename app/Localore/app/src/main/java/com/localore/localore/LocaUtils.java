@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.location.Location;
+import android.os.Build;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -20,10 +22,13 @@ import com.localore.localore.model.RunningQuiz;
 import com.localore.localore.model.Session;
 import com.localore.localore.model.User;
 import com.localore.localore.modelManipulation.SessionControl;
+import com.mapbox.mapboxsdk.annotations.Annotation;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.annotations.Polygon;
+import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.annotations.Polyline;
 import com.mapbox.mapboxsdk.annotations.PolylineOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
@@ -36,6 +41,8 @@ import com.mapbox.mapboxsdk.maps.MapboxMap;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -119,39 +126,23 @@ public class LocaUtils {
         oldActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
-//
-//    /**
-//     * Disables clicking of the view, and changes the appearance to reflect this.
-//     * @param button
-//     */
-//    public static void disableButton(View button) {
-//        button.setEnabled(false);
-//        button.setAlpha(1f);
-//    }
-//
-//    /**
-//     * Undo disableButton()
-//     * @param button
-//     */
-//    public static void enableButton(View button) {
-//        button.setEnabled(true);
-//        button.setAlpha(0.4f);
-//    }
-
     /**
      * Adds a border around a view.
      * @param view
      * @param color
      */
     public static void addBorder(View view, int color) {
-
+        GradientDrawable border = new GradientDrawable();
+        border.setColor(0x00000000);
+        border.setStroke(10, color);
+        view.setBackground(border);
     }
 
     /**
      * @param view
      */
     public static void removeBorder(View view) {
-
+        addBorder(view, view.getSolidColor());
     }
 
     /**
@@ -360,18 +351,26 @@ public class LocaUtils {
      * @param polylinesMap
      * @param context
      */
-    public static void addGeoObject(GeoObject geoObject, MapboxMap mapboxMap,
+    public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap,
                               Map<Long,Long> markersMap, Map<Long,Long> polylinesMap, Context context) {
         int color = LocaUtils.rankBasedColor(geoObject.getRank());
+        List<Annotation> annotations = new ArrayList<>();
 
         for (NodeShape nodeShape : geoObject.getShapes()) {
             if (nodeShape.getNodes().size() == 1) {
-                addMarker(nodeShape.getNodes().get(0), geoObject.getId(), color, mapboxMap, markersMap, context);
+//                Marker marker = addMarker(nodeShape.getNodes().get(0), geoObject.getId(), color, mapboxMap, markersMap, context);
+//                annotations.add(marker);
+
+                Polygon dot = addDot(nodeShape.getNodes().get(0), geoObject.getId(), color, mapboxMap, markersMap, context);
+                annotations.add(dot);
             }
             else {
-                addPolyline(nodeShape.getNodes(), geoObject.getId(), color, mapboxMap, polylinesMap);
+                Polyline polyline = addPolyline(nodeShape.getNodes(), geoObject.getId(), color, mapboxMap, polylinesMap);
+                annotations.add(polyline);
             }
         }
+
+        return annotations;
     }
 
     /**
@@ -380,8 +379,22 @@ public class LocaUtils {
      * @param mapboxMap
      * @param context
      */
-    public static void addGeoObject(GeoObject geoObject, MapboxMap mapboxMap, Context context) {
-        addGeoObject(geoObject, mapboxMap, null, null, context);
+    public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap, Context context) {
+        return addGeoObject(geoObject, mapboxMap, null, null, context);
+    }
+
+    private static Polygon addDot(double[] node, long geoObjectId, int color, MapboxMap mapboxMap,
+                                  Map<Long,Long> markersMap, Context context) {
+        double radius = 0.001;
+        int n = 10;
+        List<double[]> nodes = generatePointsOnCircle(node, radius, n);
+
+        Polygon dot = mapboxMap.addPolygon(new PolygonOptions()
+                .addAll(LocaUtils.toLatLngs(nodes))
+                .fillColor(color));
+
+        //if (markersMap != null) markersMap.put(marker.getId(), geoObjectId);
+        return dot;
     }
 
 
@@ -391,13 +404,14 @@ public class LocaUtils {
      * @param geoObjectId
      * @param color
      */
-    private static void addMarker(double[] node, long geoObjectId, int color, MapboxMap mapboxMap,
+    private static Marker addMarker(double[] node, long geoObjectId, int color, MapboxMap mapboxMap,
                            Map<Long,Long> markersMap, Context context) {
         Marker marker = mapboxMap.addMarker(new MarkerOptions()
                 .icon(LocaUtils.nodeGeoObjectIcon(color, context))
                 .position(LocaUtils.toLatLng(node)));
 
         if (markersMap != null) markersMap.put(marker.getId(), geoObjectId);
+        return marker;
     }
 
     /**
@@ -406,17 +420,44 @@ public class LocaUtils {
      * @param geoObjectId
      * @param color
      */
-    private static void addPolyline(List<double[]> nodes, long geoObjectId, int color, MapboxMap mapboxMap,
-                             Map<Long,Long> polylinesMap) {
+    private static Polyline addPolyline(List<double[]> nodes, long geoObjectId, int color, MapboxMap mapboxMap,
+                                        Map<Long,Long> polylinesMap) {
         Polyline polyline = mapboxMap.addPolyline(new PolylineOptions()
                 .addAll(LocaUtils.toLatLngs(nodes))
                 .color(color)
                 .width(2));
 
         if (polylinesMap != null) polylinesMap.put(polyline.getId(), geoObjectId);
+        return polyline;
     }
 
     //endregion
+
+    /**
+     * @param center
+     * @param radius
+     * @param n
+     * @return n points on circle defined by center and radius. Ordered consecutively.
+     */
+    public static List<double[]> generatePointsOnCircle(double[] center, double radius, int n) {
+        List<double[]> upperPs = new ArrayList<>();
+        List<double[]> underPs = new ArrayList<>();
+
+        for (double x = -radius; x < radius; x += radius/n) {
+            double y = Math.sqrt(Math.pow(radius,2) - Math.pow(x,2));
+            upperPs.add(new double[]{center[0] + x, center[1] + y});
+            underPs.add(new double[]{center[0] + x, center[1] - y});
+        }
+
+        List<double[]> ps = new ArrayList<>();
+        ps.addAll(upperPs);
+
+        Collections.reverse(underPs);
+        ps.addAll(underPs);
+        ps.add(ps.get(0));
+
+        return ps;
+    }
 
     //region Map-camera motion
 

@@ -1,5 +1,6 @@
 package com.localore.localore;
 
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.graphics.Color;
@@ -15,6 +16,8 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -35,7 +38,7 @@ import com.localore.localore.modelManipulation.SessionControl;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
-
+import com.mapbox.mapboxsdk.annotations.Annotation;
 import java.util.List;
 
 public class QuizActivity extends AppCompatActivity {
@@ -292,7 +295,8 @@ public class QuizActivity extends AppCompatActivity {
          */
         public void setCorrect() {
             button_alternative.setClickable(false);
-            //button_alternative.setVisibility(View.INVISIBLE);
+            int borderColor = LocaUtils.rankBasedColor(geoObjectAlternative.getRank());
+            LocaUtils.addBorder(button_alternative, borderColor);
         }
 
         /**
@@ -322,8 +326,23 @@ public class QuizActivity extends AppCompatActivity {
         }
         else {
             clickedHolder.setIncorrect();
-            //flashGeoObject(clickedHolder.getGeoObject());
+            flashGeoObject(clickedHolder.getGeoObject(), Color.GRAY, 2000);
         }
+    }
+
+    /**
+     * Fade in and out a geo-object in the map.
+     * @param geoObject
+     * @param color
+     * @param time
+     */
+    private void flashGeoObject(GeoObject geoObject, int color, int time) {
+        List<Annotation> annotations = LocaUtils.addGeoObject(geoObject, mapboxMap, this);
+
+        for (Annotation annotation : annotations) {
+
+        }
+
     }
 
     //endregion

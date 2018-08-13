@@ -29,7 +29,7 @@ public class NodeShape implements Serializable {
      * @return [lon lat]
      */
     public List<double[]> getNodes() {
-        return this.nodes;
+        return new ArrayList<>(this.nodes);
     }
 
     /**
