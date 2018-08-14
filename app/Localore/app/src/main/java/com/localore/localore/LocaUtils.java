@@ -122,6 +122,9 @@ public class LocaUtils {
      */
     public static void fadeInActivity(Class<?> newActivityClass, Activity oldActivity) {
         Intent intent = new Intent(oldActivity, newActivityClass);
+        fadeInActivity(intent, oldActivity);
+    }
+    public static void fadeInActivity(Intent intent, Activity oldActivity) {
         oldActivity.startActivity(intent);
         oldActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
@@ -343,26 +346,26 @@ public class LocaUtils {
         addGeoObjects(geoObjects, mapboxMap, null, null, context);
     }
 
+
+
     /**
      * Adds a geo-object to the map. Also updates id-maps if not null.
      * @param geoObject
      * @param mapboxMap
      * @param markersMap
      * @param polylinesMap
+     * @param color
      * @param context
+     * @return Added stuff.
      */
-    public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap,
-                              Map<Long,Long> markersMap, Map<Long,Long> polylinesMap, Context context) {
-        int color = LocaUtils.rankBasedColor(geoObject.getRank());
+    public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap, Map<Long,Long> markersMap,
+                                                Map<Long,Long> polylinesMap, int color, Context context) {
         List<Annotation> annotations = new ArrayList<>();
 
         for (NodeShape nodeShape : geoObject.getShapes()) {
             if (nodeShape.getNodes().size() == 1) {
-//                Marker marker = addMarker(nodeShape.getNodes().get(0), geoObject.getId(), color, mapboxMap, markersMap, context);
-//                annotations.add(marker);
-
-                Polygon dot = addDot(nodeShape.getNodes().get(0), geoObject.getId(), color, mapboxMap, markersMap, context);
-                annotations.add(dot);
+                Marker marker = addMarker(nodeShape.getNodes().get(0), geoObject.getId(), color, mapboxMap, markersMap, context);
+                annotations.add(marker);
             }
             else {
                 Polyline polyline = addPolyline(nodeShape.getNodes(), geoObject.getId(), color, mapboxMap, polylinesMap);
@@ -374,29 +377,23 @@ public class LocaUtils {
     }
 
     /**
-     * Adds a geo-object to the map.
-     * @param geoObject
-     * @param mapboxMap
-     * @param context
+     * With color based on object-rank.
      */
+    public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap,
+                                                Map<Long,Long> markersMap, Map<Long,Long> polylinesMap, Context context) {
+        int color = LocaUtils.rankBasedColor(geoObject.getRank());
+        return addGeoObject(geoObject, mapboxMap, markersMap, polylinesMap, color, context);
+    }
+
+    /**
+     * Without lookup-maps.
+     */
+    public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap, int color, Context context) {
+        return addGeoObject(geoObject, mapboxMap, null, null, color, context);
+    }
     public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap, Context context) {
         return addGeoObject(geoObject, mapboxMap, null, null, context);
     }
-
-    private static Polygon addDot(double[] node, long geoObjectId, int color, MapboxMap mapboxMap,
-                                  Map<Long,Long> markersMap, Context context) {
-        double radius = 0.001;
-        int n = 10;
-        List<double[]> nodes = generatePointsOnCircle(node, radius, n);
-
-        Polygon dot = mapboxMap.addPolygon(new PolygonOptions()
-                .addAll(LocaUtils.toLatLngs(nodes))
-                .fillColor(color));
-
-        //if (markersMap != null) markersMap.put(marker.getId(), geoObjectId);
-        return dot;
-    }
-
 
     /**
      * Adds a marker. Updates id-map if not null.
@@ -433,31 +430,6 @@ public class LocaUtils {
 
     //endregion
 
-    /**
-     * @param center
-     * @param radius
-     * @param n
-     * @return n points on circle defined by center and radius. Ordered consecutively.
-     */
-    public static List<double[]> generatePointsOnCircle(double[] center, double radius, int n) {
-        List<double[]> upperPs = new ArrayList<>();
-        List<double[]> underPs = new ArrayList<>();
-
-        for (double x = -radius; x < radius; x += radius/n) {
-            double y = Math.sqrt(Math.pow(radius,2) - Math.pow(x,2));
-            upperPs.add(new double[]{center[0] + x, center[1] + y});
-            underPs.add(new double[]{center[0] + x, center[1] - y});
-        }
-
-        List<double[]> ps = new ArrayList<>();
-        ps.addAll(upperPs);
-
-        Collections.reverse(underPs);
-        ps.addAll(underPs);
-        ps.add(ps.get(0));
-
-        return ps;
-    }
 
     //region Map-camera motion
 

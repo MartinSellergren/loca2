@@ -37,13 +37,15 @@ public class SessionControl {
 
 
     /**
-     * @param context
+     * @param db
      * @return Active exercise, or NULL.
      */
-    public static Exercise loadExercise(Context context) {
-        AppDatabase db = AppDatabase.getInstance(context);
+    public static Exercise loadExercise(AppDatabase db) {
         long exerciseId = load(db).getExerciseId();
         return db.exerciseDao().load(exerciseId);
+    }
+    public static Exercise loadExercise(Context context) {
+        return loadExercise(AppDatabase.getInstance(context));
     }
 
     //endregion

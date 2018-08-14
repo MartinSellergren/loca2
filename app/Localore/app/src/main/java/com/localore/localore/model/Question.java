@@ -2,10 +2,13 @@ package com.localore.localore.model;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
+import android.content.Context;
 import android.support.annotation.VisibleForTesting;
 
 import com.localore.localore.LocaUtils;
+import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.RunningQuizControl;
+import com.localore.localore.modelManipulation.SessionControl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -213,7 +216,10 @@ public class Question {
      *         List includes specified geo-object.
      */
     private List<GeoObject> loadRandomGeoObjectsIncluding(GeoObject includeGeoObject, int preferredCount, AppDatabase db) {
-        List<GeoObject> geoObjects = db.geoDao().loadRandoms(preferredCount);
+        long exerciseId = SessionControl.loadExercise(db).getId();
+        List<Long> quizIds = ExerciseControl.loadQuizIdsInExercise(exerciseId, db);
+        List<GeoObject> geoObjects = db.geoDao().loadRandomsWithQuizIn(quizIds, preferredCount);
+
         if (geoObjects.size() == 0) return new ArrayList<>();
 
         if (!geoObjects.contains(includeGeoObject))

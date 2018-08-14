@@ -3,6 +3,7 @@ package com.localore.localore.modelManipulation;
 import android.content.Context;
 
 import com.localore.localore.LocaUtils;
+import com.localore.localore.R;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
 import com.localore.localore.model.GeoObject;
@@ -28,7 +29,7 @@ public class RunningQuizControl {
     /**
      * ..except one (selected randomly) which gets this many extra questions.
      */
-    public static final int NO_EXTRA_QUESTIONS = 3;
+    public static final int NO_EXTRA_QUESTIONS = 2;
 
     /**
      * Required min success-rate to pass a level-quiz.
@@ -44,6 +45,7 @@ public class RunningQuizControl {
     public static final int MIN_NO_QUIZ_CATEGORY_REMINDERS = 0;
 
     public static final int MAX_NO_QUIZ_CATEGORY_REMINDERS = 3;
+
 
 
     //region shortcuts
@@ -153,14 +155,23 @@ public class RunningQuizControl {
 
     /**
      * Set running-quiz to a new follow-up-quiz (constructed from db running-quiz).
+     * If no incorrectly answered questions exists in previous running-quiz, does nothing.
+     * If previous running-quiz a follow-up, does nothing.
+     *
      * @param context
+     * @return True if new follow-up quiz started.
      * @pre A running-quiz in db.
      */
-    public static void newFollowUpQuiz(Context context) {
+    public static boolean newFollowUpQuiz(Context context) {
         AppDatabase db = AppDatabase.getInstance(context);
+        RunningQuiz runningQuiz = load(context);
         long runningQuizId = load(context).getId();
         List<Question> incorrectQuestions = db.questionDao()
                         .loadIncorrectWithRunningQuizOrderedByIndex(runningQuizId);
+
+        if (runningQuiz.getType() == RunningQuiz.FOLLOW_UP_QUIZ ||
+                incorrectQuestions.size() == 0)
+            return false;
 
         int runningQuizType = 1;
         runningQuizId = newRunningQuiz(runningQuizType, context);
@@ -170,9 +181,15 @@ public class RunningQuizControl {
             Question question = incorrectQuestions.get(i);
             question.setRunningQuizId(runningQuizId);
             question.setIndex(i);
+            question.setAnswered(false);
+            question.setAnsweredCorrectly(false);
             newQuestions.add(question);
         }
         db.questionDao().insert(newQuestions);
+
+        RunningQuizControl.nextQuestion(context);
+
+        return true;
     }
 
     /**
@@ -327,38 +344,38 @@ public class RunningQuizControl {
 
     //region question-operations
 
-    /**
-     * Report result of question in running quiz. Does nothing if question already reported.
-     * Don't report pair-it questions.
-     * Db-updates: Question (answered/correct) in running-quiz, and Geo-object (defining question) stats.
-     *
-     * @param question
-     * @param correct
-     * @param context
-     */
-    public static void reportQuestionResult(Question question, boolean correct, Context context) {
-        AppDatabase db = AppDatabase.getInstance(context);
-        Question dbQuestion = db.questionDao().load(question.getId());
-        if (dbQuestion.isAnswered()) return;
-
-        question.setAnswered(true);
-        if (correct) question.setAnsweredCorrectly(true);
-        else question.setAnsweredCorrectly(false);
-        db.questionDao().update(question);
-
-        RunningQuiz runningQuiz = load(context);
-        double askWeight = 1;
-        if (runningQuiz.getType() == RunningQuiz.FOLLOW_UP_QUIZ) askWeight *= 0.5;
-
-        GeoObject geoObject = loadGeoObjectFromQuestion(question, context);
-        geoObject.setTimesAsked( geoObject.getTimesAsked() + askWeight );
-        if (correct) {
-            geoObject.setNoCorrectAnswers(geoObject.getNoCorrectAnswers() + askWeight);
-            geoObject.setTimeOfPreviousCorrectAnswer(System.currentTimeMillis());
-        }
-
-        db.geoDao().update(geoObject);
-    }
+//    /**
+//     * Report result of question in running quiz. Does nothing if question already reported.
+//     * Don't report pair-it questions.
+//     * Db-updates: Question (answered/correct) in running-quiz, and Geo-object (defining question) stats.
+//     *
+//     * @param question
+//     * @param correct
+//     * @param context
+//     */
+//    public static void reportQuestionResult(Question question, boolean correct, Context context) {
+//        AppDatabase db = AppDatabase.getInstance(context);
+//        Question dbQuestion = db.questionDao().load(question.getId());
+//        if (dbQuestion.isAnswered()) return;
+//
+//        question.setAnswered(true);
+//        if (correct) question.setAnsweredCorrectly(true);
+//        else question.setAnsweredCorrectly(false);
+//        db.questionDao().update(question);
+//
+//        RunningQuiz runningQuiz = load(context);
+//        double askWeight = 1;
+//        if (runningQuiz.getType() == RunningQuiz.FOLLOW_UP_QUIZ) askWeight *= 0.5;
+//
+//        GeoObject geoObject = loadGeoObjectFromQuestion(question, context);
+//        geoObject.setTimesAsked( geoObject.getTimesAsked() + askWeight );
+//        if (correct) {
+//            geoObject.setNoCorrectAnswers(geoObject.getNoCorrectAnswers() + askWeight);
+//            geoObject.setTimeOfPreviousCorrectAnswer(System.currentTimeMillis());
+//        }
+//
+//        db.geoDao().update(geoObject);
+//    }
 
     /**
      * Call after an answer to a name-it or pair-it question.
@@ -378,10 +395,12 @@ public class RunningQuizControl {
             throw new RuntimeException("Illegal call");
         }
 
-        if (question.isAnswered()) return question.isAnsweredCorrectly();
+        boolean correctAnswer = checkNameItPlaceItAnswer(question, contentIndex);
+
+        if (question.isAnswered()) return correctAnswer;
 
         question.setAnswered(true);
-        question.setAnsweredCorrectly( checkNameItPlaceItAnswer(question, contentIndex) );
+        question.setAnsweredCorrectly(correctAnswer);
         db.questionDao().update(question);
 
         //report geo-obj stats
@@ -459,25 +478,23 @@ public class RunningQuizControl {
 
     /**
      * Call when a quiz is finished. Updates database based on quiz-type and result.
-     * Removes running-quiz from db.
      *
      * Level-quiz: If satisfactory result: Set passed and increment level, and set required reminders.
      * Follow-up: Update nothing.
      * Reminders: Decrement number of required reminders.
      *
-     * @param exercise
      * @param context
-     * @return Brief feedback.
      */
-    public static String onFinishedRunningQuiz(Exercise exercise, Context context) {
+    public static void reportRunningQuizFinished(Context context) {
+        Exercise exercise = SessionControl.loadExercise(context);
+
         AppDatabase db = AppDatabase.getInstance(context);
         RunningQuiz runningQuiz = load(context);
         Quiz quiz = loadQuizFromRunningQuiz(runningQuiz, context);
         QuizCategory quizCategory = loadQuizCategoryFromRunningQuiz(runningQuiz, context);
 
         List<Question> questions =
-                db.questionDao()
-                        .loadWithRunningQuiz(runningQuiz.getId());
+                db.questionDao().loadWithRunningQuiz(runningQuiz.getId());
         double successRate = successRate(questions);
 
         if (runningQuiz.getType() == RunningQuiz.LEVEL_QUIZ) {
@@ -492,9 +509,6 @@ public class RunningQuizControl {
         else if (runningQuiz.getType() == RunningQuiz.EXERCISE_REMINDER) {
             decrementNoRequiredExerciseReminders(exercise, db);
         }
-
-        deleteRunningQuiz(context);
-        return feedback(successRate);
     }
 
     /**
@@ -523,7 +537,7 @@ public class RunningQuizControl {
      * @param questions
      * @return Success-rate of questions.
      */
-    private static double successRate(List<Question> questions) {
+    public static double successRate(List<Question> questions) {
         double correctCount = 0;
 
         for (Question question : questions) {
@@ -571,14 +585,6 @@ public class RunningQuizControl {
         db.quizCategoryDao().update(quizCategory);
     }
 
-    /**
-     * @param successRate
-     * @return poor/decent/good/excellent. Excellent means level passed.
-     */
-    private static String feedback(double successRate) {
-        if (successRate >= ACCEPTABLE_QUIZ_SUCCESS_RATE) return "Excellent";
-        else return "Poor";
-    }
 
     //endregion
 

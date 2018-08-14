@@ -183,15 +183,20 @@ public class ExerciseActivity extends AppCompatActivity {
 
 
     /**
-     * Starts the activity.
+     * Starts the activity and sets exercise in session.
      * @param oldActivity
-     *
-     * @pre exerciseId in session.
      */
     public static void start(long exerciseId, Activity oldActivity) {
         AppDatabase db = AppDatabase.getInstance(oldActivity);
         SessionControl.setActiveExercise(exerciseId, db);
+        LocaUtils.fadeInActivity(ExerciseActivity.class, oldActivity);
+    }
 
+    /**
+     * Start with exercise already in session.
+     * @param oldActivity
+     */
+    public static void start(Activity oldActivity) {
         LocaUtils.fadeInActivity(ExerciseActivity.class, oldActivity);
     }
 

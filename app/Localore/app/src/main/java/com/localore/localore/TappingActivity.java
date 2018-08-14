@@ -61,8 +61,7 @@ public class TappingActivity extends AppCompatActivity {
     public static void start(int quizCategoryType, Activity oldActivity) {
         Intent intent = new Intent(oldActivity, TappingActivity.class);
         intent.putExtra(QUIZ_CATEGORY_TYPE_PARAM_KEY, quizCategoryType);
-        oldActivity.startActivity(intent);
-        oldActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        LocaUtils.fadeInActivity(intent, oldActivity);
     }
 
     @Override

@@ -1,9 +1,9 @@
 package com.localore.localore;
 
-import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.graphics.Color;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -16,14 +16,11 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.GeoObject;
@@ -31,7 +28,6 @@ import com.localore.localore.model.NodeShape;
 import com.localore.localore.model.Question;
 import com.localore.localore.model.QuizCategory;
 import com.localore.localore.model.RunningQuiz;
-import com.localore.localore.model.SessionDao;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.RunningQuizControl;
 import com.localore.localore.modelManipulation.SessionControl;
@@ -87,6 +83,7 @@ public class QuizActivity extends AppCompatActivity {
         this.mapView = findViewById(R.id.mapView_quiz);
         this.bottomRecycler = findViewById(R.id.recyclerView_bottom);
 
+        mapView.onCreate(null);
         mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(MapboxMap mapboxMap) {
@@ -94,11 +91,16 @@ public class QuizActivity extends AppCompatActivity {
                 update();
             }
         });
-
         exitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 exitQuiz();
+            }
+        });
+        nextQuestionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                nextQuestion();
             }
         });
     }
@@ -126,6 +128,7 @@ public class QuizActivity extends AppCompatActivity {
         }
 
         updateNextQuestionButton();
+        updateExitButton();
     }
 
     /**
@@ -154,6 +157,16 @@ public class QuizActivity extends AppCompatActivity {
             this.nextQuestionButton.show();
         else
             this.nextQuestionButton.hide();
+    }
+
+    /**
+     * Hidden if follow-up.
+     */
+    private void updateExitButton() {
+        if (RunningQuizControl.load(this).getType() == RunningQuiz.FOLLOW_UP_QUIZ)
+            exitButton.setVisibility(View.INVISIBLE);
+        else
+            exitButton.setVisibility(View.VISIBLE);
     }
 
     //region Name-it
@@ -323,26 +336,29 @@ public class QuizActivity extends AppCompatActivity {
                 }
             }
             clickedHolder.setCorrect();
+            nextQuestionButton.show();
         }
         else {
             clickedHolder.setIncorrect();
-            flashGeoObject(clickedHolder.getGeoObject(), Color.GRAY, 2000);
+            flashGeoObject(clickedHolder.getGeoObject());
         }
     }
 
     /**
-     * Fade in and out a geo-object in the map.
+     * Flash geo-object in map.
      * @param geoObject
-     * @param color
-     * @param time
      */
-    private void flashGeoObject(GeoObject geoObject, int color, int time) {
-        List<Annotation> annotations = LocaUtils.addGeoObject(geoObject, mapboxMap, this);
+    private void flashGeoObject(GeoObject geoObject) {
+        int color = Color.GRAY;
+        int displayTime = 1500;
+        List<Annotation> annotations = LocaUtils.addGeoObject(geoObject, mapboxMap, color, this);
 
-        for (Annotation annotation : annotations) {
-
-        }
-
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mapboxMap.removeAnnotations(annotations);
+            }
+        }, displayTime);
     }
 
     //endregion
@@ -362,11 +378,10 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     /**
-     * Report result and progress to next question, or quiz done.
-     * @param correct True if the answer was correct.
+     * Move to next question in running-quiz in db, and update activity accordingly.
+     * Or, quiz done.
      */
-    public void nextQuestion(Question question, boolean correct) {
-        RunningQuizControl.reportQuestionResult(question, correct, this);
+    public void nextQuestion() {
         Question nextQuestion = RunningQuizControl.nextQuestion(this);
         if (nextQuestion == null) {
             quizDone();
@@ -377,11 +392,19 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     /**
-     * If quiz not a follow-up quiz: start one.
-     * If follow-up: exit.
+     * Start result-activity when finished.
      */
     public void quizDone() {
+        RunningQuizControl.reportRunningQuizFinished(this);
 
+        int type = RunningQuizControl.load(this).getType();
+        if (type != RunningQuiz.FOLLOW_UP_QUIZ) {
+            QuizResultActivity.start(this);
+        }
+        else {
+            ExerciseActivity.start(this);
+        }
+        finish();
     }
 
 
@@ -446,7 +469,6 @@ public class QuizActivity extends AppCompatActivity {
             case RunningQuiz.FOLLOW_UP_QUIZ:
                 RunningQuizControl.newFollowUpQuiz(oldActivity);
                 break;
-
             case RunningQuiz.QUIZ_CATEGORY_REMINDER:
                 RunningQuizControl.newLevelReminder(exerciseId, quizCategory, oldActivity);
                 break;
@@ -463,7 +485,7 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     /**
-     * Use when an exercise is running (i.e a running-quiz exists).
+     * Use when new running-quiz already exists in db.
      * @param oldActivity
      */
     public static void resumedStart(Activity oldActivity) {

@@ -568,7 +568,17 @@ public class ExerciseControl {
      */
     public static List<Quiz> loadQuizzesInExercise(long exerciseId, AppDatabase db) {
         List<Long> quizCategoryIds = db.quizCategoryDao().loadIdsWithExercise(exerciseId);
-        return db.quizDao().loadWithQuizCategories(quizCategoryIds);
+        return db.quizDao().loadWithQuizCategoryIn(quizCategoryIds);
+    }
+
+    /**
+     * @param exerciseId
+     * @param db
+     * @return Quizzes in exercise.
+     */
+    public static List<Long> loadQuizIdsInExercise(long exerciseId, AppDatabase db) {
+        List<Long> quizCategoryIds = db.quizCategoryDao().loadIdsWithExercise(exerciseId);
+        return db.quizDao().loadIdsWithQuizCategoryIn(quizCategoryIds);
     }
 
     /**

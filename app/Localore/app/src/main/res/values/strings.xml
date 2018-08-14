@@ -32,4 +32,8 @@
     <string name="about">About</string>
     <string name="press_once_again_to_exit">Press once again to exit</string>
     <string name="quit_confirmation_request">Are you sure you want to quit?</string>
+    <string name="excellent_result_feedback">Excellent!</string>
+    <string name="good_result_feedback">Close, but try once again</string>
+    <string name="poor_result_feedback">You can do better</string>
+    <string name="level_cleared">Level cleared</string>
 </resources>

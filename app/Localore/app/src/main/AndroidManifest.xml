@@ -58,8 +58,7 @@
             android:name=".CreateExerciseActivity"
             android:label="@string/new_exercise"
             android:launchMode="singleTask"
-            android:screenOrientation="portrait">
-        </activity>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".LoadingNewExerciseActivity"
             android:label="@string/loading_exercise"
@@ -77,7 +76,13 @@
             android:name=".AboutActivity"
             android:label="@string/about"
             android:launchMode="singleTask"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".TalkActivity"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:screenOrientation="portrait" />
+        <activity android:name=".QuizResultActivity"></activity>
     </application>
 
 </manifest>

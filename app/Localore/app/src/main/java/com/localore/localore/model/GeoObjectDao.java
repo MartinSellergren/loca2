@@ -75,6 +75,9 @@ public abstract class GeoObjectDao {
     @Transaction @Query("SELECT * FROM geoobject ORDER BY RANDOM() LIMIT :preferredCount")
     public abstract List<GeoObject> loadRandoms(int preferredCount);
 
+    @Transaction @Query("SELECT * FROM geoobject where quizId IN (:quizIds) ORDER BY RANDOM() LIMIT :preferredCount")
+    public abstract List<GeoObject> loadRandomsWithQuizIn(List<Long> quizIds, int preferredCount);
+
     @Transaction @Query("SELECT id FROM GeoObject WHERE quizId = :quizId")
     public abstract List<Long> loadIdsWithQuiz(long quizId);
 
