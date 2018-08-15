@@ -24,7 +24,7 @@ Seterra - 50000, 4.7
  - A bit messy o select quiz
  (- No progress-system)
 
-World Geography, 5000000, 4.7
+World Geography, 500 0000, 4.7
  + Repete incorrect quesions after quiz, without time-stress
  + Difficulty increases
  0 Bonus if quick answer
@@ -35,7 +35,7 @@ World Geography, 5000000, 4.7
  - Ads and bonus-videos
 
 
-Geo Challenge, 100000, 4.5
+Geo Challenge, 100 000, 4.5
  + Beautiful and swift
  0 Simple
  - Very stressful with time ticking down
@@ -49,7 +49,7 @@ MapPie, 5000, 4.8
  - Slow gameplay, no stimulation (stress)
  - Ugly faint maps
 
-Countries of the world: 1000000, 4.0
+Countries of the world: 100 0000, 4.0
  + Simple
  + Extra-info in question: asking for country, show flag and capital -> Large number of associations.
  - Only multi-choice
@@ -57,7 +57,7 @@ Countries of the world: 1000000, 4.0
  - Random quiz-content
  - No scoring
 
-Blank map quiz: 10000, 4.6
+Blank map quiz: 10 000, 4.6
  + Simple
  + Beautiful colouring of map
  + Predefined exercises
@@ -71,8 +71,8 @@ Blank map quiz: 10000, 4.6
 
 
 
-Geography Quiz Game 3d: 500000, 4.2
-Geography Learning: 1000000, 3.8
-World citizen: 100000, 4.3
-Geography master quiz: 100000, 4.0
+Geography Quiz Game 3d: 500 000, 4.2
+Geography Learning: 1000 000, 3.8
+World citizen: 100 000, 4.3
+Geography master quiz: 100 000, 4.0
 Geo Sverige: 1000, 2.9
