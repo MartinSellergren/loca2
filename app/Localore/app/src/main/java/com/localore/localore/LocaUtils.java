@@ -7,8 +7,16 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.location.Location;
 import android.os.Build;
+import android.os.Handler;
+import android.os.SystemClock;
+import android.support.constraint.ConstraintLayout;
+import android.support.constraint.ConstraintSet;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.localore.localore.model.AppDatabase;
@@ -47,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.fillColor;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.fillOpacity;
@@ -115,8 +124,132 @@ public class LocaUtils {
         }
     }
 
+    //region fade transitions
+
+    public static int QUICK_TALK = 500;
+    public static int LONG_TALK = 1000;
+
     /**
-     * Fade out old activity, start new new and fade it in.
+     * Fade in overlay on top of screen, run action, fade back.
+     * @param overlay
+     * @param activity
+     * @param betweenAction
+     */
+    private static void fadeOutFadeInOverlay(ConstraintLayout overlay, Activity activity, boolean fadeBack, Runnable betweenAction) {
+        int fadeDuration = 500;
+
+        View absoluteRoot = activity.findViewById(android.R.id.content);
+        if (absoluteRoot == null)
+            absoluteRoot = activity.getWindow().getDecorView().findViewById(android.R.id.content);
+
+        ConstraintLayout root = (ConstraintLayout)((ViewGroup)(absoluteRoot)).getChildAt(0);
+        overlay.setAlpha(0);
+        root.addView(overlay);
+        root.invalidate();
+//        new Handler().postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+                overlay.animate()
+                        .alpha(1)
+                        .setDuration(fadeDuration)
+                        .withEndAction(() -> {
+                            if (betweenAction != null) {
+                                betweenAction.run();
+                            }
+                            if (fadeBack) {
+                                overlay.animate()
+                                        .alpha(0f)
+                                        .setDuration(fadeDuration)
+                                        .withEndAction(() -> {
+                                            root.removeView(overlay);
+                                            root.invalidate();
+                                        })
+                                        .start();
+                            }
+                        })
+                        .start();
+//            }
+//        }, 0);
+    }
+
+    /**
+     * Fades out screen, runs between-action, fades back.
+     * @param activity
+     * @param betweenAction
+     */
+    public static void fadeOutFadeIn(Activity activity, Runnable betweenAction) {
+        ConstraintLayout overlay = new ConstraintLayout(activity);
+        overlay.setLayoutParams(new ConstraintLayout.LayoutParams(
+                ConstraintLayout.LayoutParams.MATCH_PARENT,
+                ConstraintLayout.LayoutParams.MATCH_PARENT));
+        //overlay.setBackgroundColor(activity.getResources().getColor(R.color.colorPrimary));
+        overlay.setBackgroundColor(Color.WHITE);
+
+        fadeOutFadeInOverlay(overlay, activity, true, betweenAction);
+    }
+
+    /**
+     * Fades out screen, show text, fades back.
+     * @param text
+     */
+    public static void talk(String text, int talkDuration, Activity activity) {
+        ConstraintLayout overlay = talkOverlay(text, activity);
+        fadeOutFadeInOverlay(overlay, activity, true, () -> {
+            SystemClock.sleep(talkDuration);
+        });
+    }
+
+    /**
+     * Talk, then fade in new activity.
+     * @param text
+     * @param newActivityClass
+     * @param oldActivity
+     */
+    public static void fadeInActivityWithTalk(String text, int talkDuration, Class<?> newActivityClass, Activity oldActivity) {
+        ConstraintLayout talkOverlay = talkOverlay(text, oldActivity);
+        fadeOutFadeInOverlay(talkOverlay, oldActivity, false, () -> {
+            SystemClock.sleep(talkDuration);
+            fadeInActivity(newActivityClass, oldActivity);
+        });
+    }
+
+    /**
+     * @param text
+     * @param activity
+     * @return Talk-view with text.
+     */
+    private static ConstraintLayout talkOverlay(String text, Activity activity) {
+        ConstraintLayout overlay = new ConstraintLayout(activity);
+        overlay.setId(generateViewId());
+        overlay.setLayoutParams(new ConstraintLayout.LayoutParams(
+                ConstraintLayout.LayoutParams.MATCH_PARENT,
+                ConstraintLayout.LayoutParams.MATCH_PARENT));
+        overlay.setBackgroundColor(Color.WHITE);
+
+        TextView textView = new TextView(activity);
+        textView.setId(generateViewId());
+        textView.setText(text);
+
+        textView.setLayoutParams(new ConstraintLayout.LayoutParams(
+                ConstraintLayout.LayoutParams.WRAP_CONTENT,
+                ConstraintLayout.LayoutParams.WRAP_CONTENT));
+        overlay.addView(textView);
+
+        ConstraintSet constraintSet = new ConstraintSet();
+        constraintSet.clone(overlay);
+
+        constraintSet.connect(textView.getId(), ConstraintSet.TOP, overlay.getId(), ConstraintSet.TOP);
+        constraintSet.connect(textView.getId(), ConstraintSet.BOTTOM, overlay.getId(), ConstraintSet.BOTTOM);
+        constraintSet.connect(textView.getId(), ConstraintSet.LEFT, overlay.getId(), ConstraintSet.LEFT);
+        constraintSet.connect(textView.getId(), ConstraintSet.RIGHT, overlay.getId(), ConstraintSet.RIGHT);
+        constraintSet.applyTo(overlay);
+
+        return overlay;
+    }
+
+    /**
+     * Fade out old activity, start new new and fade it in. Also finishes old activity
+     * (removed from task-stack).
      * @param newActivityClass
      * @param oldActivity
      */
@@ -126,8 +259,11 @@ public class LocaUtils {
     }
     public static void fadeInActivity(Intent intent, Activity oldActivity) {
         oldActivity.startActivity(intent);
-        oldActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        oldActivity.overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+        oldActivity.finish();
     }
+
+    //endregion
 
     /**
      * Adds a border around a view.
@@ -327,8 +463,8 @@ public class LocaUtils {
      *
      * @param geoObjects
      * @param mapboxMap
-     * @param markersMap Updated with mappings: markerId -> geoObjectId. May be null.
-     * @param polylinesMap Updated with mappings: polylineId -> geoObjectId. May be null.
+     * @param markersMap Afterwards updated with mappings: markerId -> geoObjectId. May be null.
+     * @param polylinesMap Afterwards updated with mappings: polylineId -> geoObjectId. May be null.
      */
     public static void addGeoObjects(List<GeoObject> geoObjects, MapboxMap mapboxMap,
                               Map<Long,Long> markersMap, Map<Long,Long> polylinesMap, Context context) {
@@ -419,10 +555,12 @@ public class LocaUtils {
      */
     private static Polyline addPolyline(List<double[]> nodes, long geoObjectId, int color, MapboxMap mapboxMap,
                                         Map<Long,Long> polylinesMap) {
+        int GEO_OBJECT_LINE_WIDTH = 4;
+
         Polyline polyline = mapboxMap.addPolyline(new PolylineOptions()
                 .addAll(LocaUtils.toLatLngs(nodes))
                 .color(color)
-                .width(2));
+                .width( GEO_OBJECT_LINE_WIDTH ));
 
         if (polylinesMap != null) polylinesMap.put(polyline.getId(), geoObjectId);
         return polyline;
@@ -502,6 +640,19 @@ public class LocaUtils {
     }
 
     //endregion
+
+    private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
+    public static int generateViewId() {
+        for (; ; ) {
+            final int result = sNextGeneratedId.get();
+            // aapt-generated IDs have the high byte nonzero; clamp to the range under that.
+            int newValue = result + 1;
+            if (newValue > 0x00FFFFFF) newValue = 1; // Roll over to 1, not 0.
+            if (sNextGeneratedId.compareAndSet(result, newValue)) {
+                return result;
+            }
+        }
+    }
 
     //region Logging
 

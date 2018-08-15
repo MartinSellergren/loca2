@@ -184,7 +184,6 @@ public class SelectExerciseActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View view) {
                     ExerciseActivity.start(exercise.getId(), SelectExerciseActivity.this);
-                    SelectExerciseActivity.this.finish();
                 }
             });
         }

@@ -32,6 +32,8 @@ public class QuizResultActivity extends AppCompatActivity {
     public static final int GOOD_RESULT = 1;
     public static final int POOR_RESULT = 2;
 
+    private TextView textView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,7 +43,6 @@ public class QuizResultActivity extends AppCompatActivity {
 
         AppDatabase db = AppDatabase.getInstance(this);
         RunningQuiz runningQuiz = RunningQuizControl.load(this);
-        Quiz quiz = RunningQuizControl.loadQuizFromRunningQuiz(runningQuiz, this);
         List<Question> questions = db.questionDao().loadWithRunningQuiz(runningQuiz.getId());
         double successRate = RunningQuizControl.successRate(questions);
 
@@ -51,19 +52,14 @@ public class QuizResultActivity extends AppCompatActivity {
             feedbackStr += "\n\n " + getString(R.string.level_cleared);
         }
 
-        TextView textView = findViewById(R.id.textView_quizResult);
+        this.textView = findViewById(R.id.textView_quizResult);
         textView.setText(feedbackStr);
 
         ConstraintLayout layout = findViewById(R.id.layout_quizResult);
         layout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                textView.animate()
-                        .alpha(0f)
-                        .withEndAction(() -> {
-                            doneOrFollowUp();
-                        })
-                        .start();
+                doneOrFollowUp();
             }
         });
     }
@@ -72,13 +68,11 @@ public class QuizResultActivity extends AppCompatActivity {
      * Starts a follow-up if relevant, else quiz done.
      */
     private void doneOrFollowUp() {
-        boolean doFollowUp = RunningQuizControl.newFollowUpQuiz(this);
-
-        if (!doFollowUp) {
-            ExerciseActivity.start(this);
+        try {
+            QuizActivity.freshStart(RunningQuiz.FOLLOW_UP_QUIZ, -1, this);
         }
-        else {
-            QuizActivity.resumedStart(this);
+        catch (RunningQuizControl.QuizConstructionException e) {
+            ExerciseActivity.start(this);
         }
     }
 
@@ -94,7 +88,6 @@ public class QuizResultActivity extends AppCompatActivity {
         else
             return POOR_RESULT;
     }
-
 
 
     /**

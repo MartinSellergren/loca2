@@ -136,21 +136,32 @@ public class RunningQuizControl {
     //region new running-quiz
 
     /**
+     * Thrown if failed to create a quiz.
+     */
+    public static class QuizConstructionException extends RuntimeException {
+        public QuizConstructionException() { super(); }
+        public QuizConstructionException(String msg) { super(msg); }
+    }
+
+    /**
      * Set running-quiz to a new level-quiz (constructed from db quiz-data of exercise).
      * @param exerciseId
      * @param quizCategoryType
      * @param context
+     * @return Level (in quiz-category) of new quiz.
      */
-    public static void newLevelQuiz(long exerciseId, int quizCategoryType, Context context) {
+    public static int newLevelQuiz(long exerciseId, int quizCategoryType, Context context) throws QuizConstructionException {
         AppDatabase db = AppDatabase.getInstance(context);
         int runningQuizType = 0;
         long runningQuizId = newRunningQuiz(runningQuizType, context);
 
         Quiz quizData = ExerciseControl.loadNextLevelQuiz(exerciseId, quizCategoryType, db);
-        if (quizData == null) return;
+        if (quizData == null) throw new QuizConstructionException("Top level reached");
         List<GeoObject> levelGeoObjects = db.geoDao().loadWithQuiz(quizData.getId());
 
         newQuestions(levelGeoObjects, runningQuizId, db);
+
+        return quizData.getLevel();
     }
 
     /**
@@ -162,16 +173,18 @@ public class RunningQuizControl {
      * @return True if new follow-up quiz started.
      * @pre A running-quiz in db.
      */
-    public static boolean newFollowUpQuiz(Context context) {
+    public static void newFollowUpQuiz(Context context) throws QuizConstructionException {
         AppDatabase db = AppDatabase.getInstance(context);
         RunningQuiz runningQuiz = load(context);
         long runningQuizId = load(context).getId();
         List<Question> incorrectQuestions = db.questionDao()
                         .loadIncorrectWithRunningQuizOrderedByIndex(runningQuizId);
 
-        if (runningQuiz.getType() == RunningQuiz.FOLLOW_UP_QUIZ ||
-                incorrectQuestions.size() == 0)
-            return false;
+        if (runningQuiz.getType() == RunningQuiz.FOLLOW_UP_QUIZ)
+            throw new QuizConstructionException("Previous quiz a follow-up");
+        if (incorrectQuestions.size() == 0)
+            throw new QuizConstructionException("No incorrect answers in previous quiz");
+
 
         int runningQuizType = 1;
         runningQuizId = newRunningQuiz(runningQuizType, context);
@@ -188,29 +201,30 @@ public class RunningQuizControl {
         db.questionDao().insert(newQuestions);
 
         RunningQuizControl.nextQuestion(context);
-
-        return true;
     }
 
     /**
      * Set running-quiz to a new level-reminder-quiz (generated semi-randomly
-     * from geo-object-stats of exercise).
+     * from geo-object-stats of exercise - geo-object from finished levels).
      *
      * @param exerciseId
      * @param quizCategoryType
      * @param context
      */
-    public static void newLevelReminder(long exerciseId, int quizCategoryType, Context context) {
+    public static boolean newLevelReminder(long exerciseId, int quizCategoryType, Context context) throws QuizConstructionException {
         AppDatabase db = AppDatabase.getInstance(context);
         int runningQuizType = 2;
         long runningQuizId = newRunningQuiz(runningQuizType, context);
 
         QuizCategory quizCategory = db.quizCategoryDao().loadWithExerciseAndType(exerciseId, quizCategoryType);
         List<Long> quizIds = db.quizDao().loadPassedIdsWithQuizCategory(quizCategory.getId());
+        if (quizIds.size() == 0) throw new QuizConstructionException("No finished quizzes in quiz-category");
+
         List<Long> geoObjectCandidateIds = db.geoDao().loadIdsWithQuizIn(quizIds);
         List<GeoObject> geoObjects = pickReminderQuizGeoObjects(geoObjectCandidateIds, db);
 
         newQuestions(geoObjects, runningQuizId, db);
+        return true;
     }
 
     /**
@@ -220,12 +234,14 @@ public class RunningQuizControl {
      * @param exerciseId
      * @param context
      */
-    public static void newExerciseReminder(long exerciseId, Context context) {
+    public static void newExerciseReminder(long exerciseId, Context context) throws QuizConstructionException {
         AppDatabase db = AppDatabase.getInstance(context);
         int runningQuizType = 3;
         long runningQuizId = newRunningQuiz(runningQuizType, context);
 
         List<Long> geoObjectCandidateIds = loadIdOfGeoObjectsInPassedQuizzesInExercise(exerciseId, db);
+        if (geoObjectCandidateIds.size() == 0) throw new QuizConstructionException("No geo objects for reminder (no passes quizzes)");
+
         List<GeoObject> geoObjects = pickReminderQuizGeoObjects(geoObjectCandidateIds, db);
         newQuestions(geoObjects, runningQuizId, db);
     }

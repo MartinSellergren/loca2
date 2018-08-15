@@ -259,8 +259,6 @@ public class LoadingNewExerciseActivity extends AppCompatActivity {
             SessionControl.setNoActiveExercise(AppDatabase.getInstance(this));
             CreateExerciseActivity.start(this);
         }
-
-        finish();
     }
 
     /**

@@ -460,4 +460,26 @@ public class GeoObject {
         GeoObject geoObject2 = (GeoObject) object;
         return this.getId() == geoObject2.getId();
     }
+
+
+    /**
+     * @param geoObjects
+     * @return [wsen] of multiple geo-objects.
+     */
+    public static double[] getBounds(List<GeoObject> geoObjects) {
+        double w = Double.POSITIVE_INFINITY;
+        double s = Double.POSITIVE_INFINITY;
+        double e = Double.NEGATIVE_INFINITY;
+        double n = Double.NEGATIVE_INFINITY;
+
+        for (GeoObject geoObject : geoObjects) {
+            double[] bs = geoObject.getBounds();
+
+            if (bs[0] < w) w = bs[0];
+            if (bs[1] < s) s = bs[1];
+            if (bs[2] > e) e = bs[2];
+            if (bs[3] > n) n = bs[3];
+        }
+        return new double[]{w, s, e, n};
+    }
 }

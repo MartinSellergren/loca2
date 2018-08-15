@@ -72,7 +72,6 @@ public class ExerciseActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.menuItem_selectExercise) {
             SelectExerciseActivity.start(ExerciseActivity.this);
-            finish();
         }
         else if (item.getItemId() == R.id.menuItem_about) {
             AboutActivity.start(ExerciseActivity.this);
@@ -143,11 +142,9 @@ public class ExerciseActivity extends AppCompatActivity {
                             }
                             else if (item == 1) {
                                 QuizActivity.freshStart(RunningQuiz.LEVEL_QUIZ, quizCategoryType, ExerciseActivity.this);
-                                ExerciseActivity.this.finish();
                             }
                             else {
                                 QuizActivity.freshStart(RunningQuiz.QUIZ_CATEGORY_REMINDER, quizCategoryType, ExerciseActivity.this);
-                                ExerciseActivity.this.finish();
                             }
                         }
                     });

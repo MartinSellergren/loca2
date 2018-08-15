@@ -36,4 +36,11 @@
     <string name="good_result_feedback">Close, but try once again</string>
     <string name="poor_result_feedback">You can do better</string>
     <string name="level_cleared">Level cleared</string>
+    <string name="so">So...</string>
+    <string name="level">Level</string>
+    <string name="follow_up_quiz_init_talk">So...</string>
+    <string name="reminder_quiz_init_talk">Remember...</string>
+    <string name="no_thats">No, that\'s</string>
+    <string name="correct">Correct</string>
+    <string name="sure_is">Sure is</string>
 </resources>

@@ -2,6 +2,7 @@ package com.localore.localore;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -17,12 +18,13 @@ public class AboutActivity extends AppCompatActivity {
     }
 
     /**
-     * Starts the activity.
+     * Starts the activity. Normal start, no fading in and parent kept in task-stack.
      *
      * @param oldActivity
      */
     public static void start(Activity oldActivity) {
-        LocaUtils.fadeInActivity(AboutActivity.class, oldActivity);
+        Intent intent = new Intent(oldActivity, AboutActivity.class);
+        oldActivity.startActivity(intent);
     }
 
     @Override

@@ -21,6 +21,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.GeoObject;
@@ -31,11 +32,17 @@ import com.localore.localore.model.RunningQuiz;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.RunningQuizControl;
 import com.localore.localore.modelManipulation.SessionControl;
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.annotations.Polyline;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.annotations.Annotation;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class QuizActivity extends AppCompatActivity {
 
@@ -66,6 +73,7 @@ public class QuizActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz);
+
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.hide();
 
@@ -94,7 +102,7 @@ public class QuizActivity extends AppCompatActivity {
         exitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                exitQuiz();
+                interruptionExit();
             }
         });
         nextQuestionButton.setOnClickListener(new View.OnClickListener() {
@@ -118,15 +126,18 @@ public class QuizActivity extends AppCompatActivity {
                 update_nameIt();
                 break;
             case Question.PLACE_IT:
-                updateLayout_placeIt();
+                update_placeIt();
                 break;
             case Question.PAIR_IT:
-                updateLayout_pairIt();
+                update_pairIt();
                 break;
             default:
                 throw new RuntimeException("Dead end");
         }
 
+        NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
+        LocaUtils.flyToFitShape(workingArea, this.mapboxMap, LocaUtils.LONG_FLY_TIME);
+        updateToggleZoomButton(WORKING_AREA_ZOOM);
         updateNextQuestionButton();
         updateExitButton();
     }
@@ -141,9 +152,10 @@ public class QuizActivity extends AppCompatActivity {
         int progress = 0;
         if (tot == 0) progress = 0;
         else if (tot == 1 && currentIndex == 0) progress = 0;
-        else if (tot == 1 && currentIndex == 1) progress = 99;
+        else if (tot == 1 && currentIndex == 1) progress = 50;
         else {
-            progress = Math.round(100f * currentIndex / (tot - 1)) - 1;
+            progress = Math.round(100f * currentIndex / tot);
+            //progress = Math.round(100f * currentIndex / (tot - 1)) - 1;
         }
         this.progressBar.setProgress(progress);
     }
@@ -192,27 +204,24 @@ public class QuizActivity extends AppCompatActivity {
 
     /**
      * Updates the map: add a geo-object.
-     * Fly to working area. Specify toggle-zoom-button action.
+     * Specify toggle-zoom-button action.
      * @param geoObject
      */
     private void updateMap_nameIt(GeoObject geoObject) {
-        NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
-
         LocaUtils.addGeoObject(geoObject, this.mapboxMap, this);
-        LocaUtils.flyToFitShape(workingArea, this.mapboxMap, LocaUtils.LONG_FLY_TIME);
 
-        setToggleZoomButton(WORKING_AREA_ZOOM);
+        NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
         toggleZoomButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 int currentZoomLevelTag = (int)toggleZoomButton.getTag();
 
                 if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
-                    setToggleZoomButton(QUESTION_ZOOM);
+                    updateToggleZoomButton(QUESTION_ZOOM);
                     LocaUtils.flyToFitBounds(geoObject.getBounds(), mapboxMap, LocaUtils.SHORT_FLY_TIME);
                 }
                 else if (currentZoomLevelTag == QUESTION_ZOOM) {
-                    setToggleZoomButton(WORKING_AREA_ZOOM);
+                    updateToggleZoomButton(WORKING_AREA_ZOOM);
                     LocaUtils.flyToFitShape(workingArea, mapboxMap, LocaUtils.SHORT_FLY_TIME);
                 }
                 else {
@@ -223,10 +232,9 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     /**
-     *
      * @param currentZoomLevelTag
      */
-    private void setToggleZoomButton(int currentZoomLevelTag) {
+    private void updateToggleZoomButton(int currentZoomLevelTag) {
         if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
             toggleZoomButton.setImageResource(R.drawable.mapbox_compass_icon); //zoom to element icon
             toggleZoomButton.setTag(WORKING_AREA_ZOOM);
@@ -341,6 +349,7 @@ public class QuizActivity extends AppCompatActivity {
         else {
             clickedHolder.setIncorrect();
             flashGeoObject(clickedHolder.getGeoObject());
+            //TODO: indicate correct answer
         }
     }
 
@@ -363,17 +372,130 @@ public class QuizActivity extends AppCompatActivity {
 
     //endregion
 
-    /**
-     *
-     */
-    private void updateLayout_placeIt() {
+    //region Place-it
 
+    /**
+     * Icon, text, map.
+     */
+    private void update_placeIt() {
+        this.topRecycler.setVisibility(View.GONE);
+        this.bottomRecycler.setVisibility(View.GONE);
+
+        Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
+        GeoObject geoObject = RunningQuizControl.loadGeoObjectFromQuestion(currentQuestion, this);
+        QuizCategory quizCategory = ExerciseControl.loadQuizCategoryOfGeoObject(geoObject, this);
+
+
+        this.questionCategoryIcon.setImageResource( quizCategory.getIconResource() );
+        this.textView.setText(
+                String.format("%s:\n%s (%s)", getString(R.string.place_it), geoObject.getName(), geoObject.getCategory()));
+
+        updateMap_placeIt(currentQuestion.getContent());
+    }
+
+    /**
+     * Adds clickable geo-objects to map.
+     * Specify toggle-zoom-button action.
+     * @param alternatives
+     */
+    private void updateMap_placeIt(List<GeoObject> alternatives) {
+        Map<Long, Long> markersLookupMap = new HashMap<>();
+        Map<Long, Long> polylinesLookupMap = new HashMap<>();
+        LocaUtils.addGeoObjects(alternatives, mapboxMap, markersLookupMap, polylinesLookupMap, this);
+
+        AppDatabase db = AppDatabase.getInstance(this);
+
+        mapboxMap.setOnMarkerClickListener(marker -> {
+            long answeredId = markersLookupMap.get(marker.getId());
+            GeoObject answered = db.geoDao().load(answeredId);
+            int contentIndex = alternatives.indexOf(answered);
+            alternativeClicked_placeIt(contentIndex, marker, answered);
+            return true;
+        });
+
+        mapboxMap.setOnPolylineClickListener(polyline -> {
+            long answeredId = polylinesLookupMap.get(polyline.getId());
+            GeoObject answered = db.geoDao().load(answeredId);
+            int contentIndex = alternatives.indexOf(answered);
+            alternativeClicked_placeIt(contentIndex, polyline, answered);
+        });
+
+        NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
+        double[] alternativesBounds = GeoObject.getBounds(alternatives);
+        toggleZoomButton.setOnClickListener(view -> {
+            int currentZoomLevelTag = (int)toggleZoomButton.getTag();
+
+            if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
+                updateToggleZoomButton(QUESTION_ZOOM);
+                LocaUtils.flyToFitBounds(alternativesBounds, mapboxMap, LocaUtils.SHORT_FLY_TIME);
+            }
+            else if (currentZoomLevelTag == QUESTION_ZOOM) {
+                updateToggleZoomButton(WORKING_AREA_ZOOM);
+                LocaUtils.flyToFitShape(workingArea, mapboxMap, LocaUtils.SHORT_FLY_TIME);
+            }
+            else {
+                throw new RuntimeException("Dead end");
+            }
+        });
     }
 
     /**
      *
+     * @param contentIndex
      */
-    private void updateLayout_pairIt() {
+    private void alternativeClicked_placeIt(int contentIndex, Annotation annotation, GeoObject answered) {
+        boolean correct = RunningQuizControl.reportNameItPlaceItAnswer(contentIndex, this);
+
+        if (correct) {
+            removeAllAnnotationsExcept(annotation);
+            removeMapListeners();
+
+            String correctText = String.format("%s! %s",
+                    getString(R.string.correct),
+                    answered.getName());
+            Toast.makeText(this, correctText, Toast.LENGTH_SHORT).show();
+            nextQuestionButton.show();
+        }
+        else {
+            if (annotation instanceof Marker) {
+                ((Marker)annotation).setIcon(LocaUtils.nodeGeoObjectIcon(Color.GRAY, this));
+            }
+            else {
+                ((Polyline)annotation).setColor(Color.GRAY);
+            }
+
+            String incorrectText = answered.getName();
+            Toast.makeText(this, incorrectText, Toast.LENGTH_SHORT).show();
+            //TODO: indicate correct answer
+        }
+    }
+
+    /**
+     * Remove listeners from map.
+     */
+    private void removeMapListeners() {
+        mapboxMap.setOnMarkerClickListener(null);
+        mapboxMap.setOnPolylineClickListener(null);
+    }
+
+    /**
+     * Remove all annotations on the map except one.
+     * @param except
+     */
+    private void removeAllAnnotationsExcept(Annotation except) {
+        for (Annotation annotation : mapboxMap.getAnnotations()) {
+            if (annotation.getId() != except.getId()) {
+                mapboxMap.removeAnnotation(annotation);
+            }
+        }
+    }
+
+    //endregion
+
+    /**
+     *
+     */
+    private void update_pairIt() {
 
     }
 
@@ -387,7 +509,7 @@ public class QuizActivity extends AppCompatActivity {
             quizDone();
         }
         else {
-            update();
+            LocaUtils.fadeOutFadeIn(this, () -> { update(); });
         }
     }
 
@@ -402,9 +524,8 @@ public class QuizActivity extends AppCompatActivity {
             QuizResultActivity.start(this);
         }
         else {
-            ExerciseActivity.start(this);
+            backToExercise();
         }
-        finish();
     }
 
 
@@ -452,36 +573,42 @@ public class QuizActivity extends AppCompatActivity {
      * Loads the first question.
      *
      * @param quizType
-     * @param quizCategory
+     * @param quizCategory Not used by follow-up and exercise-reminder (just put -1).
      * @param oldActivity
      *
      * @pre Session-exercise set.
      * @pre If quizType=followup: A running-quiz in db.
      */
-    public static void freshStart(int quizType, int quizCategory, Activity oldActivity) {
+    public static void freshStart(int quizType, int quizCategory, Activity oldActivity)
+            throws RunningQuizControl.QuizConstructionException {
         AppDatabase db = AppDatabase.getInstance(oldActivity);
         long exerciseId = SessionControl.load(db).getExerciseId();
+        String initTalk = "";
 
         switch (quizType) {
             case RunningQuiz.LEVEL_QUIZ:
-                RunningQuizControl.newLevelQuiz(exerciseId, quizCategory, oldActivity);
+                int level = RunningQuizControl.newLevelQuiz(exerciseId, quizCategory, oldActivity);
+                int displayLevel = level + 1;
+                initTalk = oldActivity.getString(R.string.level) + " " + displayLevel;
                 break;
             case RunningQuiz.FOLLOW_UP_QUIZ:
                 RunningQuizControl.newFollowUpQuiz(oldActivity);
+                initTalk = oldActivity.getString(R.string.follow_up_quiz_init_talk);
                 break;
             case RunningQuiz.QUIZ_CATEGORY_REMINDER:
                 RunningQuizControl.newLevelReminder(exerciseId, quizCategory, oldActivity);
+                initTalk = oldActivity.getString(R.string.reminder_quiz_init_talk);
                 break;
             case RunningQuiz.EXERCISE_REMINDER:
                 RunningQuizControl.newExerciseReminder(exerciseId, oldActivity);
+                initTalk = oldActivity.getString(R.string.reminder_quiz_init_talk);
                 break;
             default:
                 throw new RuntimeException("Dead end");
         }
 
         RunningQuizControl.nextQuestion(oldActivity);
-
-        LocaUtils.fadeInActivity(QuizActivity.class, oldActivity);
+        LocaUtils.fadeInActivityWithTalk(initTalk, LocaUtils.LONG_TALK, QuizActivity.class, oldActivity);
     }
 
     /**
@@ -497,7 +624,7 @@ public class QuizActivity extends AppCompatActivity {
      * Called when user clicks exit-button.
      * Only way out!
      */
-    public void exitQuiz() {
+    public void interruptionExit() {
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
         alertBuilder.setTitle(R.string.quit_confirmation_request);
 
@@ -506,16 +633,22 @@ public class QuizActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int item) {
                 if (item == 0) {
-                    AppDatabase db = AppDatabase.getInstance(activity);
-                    RunningQuizControl.deleteRunningQuiz(activity);
-                    ExerciseActivity.start(SessionControl.load(db).getExerciseId(), activity);
-                    QuizActivity.this.finish();
+                    backToExercise();
                 }
             }
         });
 
         AlertDialog functionDialog = alertBuilder.create();
         functionDialog.show();
+    }
+
+    /**
+     * Only way out! (unless follow-up).
+     */
+    public void backToExercise() {
+        AppDatabase db = AppDatabase.getInstance(activity);
+        RunningQuizControl.deleteRunningQuiz(activity);
+        ExerciseActivity.start(SessionControl.load(db).getExerciseId(), activity);
     }
 
     /**

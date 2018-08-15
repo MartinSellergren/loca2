@@ -223,4 +223,10 @@ public class TappingActivity extends AppCompatActivity {
         mapView.onDestroy();
     }
     //endregion
+
+
+    @Override
+    public void onBackPressed() {
+        SelectExerciseActivity.start(this);
+    }
 }
