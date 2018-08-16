@@ -1,4 +1,4 @@
-[out:xml][timeout:900][bbox:{{bbox}}];
+[out:xml][timeout:3600][bbox:{{bbox}}];
 
 node(poly:"{{poly}}") -> .ns;
 way(bn.ns) -> .ws;

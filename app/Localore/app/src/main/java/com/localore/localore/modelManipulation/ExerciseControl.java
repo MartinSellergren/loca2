@@ -91,8 +91,8 @@ public class ExerciseControl {
      * Updates database with geo-objects. They all have quizId -1.
      *
      * @param workingArea Area containing objects.
+     * @param tempDb Where geo-objects are inserted.
      * @param context For reading conversion-table from file.
-     * @return True if database updated as planned. False means network error (etc?).
      */
     public static void acquireGeoObjects(NodeShape workingArea, AppDatabase tempDb, Context context)  throws IOException, LocaUtils.WorkInterruptedException {
         interruptAcquisition = false;

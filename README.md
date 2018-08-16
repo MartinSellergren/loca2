@@ -9,6 +9,7 @@ TODO:
 - Draw working-area in tapping with tap-text: "Working area".
 
 - No answers in the map.
+- Switch overpass endpoint if problem.
 
 - equal alternatives height
 - scale text after alternative-box
