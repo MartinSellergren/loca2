@@ -8,6 +8,8 @@ TODO:
 - Not two same questions (type and object) after another.
 - Draw working-area in tapping with tap-text: "Working area".
 
+- No answers in the map.
+
 - equal alternatives height
 - scale text after alternative-box
 
