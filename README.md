@@ -10,6 +10,7 @@ TODO:
 
 - No answers in the map.
 - Switch overpass endpoint if problem.
+- Geo-objects in map blink when tapped.
 
 - equal alternatives height
 - scale text after alternative-box

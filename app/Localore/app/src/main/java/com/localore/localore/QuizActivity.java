@@ -16,6 +16,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -334,7 +335,7 @@ public class QuizActivity extends AppCompatActivity {
     private void alternativeClicked_nameIt(int clickedIndex) {
         boolean correct = RunningQuizControl.reportNameItPlaceItAnswer(clickedIndex, this);
         View clickedView = bottomRecycler.getChildAt(clickedIndex);
-        AlternativeHolder clickedHolder = (AlternativeHolder) bottomRecycler.getChildViewHolder(clickedView);
+        AlternativeHolder clickedHolder = (AlternativeHolder)bottomRecycler.getChildViewHolder(clickedView);
 
         if (correct) {
             for (int i = 0; i < bottomRecycler.getChildCount(); i++) {
@@ -385,7 +386,6 @@ public class QuizActivity extends AppCompatActivity {
         GeoObject geoObject = RunningQuizControl.loadGeoObjectFromQuestion(currentQuestion, this);
         QuizCategory quizCategory = ExerciseControl.loadQuizCategoryOfGeoObject(geoObject, this);
 
-
         this.questionCategoryIcon.setImageResource( quizCategory.getIconResource() );
         this.textView.setText(
                 String.format("%s:\n%s (%s)", getString(R.string.place_it), geoObject.getName(), geoObject.getCategory()));
@@ -403,9 +403,9 @@ public class QuizActivity extends AppCompatActivity {
         Map<Long, Long> polylinesLookupMap = new HashMap<>();
         LocaUtils.addGeoObjects(alternatives, mapboxMap, markersLookupMap, polylinesLookupMap, this);
 
-        AppDatabase db = AppDatabase.getInstance(this);
 
         mapboxMap.setOnMarkerClickListener(marker -> {
+            AppDatabase db = AppDatabase.getInstance(this);
             long answeredId = markersLookupMap.get(marker.getId());
             GeoObject answered = db.geoDao().load(answeredId);
             int contentIndex = alternatives.indexOf(answered);
@@ -414,6 +414,7 @@ public class QuizActivity extends AppCompatActivity {
         });
 
         mapboxMap.setOnPolylineClickListener(polyline -> {
+            AppDatabase db = AppDatabase.getInstance(this);
             long answeredId = polylinesLookupMap.get(polyline.getId());
             GeoObject answered = db.geoDao().load(answeredId);
             int contentIndex = alternatives.indexOf(answered);
@@ -440,7 +441,6 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     /**
-     *
      * @param contentIndex
      */
     private void alternativeClicked_placeIt(int contentIndex, Annotation annotation, GeoObject answered) {
@@ -492,12 +492,235 @@ public class QuizActivity extends AppCompatActivity {
 
     //endregion
 
+    //region pair it
+
     /**
-     *
+     * Text, alternatives and map.
      */
     private void update_pairIt() {
+        this.topRecycler.setVisibility(View.VISIBLE);
+        this.bottomRecycler.setVisibility(View.GONE);
+        this.questionCategoryIcon.setVisibility(View.GONE);
 
+        Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
+        this.textView.setText(getString(R.string.pair_it) + ":");
+
+        updateAlternatives_pairIt(currentQuestion.getContent());
+        updateMap_pairIt();
     }
+
+    /**
+     * Updates the top-recycler with toggle-able buttons with names of geo-objects.
+     *
+     * Set listeners to the view-holders. When one is clicked, select this one and
+     * deselect all others. Also deselect all objects in the map.
+     *
+     * @param geoObjects
+     */
+    private void updateAlternatives_pairIt(List<GeoObject> geoObjects) {
+        topRecycler.setLayoutManager(new GridLayoutManager(this, 2));
+        UnpairedObjectAdapter adapter = new UnpairedObjectAdapter(geoObjects);
+        topRecycler.setAdapter(adapter);
+
+        topRecycler.addOnItemTouchListener(new RecyclerItemClickListener(this, bottomRecycler, new RecyclerItemClickListener.OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, int position) {
+                deselectAllUnpairedButtons();
+                View clickedView = topRecycler.getChildAt(position);
+                UnpairedObjectHolder clickedHolder = (UnpairedObjectHolder)topRecycler.getChildViewHolder(clickedView);
+                clickedHolder.toggleSelected();
+            }
+
+            @Override
+            public void onLongItemClick(View view, int position) {}
+        }));
+    }
+
+    /**
+     * Deselect all buttons in the top recycler.
+     */
+    private void deselectAllUnpairedButtons() {
+        for (int i = 0; i < topRecycler.getChildCount(); i++) {
+            UnpairedObjectHolder holder = (UnpairedObjectHolder)topRecycler.getChildViewHolder(topRecycler.getChildAt(i));
+            holder.deselect();
+        }
+    }
+
+    private class UnpairedObjectAdapter extends RecyclerView.Adapter<UnpairedObjectHolder> {
+        private List<GeoObject> geoObjects;
+
+        public UnpairedObjectAdapter(List<GeoObject> geoObjectAlternatives) {
+            this.geoObjects = geoObjects;
+        }
+
+        @NonNull
+        @Override
+        public UnpairedObjectHolder onCreateViewHolder(@NonNull ViewGroup parent, int i) {
+            LayoutInflater inflater = LayoutInflater.from(QuizActivity.this);
+            return new UnpairedObjectHolder(inflater, parent);
+        }
+
+        /**
+         * @param holder
+         * @param position
+         */
+        @Override
+        public void onBindViewHolder(@NonNull UnpairedObjectHolder holder, int position) {
+            GeoObject geoObject = this.geoObjects.get(position);
+            holder.bind(geoObject);
+        }
+
+        @Override
+        public int getItemCount() {
+            return this.geoObjects.size();
+        }
+    }
+
+    private class UnpairedObjectHolder extends RecyclerView.ViewHolder {
+        private GeoObject geoObject;
+        private Button button;
+
+        /**
+         * The button is toggle-able.
+         */
+        boolean isSelected = false;
+
+        /**
+         * True if paired with corresponding map-object.
+         */
+        private boolean isPaired = false;
+
+        public UnpairedObjectHolder(LayoutInflater inflater, ViewGroup parent) {
+            super(inflater.inflate(R.layout.listitem_question_alternative, parent, false));
+
+            this.button = super.itemView.findViewById(R.id.button_alternative);
+        }
+
+        public void bind(GeoObject geoObject) {
+            this.geoObject = geoObject;
+            this.button.setText(geoObject.getName());
+        }
+
+        public GeoObject getGeoObject() {
+            return this.geoObject;
+        }
+
+        public Button getButton() {
+            return this.button;
+        }
+
+        public boolean isSelected() {
+            return isSelected;
+        }
+
+        /**
+         * Switches selected-state of button. Also changes appearance.
+         * @return
+         */
+        public boolean toggleSelected() {
+            this.isSelected = !isSelected;
+            updateAppearance();
+            return isSelected;
+        }
+
+        /**
+         * Deselect the button.
+         */
+        public void deselect() {
+            this.isSelected = false;
+            updateAppearance();
+        }
+
+        private void updateAppearance() {
+            if (isSelected) {
+                int borderColor = LocaUtils.rankBasedColor(geoObject.getRank());
+                LocaUtils.addBorder(button, borderColor);
+            }
+            else {
+                LocaUtils.removeBorder(button);
+            }
+        }
+
+        /**
+         * Hide this view-holder when correctly paired.
+         */
+        public void setPaired() {
+            itemView.setVisibility(View.INVISIBLE);
+            this.isPaired = true;
+        }
+
+        public boolean isPaired() {
+            return isPaired;
+        }
+    }
+
+    /**
+     * Updated map with geoObjects that isn't paired, which is defined by the view-holders in
+     * the top-recycler.
+     *
+     * @pre Top recycler items set.
+     */
+    private void updateMap_pairIt() {
+        Map<Long, Long> markersLookupMap = new HashMap<>();
+        Map<Long, Long> polylinesLookupMap = new HashMap<>();
+
+        for (int i = 0; i < topRecycler.getChildCount(); i++) {
+            UnpairedObjectHolder holder = (UnpairedObjectHolder)topRecycler.getChildViewHolder(topRecycler.getChildAt(i));
+            if (!holder.isPaired()) {
+                GeoObject geoObject = holder.getGeoObject();
+                LocaUtils.addGeoObject(geoObject, mapboxMap, markersLookupMap, polylinesLookupMap, this);
+            }
+        }
+
+        mapboxMap.setOnMarkerClickListener(marker -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            long answeredId = markersLookupMap.get(marker.getId());
+            GeoObject geoObject = db.geoDao().load(answeredId);
+            UnpairedObjectHolder holder = findTopRecyclerHolder(geoObject);
+            itemsPaired(marker, holder);
+            return true;
+        });
+
+        mapboxMap.setOnPolylineClickListener(polyline -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            long answeredId = polylinesLookupMap.get(polyline.getId());
+            GeoObject geoObject = db.geoDao().load(answeredId);
+            UnpairedObjectHolder holder = findTopRecyclerHolder(geoObject);
+            itemsPaired(polyline, holder);
+        });
+    }
+
+    private UnpairedObjectHolder findTopRecyclerHolder(GeoObject geoObject) {
+        for (int i = 0; i < topRecycler.getChildCount(); i++) {
+            UnpairedObjectHolder holder = (UnpairedObjectHolder)topRecycler.getChildViewHolder(topRecycler.getChildAt(i));
+            if (holder.getGeoObject() == geoObject) {
+                return holder;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Called when a map-object is pressed.
+     * @param annotation
+     * @param holder Currently selected holder. NULL if none selected.
+     */
+    private void itemsPaired(Annotation annotation, UnpairedObjectHolder holder) {
+        if (holder == null) {
+            //ignore map-click
+        }
+        else if (!holder.isSelected()) {
+            Toast.makeText(this, R.string.incorrect, Toast.LENGTH_SHORT).show();
+            holder.deselect();
+        }
+        else {
+            Toast.makeText(this, R.string.correct, Toast.LENGTH_LONG).show();
+            holder.setPaired();
+            mapboxMap.removeAnnotation(annotation);
+        }
+    }
+
+    //endregion
 
     /**
      * Move to next question in running-quiz in db, and update activity accordingly.

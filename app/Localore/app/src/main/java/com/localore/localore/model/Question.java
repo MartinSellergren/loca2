@@ -102,7 +102,7 @@ public class Question {
         this.runningQuizId = runningQuizId;
         this.geoObjectId = geoObject.getId();
         this.index = index;
-        this.type = LocaUtils.randi(2);;//LocaUtils.randi(3);
+        this.type = LocaUtils.randi(3);
 
         if (difficulty > RunningQuizControl.DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT)
             difficulty = RunningQuizControl.DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT;
