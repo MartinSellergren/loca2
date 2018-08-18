@@ -56,12 +56,7 @@ public class QuizResultActivity extends AppCompatActivity {
         textView.setText(feedbackStr);
 
         ConstraintLayout layout = findViewById(R.id.layout_quizResult);
-        layout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                doneOrFollowUp();
-            }
-        });
+        layout.setOnClickListener(view -> doneOrFollowUp());
     }
 
     /**

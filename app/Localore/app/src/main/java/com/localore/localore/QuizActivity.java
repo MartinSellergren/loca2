@@ -13,9 +13,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -41,6 +43,7 @@ import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.annotations.Annotation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,12 +96,9 @@ public class QuizActivity extends AppCompatActivity {
         this.bottomRecycler = findViewById(R.id.recyclerView_bottom);
 
         mapView.onCreate(null);
-        mapView.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(MapboxMap mapboxMap) {
-                QuizActivity.this.mapboxMap = mapboxMap;
-                update();
-            }
+        mapView.getMapAsync(mapboxMap -> {
+            QuizActivity.this.mapboxMap = mapboxMap;
+            update();
         });
         exitButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -115,7 +115,7 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     /**
-     * Update quiz (layout etc) based on db.
+     * Update quiz (layout etc) based on db. A question is initialized.
      */
     private void update() {
         Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
@@ -139,8 +139,8 @@ public class QuizActivity extends AppCompatActivity {
         NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
         LocaUtils.flyToFitShape(workingArea, this.mapboxMap, LocaUtils.LONG_FLY_TIME);
         updateToggleZoomButton(WORKING_AREA_ZOOM);
-        updateNextQuestionButton();
         updateExitButton();
+        nextQuestionButton.hide();
     }
 
     /**
@@ -155,21 +155,10 @@ public class QuizActivity extends AppCompatActivity {
         else if (tot == 1 && currentIndex == 0) progress = 0;
         else if (tot == 1 && currentIndex == 1) progress = 50;
         else {
-            progress = Math.round(100f * currentIndex / tot);
-            //progress = Math.round(100f * currentIndex / (tot - 1)) - 1;
+            //progress = Math.round(100f * currentIndex / tot);
+            progress = Math.round(100f * currentIndex / (tot - 1)) - 1;
         }
         this.progressBar.setProgress(progress);
-    }
-
-    /**
-     * Hide/show depending on current question result.
-     */
-    private void updateNextQuestionButton() {
-        Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
-        if (currentQuestion.isAnsweredCorrectly())
-            this.nextQuestionButton.show();
-        else
-            this.nextQuestionButton.hide();
     }
 
     /**
@@ -186,6 +175,7 @@ public class QuizActivity extends AppCompatActivity {
 
     /**
      * Icon, text, map and alternatives.
+     * Specify toggle-zoom-button action.
      */
     private void update_nameIt() {
         this.topRecycler.setVisibility(View.GONE);
@@ -201,15 +191,6 @@ public class QuizActivity extends AppCompatActivity {
 
         updateMap_nameIt(geoObject);
         updateAlternatives_nameIt(geoObject, currentQuestion.getContent());
-    }
-
-    /**
-     * Updates the map: add a geo-object.
-     * Specify toggle-zoom-button action.
-     * @param geoObject
-     */
-    private void updateMap_nameIt(GeoObject geoObject) {
-        LocaUtils.addGeoObject(geoObject, this.mapboxMap, this);
 
         NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
         toggleZoomButton.setOnClickListener(new View.OnClickListener() {
@@ -230,6 +211,14 @@ public class QuizActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    /**
+     * Updates the map: add a geo-object.
+     * @param geoObject
+     */
+    private void updateMap_nameIt(GeoObject geoObject) {
+        LocaUtils.addGeoObject(geoObject, this.mapboxMap, this);
     }
 
     /**
@@ -377,6 +366,7 @@ public class QuizActivity extends AppCompatActivity {
 
     /**
      * Icon, text, map.
+     * Specify toggle-zoom-button action.
      */
     private void update_placeIt() {
         this.topRecycler.setVisibility(View.GONE);
@@ -391,38 +381,9 @@ public class QuizActivity extends AppCompatActivity {
                 String.format("%s:\n%s (%s)", getString(R.string.place_it), geoObject.getName(), geoObject.getCategory()));
 
         updateMap_placeIt(currentQuestion.getContent());
-    }
-
-    /**
-     * Adds clickable geo-objects to map.
-     * Specify toggle-zoom-button action.
-     * @param alternatives
-     */
-    private void updateMap_placeIt(List<GeoObject> alternatives) {
-        Map<Long, Long> markersLookupMap = new HashMap<>();
-        Map<Long, Long> polylinesLookupMap = new HashMap<>();
-        LocaUtils.addGeoObjects(alternatives, mapboxMap, markersLookupMap, polylinesLookupMap, this);
-
-
-        mapboxMap.setOnMarkerClickListener(marker -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            long answeredId = markersLookupMap.get(marker.getId());
-            GeoObject answered = db.geoDao().load(answeredId);
-            int contentIndex = alternatives.indexOf(answered);
-            alternativeClicked_placeIt(contentIndex, marker, answered);
-            return true;
-        });
-
-        mapboxMap.setOnPolylineClickListener(polyline -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            long answeredId = polylinesLookupMap.get(polyline.getId());
-            GeoObject answered = db.geoDao().load(answeredId);
-            int contentIndex = alternatives.indexOf(answered);
-            alternativeClicked_placeIt(contentIndex, polyline, answered);
-        });
 
         NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
-        double[] alternativesBounds = GeoObject.getBounds(alternatives);
+        double[] alternativesBounds = GeoObject.getBounds(currentQuestion.getContent());
         toggleZoomButton.setOnClickListener(view -> {
             int currentZoomLevelTag = (int)toggleZoomButton.getTag();
 
@@ -441,13 +402,43 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     /**
+     * Adds clickable geo-objects to map.
+     * @param alternatives
+     */
+    private void updateMap_placeIt(List<GeoObject> alternatives) {
+        Map<Long, Long> markersLookupMap = new HashMap<>();
+        Map<Long, Long> polylinesLookupMap = new HashMap<>();
+        LocaUtils.addGeoObjects(alternatives, mapboxMap, markersLookupMap, polylinesLookupMap, this);
+
+        mapboxMap.setOnMarkerClickListener(marker -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            long answeredId = markersLookupMap.get(marker.getId());
+            GeoObject answered = db.geoDao().load(answeredId);
+            int contentIndex = alternatives.indexOf(answered);
+
+            List<Annotation> annotations = geoObjectAnnotations(answered.getId(), markersLookupMap, polylinesLookupMap);
+            alternativeClicked_placeIt(contentIndex, annotations, answered);
+            return true;
+        });
+        mapboxMap.setOnPolylineClickListener(polyline -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            long answeredId = polylinesLookupMap.get(polyline.getId());
+            GeoObject answered = db.geoDao().load(answeredId);
+            int contentIndex = alternatives.indexOf(answered);
+
+            List<Annotation> annotations = geoObjectAnnotations(answered.getId(), markersLookupMap, polylinesLookupMap);
+            alternativeClicked_placeIt(contentIndex, annotations, answered);
+        });
+    }
+
+    /**
      * @param contentIndex
      */
-    private void alternativeClicked_placeIt(int contentIndex, Annotation annotation, GeoObject answered) {
+    private void alternativeClicked_placeIt(int contentIndex, List<Annotation> annotations, GeoObject answered) {
         boolean correct = RunningQuizControl.reportNameItPlaceItAnswer(contentIndex, this);
 
         if (correct) {
-            removeAllAnnotationsExcept(annotation);
+            removeAllAnnotationsExcept(annotations);
             removeMapListeners();
 
             String correctText = String.format("%s! %s",
@@ -457,11 +448,12 @@ public class QuizActivity extends AppCompatActivity {
             nextQuestionButton.show();
         }
         else {
-            if (annotation instanceof Marker) {
-                ((Marker)annotation).setIcon(LocaUtils.nodeGeoObjectIcon(Color.GRAY, this));
-            }
-            else {
-                ((Polyline)annotation).setColor(Color.GRAY);
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof Marker) {
+                    ((Marker) annotation).setIcon(LocaUtils.nodeGeoObjectIcon(Color.GRAY, this));
+                } else {
+                    ((Polyline) annotation).setColor(Color.GRAY);
+                }
             }
 
             String incorrectText = answered.getName();
@@ -480,11 +472,11 @@ public class QuizActivity extends AppCompatActivity {
 
     /**
      * Remove all annotations on the map except one.
-     * @param except
+     * @param excepts
      */
-    private void removeAllAnnotationsExcept(Annotation except) {
+    private void removeAllAnnotationsExcept(List<Annotation> excepts) {
         for (Annotation annotation : mapboxMap.getAnnotations()) {
-            if (annotation.getId() != except.getId()) {
+            if (!excepts.contains(annotation)) {
                 mapboxMap.removeAnnotation(annotation);
             }
         }
@@ -492,10 +484,11 @@ public class QuizActivity extends AppCompatActivity {
 
     //endregion
 
-    //region pair it
+    //region Pair it
 
     /**
-     * Text, alternatives and map.
+     * Text, top-buttons and map.
+     * Specify toggle-zoom-button action.
      */
     private void update_pairIt() {
         this.topRecycler.setVisibility(View.VISIBLE);
@@ -505,8 +498,25 @@ public class QuizActivity extends AppCompatActivity {
         Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
         this.textView.setText(getString(R.string.pair_it) + ":");
 
-        updateAlternatives_pairIt(currentQuestion.getContent());
-        updateMap_pairIt();
+        updateTopButtonsAndMap_pairIt(currentQuestion.getContent());
+
+        NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
+        double[] alternativesBounds = GeoObject.getBounds(currentQuestion.getContent());
+        toggleZoomButton.setOnClickListener(view -> {
+            int currentZoomLevelTag = (int)toggleZoomButton.getTag();
+
+            if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
+                updateToggleZoomButton(QUESTION_ZOOM);
+                LocaUtils.flyToFitBounds(alternativesBounds, mapboxMap, LocaUtils.SHORT_FLY_TIME);
+            }
+            else if (currentZoomLevelTag == QUESTION_ZOOM) {
+                updateToggleZoomButton(WORKING_AREA_ZOOM);
+                LocaUtils.flyToFitShape(workingArea, mapboxMap, LocaUtils.SHORT_FLY_TIME);
+            }
+            else {
+                throw new RuntimeException("Dead end");
+            }
+        });
     }
 
     /**
@@ -515,24 +525,35 @@ public class QuizActivity extends AppCompatActivity {
      * Set listeners to the view-holders. When one is clicked, select this one and
      * deselect all others. Also deselect all objects in the map.
      *
+     * Then, when top-buttons are laid out, update the map.
+     *
      * @param geoObjects
      */
-    private void updateAlternatives_pairIt(List<GeoObject> geoObjects) {
+    private void updateTopButtonsAndMap_pairIt(List<GeoObject> geoObjects) {
         topRecycler.setLayoutManager(new GridLayoutManager(this, 2));
         UnpairedObjectAdapter adapter = new UnpairedObjectAdapter(geoObjects);
         topRecycler.setAdapter(adapter);
+        topRecycler.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                updateMap_pairIt();
+                topRecycler.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+            }
+        });
 
         topRecycler.addOnItemTouchListener(new RecyclerItemClickListener(this, bottomRecycler, new RecyclerItemClickListener.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                deselectAllUnpairedButtons();
                 View clickedView = topRecycler.getChildAt(position);
                 UnpairedObjectHolder clickedHolder = (UnpairedObjectHolder)topRecycler.getChildViewHolder(clickedView);
-                clickedHolder.toggleSelected();
+                boolean clickedIsSelected = clickedHolder.isSelected();
+                deselectAllUnpairedButtons();
+                clickedHolder.setSelected(!clickedIsSelected);
             }
 
             @Override
-            public void onLongItemClick(View view, int position) {}
+            public void onLongItemClick(View view, int position) {
+            }
         }));
     }
 
@@ -542,14 +563,14 @@ public class QuizActivity extends AppCompatActivity {
     private void deselectAllUnpairedButtons() {
         for (int i = 0; i < topRecycler.getChildCount(); i++) {
             UnpairedObjectHolder holder = (UnpairedObjectHolder)topRecycler.getChildViewHolder(topRecycler.getChildAt(i));
-            holder.deselect();
+            holder.setSelected(false);
         }
     }
 
     private class UnpairedObjectAdapter extends RecyclerView.Adapter<UnpairedObjectHolder> {
         private List<GeoObject> geoObjects;
 
-        public UnpairedObjectAdapter(List<GeoObject> geoObjectAlternatives) {
+        public UnpairedObjectAdapter(List<GeoObject> geoObjects) {
             this.geoObjects = geoObjects;
         }
 
@@ -626,8 +647,8 @@ public class QuizActivity extends AppCompatActivity {
         /**
          * Deselect the button.
          */
-        public void deselect() {
-            this.isSelected = false;
+        public void setSelected(boolean isSelected) {
+            this.isSelected = isSelected;
             updateAppearance();
         }
 
@@ -658,6 +679,8 @@ public class QuizActivity extends AppCompatActivity {
      * Updated map with geoObjects that isn't paired, which is defined by the view-holders in
      * the top-recycler.
      *
+     * Add listeners to map-objects - remove if becomes paired, otherwise incorrect.
+     *
      * @pre Top recycler items set.
      */
     private void updateMap_pairIt() {
@@ -673,54 +696,130 @@ public class QuizActivity extends AppCompatActivity {
         }
 
         mapboxMap.setOnMarkerClickListener(marker -> {
-            AppDatabase db = AppDatabase.getInstance(this);
             long answeredId = markersLookupMap.get(marker.getId());
+            AppDatabase db = AppDatabase.getInstance(this);
             GeoObject geoObject = db.geoDao().load(answeredId);
-            UnpairedObjectHolder holder = findTopRecyclerHolder(geoObject);
-            itemsPaired(marker, holder);
+
+            List<Annotation> geoObjectAnnotations = geoObjectAnnotations(geoObject.getId(), markersLookupMap, polylinesLookupMap);
+            onPairItAnnotationClick(geoObjectAnnotations, geoObject);
             return true;
         });
 
         mapboxMap.setOnPolylineClickListener(polyline -> {
-            AppDatabase db = AppDatabase.getInstance(this);
             long answeredId = polylinesLookupMap.get(polyline.getId());
+            AppDatabase db = AppDatabase.getInstance(this);
             GeoObject geoObject = db.geoDao().load(answeredId);
-            UnpairedObjectHolder holder = findTopRecyclerHolder(geoObject);
-            itemsPaired(polyline, holder);
+
+            List<Annotation> annotations = geoObjectAnnotations(geoObject.getId(), markersLookupMap, polylinesLookupMap);
+            onPairItAnnotationClick(annotations, geoObject);
         });
     }
 
-    private UnpairedObjectHolder findTopRecyclerHolder(GeoObject geoObject) {
+    /**
+     * Called when a map-annotation is pressed.
+     * @param annotations
+     * @param geoObject
+     */
+    private void onPairItAnnotationClick(List<Annotation> annotations, GeoObject geoObject) {
+        UnpairedObjectHolder selectedHolder = findSelectedTopRecyclerHolder();
+
+        if (selectedHolder == null) {
+            //ignore map-click
+        }
+        else if (!selectedHolder.getGeoObject().equals(geoObject)) {
+            Toast.makeText(this, R.string.incorrect, Toast.LENGTH_SHORT).show();
+            selectedHolder.setSelected(false);
+            RunningQuizControl.reportIncorrectPairItAnswer(this);
+        }
+        else {
+            Toast.makeText(this, R.string.correct, Toast.LENGTH_LONG).show();
+            selectedHolder.setPaired();
+            mapboxMap.removeAnnotations(annotations);
+
+            if (allTopItemsPaired())
+                nextQuestionButton.show();
+        }
+    }
+
+    /**
+     * @return True if every item in the top-recycler has been paired.
+     */
+    private boolean allTopItemsPaired() {
         for (int i = 0; i < topRecycler.getChildCount(); i++) {
             UnpairedObjectHolder holder = (UnpairedObjectHolder)topRecycler.getChildViewHolder(topRecycler.getChildAt(i));
-            if (holder.getGeoObject() == geoObject) {
-                return holder;
+            if (!holder.isPaired()) {
+                return false;
             }
+        }
+        return true;
+    }
+
+    /**
+     * @return The one selected holder, or NULL if none.
+     */
+    private UnpairedObjectHolder findSelectedTopRecyclerHolder() {
+        for (int i = 0; i < topRecycler.getChildCount(); i++) {
+            UnpairedObjectHolder holder = (UnpairedObjectHolder)topRecycler.getChildViewHolder(topRecycler.getChildAt(i));
+            if (holder.isSelected()) return holder;
         }
         return null;
     }
 
+    //endregion
+
+
     /**
-     * Called when a map-object is pressed.
-     * @param annotation
-     * @param holder Currently selected holder. NULL if none selected.
+     * @param geoObjectId
+     * @param markersMap
+     * @param polylinesMap
+     * @return All annotations used to draw specified geo-object.
      */
-    private void itemsPaired(Annotation annotation, UnpairedObjectHolder holder) {
-        if (holder == null) {
-            //ignore map-click
-        }
-        else if (!holder.isSelected()) {
-            Toast.makeText(this, R.string.incorrect, Toast.LENGTH_SHORT).show();
-            holder.deselect();
-        }
-        else {
-            Toast.makeText(this, R.string.correct, Toast.LENGTH_LONG).show();
-            holder.setPaired();
-            mapboxMap.removeAnnotation(annotation);
-        }
+    private List<Annotation> geoObjectAnnotations(long geoObjectId, Map<Long,Long> markersMap, Map<Long,Long> polylinesMap) {
+        List<Long> markerIds = getKeysFromValue(geoObjectId, markersMap);
+        List<Long> polylinesIds = getKeysFromValue(geoObjectId, polylinesMap);
+
+        List<Annotation> annotations = new ArrayList<>();
+        annotations.addAll(getMarkersFromIds(markerIds));
+        annotations.addAll(getPolylinesFromIds(polylinesIds));
+        return annotations;
     }
 
-    //endregion
+    /**
+     * @param value
+     * @param map
+     * @return Keys with certain value.
+     */
+    private List<Long> getKeysFromValue(long value, Map<Long,Long> map) {
+        List<Long> keys = new ArrayList<>();
+        for (Map.Entry<Long,Long> entry : map.entrySet()) {
+            if (entry.getValue() == value) keys.add(entry.getKey());
+        }
+        return keys;
+    }
+
+    /**
+     * @param ids
+     * @return Markers in map with id in ids.
+     */
+    private List<Marker> getMarkersFromIds(List<Long> ids) {
+        List<Marker> markers = new ArrayList<>();
+        for (Marker marker : mapboxMap.getMarkers()) {
+            if (ids.contains(marker.getId())) markers.add(marker);
+        }
+        return markers;
+    }
+
+    /**
+     * @param ids
+     * @return Polylines in map with id in ids.
+     */
+    private List<Polyline> getPolylinesFromIds(List<Long> ids) {
+        List<Polyline> polylines = new ArrayList<>();
+        for (Polyline polyline : mapboxMap.getPolylines()) {
+            if (ids.contains(polyline.getId())) polylines.add(polyline);
+        }
+        return polylines;
+    }
 
     /**
      * Move to next question in running-quiz in db, and update activity accordingly.
@@ -732,7 +831,7 @@ public class QuizActivity extends AppCompatActivity {
             quizDone();
         }
         else {
-            LocaUtils.fadeOutFadeIn(this, () -> { update(); });
+            LocaUtils.fadeOutFadeIn(this, () -> update());
         }
     }
 

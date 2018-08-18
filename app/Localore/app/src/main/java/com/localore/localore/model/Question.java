@@ -49,14 +49,9 @@ public class Question {
 
     /**
      * True if question has been answered correctly in quiz-run.
+     * Set default to true: If still true after question: the answer was correct.
      */
-    private boolean answeredCorrectly = false;
-
-    /**
-     * True if question has been answered in quiz-run.
-     * True even if sub-answer given (pair-it).
-     */
-    private boolean answered = false;
+    private boolean answeredCorrectly = true;
 
     /**
      * Question-type.
@@ -281,14 +276,6 @@ public class Question {
 
     public void setAnsweredCorrectly(boolean answeredCorrectly) {
         this.answeredCorrectly = answeredCorrectly;
-    }
-
-    public boolean isAnswered() {
-        return answered;
-    }
-
-    public void setAnswered(boolean answered) {
-        this.answered = answered;
     }
 
     public int getType() {

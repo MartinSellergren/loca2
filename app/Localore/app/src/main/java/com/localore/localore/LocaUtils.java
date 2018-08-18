@@ -12,6 +12,7 @@ import android.os.SystemClock;
 import android.support.constraint.ConstraintLayout;
 import android.support.constraint.ConstraintSet;
 import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.view.ViewCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -144,7 +145,9 @@ public class LocaUtils {
 
         ConstraintLayout root = (ConstraintLayout)((ViewGroup)(absoluteRoot)).getChildAt(0);
         overlay.setAlpha(0);
-        root.addView(overlay);
+        ViewCompat.setElevation(overlay, 100);
+        //overlay.setElevation(0);
+        root.addView(overlay, -1);
         root.invalidate();
 //        new Handler().postDelayed(new Runnable() {
 //            @Override
@@ -271,17 +274,19 @@ public class LocaUtils {
      * @param color
      */
     public static void addBorder(View view, int color) {
-        GradientDrawable border = new GradientDrawable();
-        border.setColor(0x00000000);
-        border.setStroke(10, color);
-        view.setBackground(border);
+//        GradientDrawable border = new GradientDrawable();
+//        border.setColor(0x00000000);
+//        border.setStroke(10, color);
+//        border.setCornerRadius(2);
+//        view.setBackground(border);
+        view.setAlpha(0.3f);
     }
 
     /**
      * @param view
      */
     public static void removeBorder(View view) {
-        addBorder(view, view.getSolidColor());
+        view.setAlpha(1f);
     }
 
     /**
@@ -504,7 +509,7 @@ public class LocaUtils {
                 annotations.add(marker);
             }
             else {
-                Polyline polyline = addPolyline(nodeShape.getNodes(), geoObject.getId(), color, mapboxMap, polylinesMap);
+                Polyline polyline = addPolyline(nodeShape.asExtraClosed().getNodes(), geoObject.getId(), color, mapboxMap, polylinesMap);
                 annotations.add(polyline);
             }
         }
@@ -556,6 +561,7 @@ public class LocaUtils {
     private static Polyline addPolyline(List<double[]> nodes, long geoObjectId, int color, MapboxMap mapboxMap,
                                         Map<Long,Long> polylinesMap) {
         int GEO_OBJECT_LINE_WIDTH = 4;
+
 
         Polyline polyline = mapboxMap.addPolyline(new PolylineOptions()
                 .addAll(LocaUtils.toLatLngs(nodes))

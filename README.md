@@ -1,8 +1,6 @@
 # loca2
 
 TODO:
-- Tapping tbx till exercise.. (int select exercise).
-- Ta inte bort delar av geo-objektet vid rätt place-it svar.
 - Time runs out for a question.
 - Inga samma svarsalternativ (same name-objects).
 - Not two same questions (type and object) after another.
@@ -11,6 +9,7 @@ TODO:
 - No answers in the map.
 - Switch overpass endpoint if problem.
 - Geo-objects in map blink when tapped.
+- Turn small geo-objects into nodes.
 
 - equal alternatives height
 - scale text after alternative-box
@@ -21,11 +20,13 @@ TODO:
 - trust bad overpass.certificates
 
 - Predefined exercise-areas, progress sharing.
+- Change theme/ map-theme
 
 
 KNOWN BUGS:
 - Loading exercise service runns, activity killed. Start activity and stop service: not working
  (service reads exit-flag in previous instance).
+- Exercise activity briefly started before follow-up quiz if tapping the screen during text So...
 
 
 

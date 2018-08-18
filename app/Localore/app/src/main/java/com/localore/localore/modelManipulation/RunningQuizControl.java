@@ -24,7 +24,7 @@ public class RunningQuizControl {
     /**
      * Every geo-object in quiz gets this number of questions in a running-quiz...
      */
-    public static final int DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT = 4;
+    public static final int DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT = 1;//4;
 
     /**
      * ..except one (selected randomly) which gets this many extra questions.
@@ -194,13 +194,10 @@ public class RunningQuizControl {
             Question question = incorrectQuestions.get(i);
             question.setRunningQuizId(runningQuizId);
             question.setIndex(i);
-            question.setAnswered(false);
-            question.setAnsweredCorrectly(false);
+            question.setAnsweredCorrectly(true);
             newQuestions.add(question);
         }
         db.questionDao().insert(newQuestions);
-
-        RunningQuizControl.nextQuestion(context);
     }
 
     /**
@@ -395,10 +392,10 @@ public class RunningQuizControl {
 
     /**
      * Call after an answer to a name-it or pair-it question.
-     * Does nothing if answer incorrect already reported.
-     * Don't call if correct answer already reported.
-     *  - Updates question (is-correctly-answered.., for follow-quiz spec).
-     *  - Updates regarded geo-object-stats (for reminder-selections).
+     * - Updates question (is-answered-correctly - for followup-quiz).
+     * - Updates geo-object stats (for reminder-selection).
+     *
+     * If is-answered-correctly is false: Incorrect answer already provided: does nothing.
      *
      * @param contentIndex
      * @param context
@@ -412,10 +409,8 @@ public class RunningQuizControl {
         }
 
         boolean correctAnswer = checkNameItPlaceItAnswer(question, contentIndex);
+        if (!question.isAnsweredCorrectly()) return correctAnswer;
 
-        if (question.isAnswered()) return correctAnswer;
-
-        question.setAnswered(true);
         question.setAnsweredCorrectly(correctAnswer);
         db.questionDao().update(question);
 
@@ -432,7 +427,7 @@ public class RunningQuizControl {
         }
         db.geoDao().update(geoObject);
 
-        return question.isAnsweredCorrectly();
+        return correctAnswer;
     }
 
     /**
@@ -448,24 +443,23 @@ public class RunningQuizControl {
 
 
     /**
-     * Call after an answer to a pair-it question (multiple times per question).
-     * A already reported answer might go from correct to incorrect (not other way).
-     * No object-stats reported.
+     * Call after an incorrect answer to a pair-it question (possibly multiple times per question).
+     * Downgrades answered-correctly-state of question.
+     * (The correct-state's init-value is true.)
      *
-     * @param correctAnswer
+     * No object-stats reported for pair-it.
+     *
      * @param context
      */
-    public static void reportPairItAnswer(boolean correctAnswer, Context context) {
+    public static void reportIncorrectPairItAnswer(Context context) {
         Question question = loadCurrentQuestion(context);
         if (question.getType() != Question.PAIR_IT) {
             throw new RuntimeException("Illegal call");
         }
 
-        if (!question.isAnswered()) question.setAnsweredCorrectly(correctAnswer);
-        else if (!correctAnswer) question.setAnsweredCorrectly(false);
-
-        question.setAnswered(true);
+        question.setAnsweredCorrectly(false);
         AppDatabase.getInstance(context).questionDao().update(question);
+
     }
 
     /**
@@ -555,12 +549,17 @@ public class RunningQuizControl {
      */
     public static double successRate(List<Question> questions) {
         double correctCount = 0;
+        int totCount = 0;
 
         for (Question question : questions) {
-            if (question.isAnsweredCorrectly()) correctCount++;
+            if (question.getType() == Question.PAIR_IT) continue;
+
+            totCount += 1;
+            if (question.isAnsweredCorrectly())
+                correctCount++;
         }
 
-        return correctCount / questions.size();
+        return correctCount / totCount;
     }
 
     /**

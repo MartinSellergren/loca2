@@ -51,7 +51,7 @@
         mapbox:mapbox_cameraTargetLat="0"
         mapbox:mapbox_cameraTargetLng="0"
         mapbox:mapbox_cameraZoom="0"
-        mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets"
+        mapbox:mapbox_styleUrl="@string/default_map_style"
 
         mapbox:mapbox_uiRotateGestures="false"
         mapbox:mapbox_uiTiltGestures="false"

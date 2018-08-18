@@ -51,7 +51,7 @@ public class NodeShape implements Serializable {
      */
     public boolean isClosed() {
         double endPointsDist = distance(getFirst(), getLast());
-        return endPointsDist < 0.00000001;
+        return endPointsDist < 0.00001;
     }
 
     /**
@@ -295,12 +295,28 @@ public class NodeShape implements Serializable {
     }
     //endregion
 
-
+    /**
+     * @return A defiantly closed node-shape (this or a new constructed from this).)
+     */
     public NodeShape asClosed() {
+        if (nodes.size() < 3 || isClosed()) return this;
+
         NodeShape nodeShape = new NodeShape(this.getNodes());
-        //if (!nodeShape.isClosed()) {
-            nodeShape.nodes.add( nodeShape.nodes.get(0) );
-        //}
+        nodeShape.nodes.add( nodeShape.nodes.get(0) );
+        return nodeShape;
+    }
+
+    /**
+     * @return A extra closed node-shape if already closed (this or a new constructed from this).
+     *         Extra closed by continue around the shape in same path, a little distance.
+     */
+    public NodeShape asExtraClosed() {
+        if (nodes.size() < 3 || !isClosed()) return this;
+
+        NodeShape nodeShape = new NodeShape(this.getNodes());
+        nodeShape.nodes.add( nodeShape.nodes.get(0) );
+        nodeShape.nodes.add( nodeShape.nodes.get(1) );
+        if (nodes.size() >= 3) nodeShape.nodes.add( nodeShape.nodes.get(2) );
         return nodeShape;
     }
 }

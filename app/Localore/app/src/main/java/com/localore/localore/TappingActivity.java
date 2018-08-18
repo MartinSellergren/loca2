@@ -146,10 +146,10 @@ public class TappingActivity extends AppCompatActivity {
         AppDatabase db = AppDatabase.getInstance(this);
         GeoObject geoObject = db.geoDao().load(geoObjectId);
 
-//        String str = String.format("%s (%s)",
-//                geoObject.getName(),
-//                geoObject.getCategory());
-        String str = geoObject.toString();
+        String str = String.format("%s (%s)",
+                geoObject.getName(),
+                geoObject.getCategory());
+        //String str = geoObject.toString();
         Toast.makeText(TappingActivity.this, str, Toast.LENGTH_SHORT).show();
     }
 
@@ -162,16 +162,15 @@ public class TappingActivity extends AppCompatActivity {
         List<GeoObject> geoObjects = ExerciseControl.loadGeoObjectsForTapping(
                 exercise.getId(), quizCategoryType, nextLevelObjects, db);
 
-        //todo: remove
-        if (nextLevelObjects == false) {
-            List<Quiz> quizzes = ExerciseControl.loadQuizzesInExercise(exercise.getId(), db);
-            geoObjects = new ArrayList<>();
-
-            for (Quiz quiz : quizzes) {
-                List<GeoObject> geoObjects1 = db.geoDao().loadWithQuiz(quiz.getId());
-                geoObjects.addAll(geoObjects1);
-            }
-        }
+//        if (nextLevelObjects == false) {
+//            List<Quiz> quizzes = ExerciseControl.loadQuizzesInExercise(exercise.getId(), db);
+//            geoObjects = new ArrayList<>();
+//
+//            for (Quiz quiz : quizzes) {
+//                List<GeoObject> geoObjects1 = db.geoDao().loadWithQuiz(quiz.getId());
+//                geoObjects.addAll(geoObjects1);
+//            }
+//        }
 
         this.mapboxMap.clear();
         this.markersMap.clear();
@@ -227,6 +226,6 @@ public class TappingActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        SelectExerciseActivity.start(this);
+        ExerciseActivity.start(this);
     }
 }

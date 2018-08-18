@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.provider.Telephony;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -15,6 +16,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -25,6 +28,7 @@ import com.localore.localore.model.RunningQuiz;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.SessionControl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,37 +38,38 @@ import java.util.List;
  */
 public class ExerciseActivity extends AppCompatActivity {
 
+    private FrameLayout overlay;
+    private Button exerciseReminderButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_exercise);
-    }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+        this.overlay = findViewById(R.id.overlay_exercise);
+        this.exerciseReminderButton = findViewById(R.id.button_exerciseReminder);
 
-        AppDatabase db = AppDatabase.getInstance(this);
-        Exercise exercise = SessionControl.loadExercise(this);
-        int progress = ExerciseControl.progressOfExercise(exercise.getId(), db);
-        int requiredNoExerciseReminders = SessionControl.loadExercise(this).getNoRequiredExerciseReminders();
-        int noPassedLevels = ExerciseControl.loadPassedQuizzesInExercise(exercise.getId(), db).size();
-        List<int[]> quizCategoriesData = ExerciseControl.loadQuizCategoriesData(exercise.getId(), db);
-
-        setTitle(exercise.getName());
-
-        RecyclerView recyclerView = findViewById(R.id.recyclerView_quizCategories);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setHasFixedSize(true);
-        QuizCategoryAdapter adapter = new QuizCategoryAdapter(quizCategoriesData);
-        recyclerView.setAdapter(adapter);
+        updateLayout();
     }
 
     //region options-menu
 
+    /**
+     * Set progress in options-bar.
+     * @param menu
+     * @return
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.exercise_actions, menu);
+
+        AppDatabase db = AppDatabase.getInstance(this);
+        Exercise exercise = SessionControl.loadExercise(this);
+        int progress = ExerciseControl.progressOfExercise(exercise.getId(), db);
+
+        MenuItem progressItem = menu.findItem(R.id.menuItem_exerciseProgress);
+        progressItem.setTitle(progress + "%");
+
         return true;
     }
 
@@ -81,6 +86,36 @@ public class ExerciseActivity extends AppCompatActivity {
     }
 
     //endregion
+
+    /**
+     * Updates layout based on database.
+     */
+    private void updateLayout() {
+        Exercise exercise = SessionControl.loadExercise(this);
+        setTitle(exercise.getName());
+
+        updateQuizCategories();
+        updateExerciseReminder();
+
+        exerciseReminderButton.setOnClickListener(view -> {
+            QuizActivity.freshStart(RunningQuiz.EXERCISE_REMINDER, -1, this);
+        });
+    }
+
+    /**
+     * Updates the quiz-categories layout and events.
+     */
+    private void updateQuizCategories() {
+        AppDatabase db = AppDatabase.getInstance(this);
+        Exercise exercise = SessionControl.loadExercise(this);
+        List<int[]> quizCategoriesData = ExerciseControl.loadQuizCategoriesData(exercise.getId(), db);
+
+        RecyclerView recyclerView = findViewById(R.id.recyclerView_quizCategories);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setHasFixedSize(true);
+        QuizCategoryAdapter adapter = new QuizCategoryAdapter(quizCategoriesData);
+        recyclerView.setAdapter(adapter);
+    }
 
     //region quiz-categories RecyclerView
 
@@ -127,31 +162,46 @@ public class ExerciseActivity extends AppCompatActivity {
             this.quizCategoryName = itemView.findViewById(R.id.textView_quizCategoryName);
             this.quizCategoryLevel = itemView.findViewById(R.id.textView_quizCategoryLevel);
 
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(ExerciseActivity.this);
-                    alertBuilder.setTitle(QuizCategory.DISPLAY_TYPES[quizCategoryType]);
+            itemView.setOnClickListener(view -> {
+                buildDialog().show();
+            });
+        }
 
-                    CharSequence[] dialogOptions = {"Tapping", "Level quiz", "Reminder"};
-                    alertBuilder.setItems(dialogOptions, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int item) {
-                            if (item == 0) {
-                                TappingActivity.start(quizCategoryType, ExerciseActivity.this);
-                            }
-                            else if (item == 1) {
-                                QuizActivity.freshStart(RunningQuiz.LEVEL_QUIZ, quizCategoryType, ExerciseActivity.this);
-                            }
-                            else {
-                                QuizActivity.freshStart(RunningQuiz.QUIZ_CATEGORY_REMINDER, quizCategoryType, ExerciseActivity.this);
-                            }
-                        }
-                    });
+        /**
+         * Dialog that displays tapping-quiz-reminder. Only possible options appear.
+         * Reminder-entry changes in appearance based on state.
+         * @return The dialog.
+         */
+        private AlertDialog buildDialog() {
+            AlertDialog.Builder alertBuilder = new AlertDialog.Builder(ExerciseActivity.this);
+            alertBuilder.setTitle(QuizCategory.DISPLAY_TYPES[quizCategoryType]);
 
-                    alertBuilder.create().show();
+            List<CharSequence> optionsList = new ArrayList<>();
+            optionsList.add("Tapping");
+
+            if (noRequiredReminders == 0 && nextLevel < totalNoLevels)
+                optionsList.add("Level quiz");
+
+            if (nextLevel > 0) {
+                String reminderEntry = "Reminder";
+                if (noRequiredReminders > 0) reminderEntry += String.format(" (%s)", noRequiredReminders);
+                optionsList.add(reminderEntry);
+            }
+
+            CharSequence[] dialogOptions = optionsList.toArray(new CharSequence[optionsList.size()]);
+            alertBuilder.setItems(dialogOptions, (dialog, item) -> {
+                if (item == 0) {
+                    TappingActivity.start(quizCategoryType, ExerciseActivity.this);
+                }
+                else if (item == 1) {
+                    QuizActivity.freshStart(RunningQuiz.LEVEL_QUIZ, quizCategoryType, ExerciseActivity.this);
+                }
+                else {
+                    QuizActivity.freshStart(RunningQuiz.QUIZ_CATEGORY_REMINDER, quizCategoryType, ExerciseActivity.this);
                 }
             });
+
+            return alertBuilder.create();
         }
 
         /**
@@ -175,7 +225,21 @@ public class ExerciseActivity extends AppCompatActivity {
 
             this.quizCategoryLevel.setText(levelString);
         }
+    }
 
+    //endregion
+
+    private void updateExerciseReminder() {
+        int requiredNoExerciseReminders = SessionControl.loadExercise(this).getNoRequiredExerciseReminders();
+
+        if (requiredNoExerciseReminders > 0) {
+            exerciseReminderButton.setText(String.format("%s (%s)",
+                    getString(R.string.reminder),
+                    requiredNoExerciseReminders));
+
+            overlay.setAlpha(0.5f);
+            overlay.setClickable(true);
+        }
     }
 
 

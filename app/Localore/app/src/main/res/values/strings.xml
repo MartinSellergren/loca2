@@ -33,7 +33,7 @@
     <string name="press_once_again_to_exit">Press once again to exit</string>
     <string name="quit_confirmation_request">Are you sure you want to quit?</string>
     <string name="excellent_result_feedback">Excellent!</string>
-    <string name="good_result_feedback">Close, but try once again</string>
+    <string name="good_result_feedback">Pretty good</string>
     <string name="poor_result_feedback">You can do better</string>
     <string name="level_cleared">Level cleared</string>
     <string name="so">So...</string>
@@ -44,4 +44,6 @@
     <string name="correct">Correct</string>
     <string name="sure_is">Sure is</string>
     <string name="incorrect">Incorrect</string>
+    <string name="reminder">Reminder</string>
+    <string name="default_map_style">mapbox://styles/masel/cjkyl6he503zy2rptne68047q</string>
 </resources>
