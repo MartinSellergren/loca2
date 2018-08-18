@@ -24,12 +24,12 @@ public class RunningQuizControl {
     /**
      * Every geo-object in quiz gets this number of questions in a running-quiz...
      */
-    public static final int DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT = 2;//4;
+    public static final int DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT = 1;//2;
 
     /**
      * ..except one (selected randomly) which gets this many extra questions.
      */
-    public static final int NO_EXTRA_QUESTIONS = 2;
+    public static final int NO_EXTRA_QUESTIONS = 0;//2;
 
     /**
      * Required min success-rate to pass a level-quiz.
@@ -331,14 +331,14 @@ public class RunningQuizControl {
             if (questionCounts[i] > 0) {
                 GeoObject geoObject = geoObjects.get(i);
                 Question question = new Question(runningQuizId, geoObject, questionIndex, questionDifficulties[i], db);
-                if (newQuestions.size() == 0 ||
-                        !sameQuestionContent(newQuestions.get( newQuestions.size()-1 ), question ) ||
-                        !sameTextInAlternatives(question)) {
-                    newQuestions.add(question);
-                    questionCounts[i] -= 1;
-                    questionIndex++;
-                    questionDifficulties[i]++;
-                }
+
+                if (sameTextInAlternatives(question)) continue;
+                if (newQuestions.size() > 0 && sameQuestionContent(newQuestions.get( newQuestions.size()-1 ), question)) continue;
+
+                newQuestions.add(question);
+                questionCounts[i] -= 1;
+                questionIndex++;
+                questionDifficulties[i]++;
             }
         }
 

@@ -188,6 +188,7 @@ public class LocaUtils {
                 ConstraintLayout.LayoutParams.MATCH_PARENT));
         //overlay.setBackgroundColor(activity.getResources().getColor(R.color.colorPrimary));
         overlay.setBackgroundColor(Color.WHITE);
+        overlay.setClickable(true);
 
         fadeOutFadeInOverlay(overlay, activity, true, betweenAction);
     }
@@ -229,6 +230,7 @@ public class LocaUtils {
                 ConstraintLayout.LayoutParams.MATCH_PARENT,
                 ConstraintLayout.LayoutParams.MATCH_PARENT));
         overlay.setBackgroundColor(Color.WHITE);
+        overlay.setClickable(true);
 
         TextView textView = new TextView(activity);
         textView.setId(generateViewId());
@@ -745,7 +747,7 @@ public class LocaUtils {
      * @param map
      */
     public static void blinkAnnotations(List<Annotation> annotations, MapboxMap map, Context context) {
-        int BLINK_TIME = 400;
+        int BLINK_TIME = 300;
 
         List<Icon> markerIcons = new ArrayList<>();
         List<Integer> polylineColors = new ArrayList<>();
@@ -765,13 +767,12 @@ public class LocaUtils {
         }
 
         new Handler().postDelayed(() -> {
-            for (int i = 0; i < annotations.size(); i++) {
-                Annotation annotation = annotations.get(i);
+            for (Annotation annotation : annotations) {
                 if (annotation instanceof Marker) {
-                    ((Marker)annotation).setIcon(markerIcons.get(i));
+                    ((Marker)annotation).setIcon(markerIcons.remove(0));
                 }
                 else if (annotation instanceof Polyline) {
-                    ((Polyline)annotation).setColor(polylineColors.get(i));
+                    ((Polyline)annotation).setColor(polylineColors.remove(0));
                 }
             }
 

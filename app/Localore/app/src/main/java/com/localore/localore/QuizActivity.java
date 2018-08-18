@@ -324,9 +324,9 @@ public class QuizActivity extends AppCompatActivity {
          * Hide and show again.
          */
         public void blink() {
-            int BLINK_TIME = 400;
+            int BLINK_TIME = 300;
             itemView.setVisibility(View.INVISIBLE);
-            new Handler().postDelayed(() -> itemView.setVisibility(View.VISIBLE), 400);
+            new Handler().postDelayed(() -> itemView.setVisibility(View.VISIBLE), BLINK_TIME);
         }
     }
 
@@ -547,7 +547,10 @@ public class QuizActivity extends AppCompatActivity {
             if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
                 updateToggleZoomButton(QUESTION_ZOOM);
                 List<GeoObject> unpairedGeoObjects = unpairedGeoObjects();
-                LocaUtils.flyToFitBounds(GeoObject.getBounds(unpairedGeoObjects), mapboxMap, LocaUtils.SHORT_FLY_TIME);
+                if (unpairedGeoObjects.size() > 0)
+                    LocaUtils.flyToFitBounds(GeoObject.getBounds(unpairedGeoObjects), mapboxMap, LocaUtils.SHORT_FLY_TIME);
+                else
+                    LocaUtils.flyToFitShape(workingArea, mapboxMap, LocaUtils.SHORT_FLY_TIME);
             }
             else if (currentZoomLevelTag == QUESTION_ZOOM) {
                 updateToggleZoomButton(WORKING_AREA_ZOOM);
@@ -719,6 +722,7 @@ public class QuizActivity extends AppCompatActivity {
         public void setPaired() {
             itemView.setVisibility(View.INVISIBLE);
             this.isPaired = true;
+            this.isSelected = false;
         }
 
         public boolean isPaired() {
@@ -813,7 +817,10 @@ public class QuizActivity extends AppCompatActivity {
     private UnpairedObjectHolder findSelectedTopRecyclerHolder() {
         for (int i = 0; i < topRecycler.getChildCount(); i++) {
             UnpairedObjectHolder holder = (UnpairedObjectHolder)topRecycler.getChildViewHolder(topRecycler.getChildAt(i));
-            if (holder.isSelected()) return holder;
+            if (holder.isSelected()) {
+                if (holder.isPaired()) return null;
+                else return holder;
+            }
         }
         return null;
     }
