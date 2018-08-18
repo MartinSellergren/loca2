@@ -34,7 +34,7 @@ public class ExerciseControl {
     /**
      * Max allowed distance in meters between two geo-objects for a merge.
      */
-    private static final double MERGE_LIMIT = 50;
+    private static final double MERGE_LIMIT = 200;
 
     /**
      * Length based rank boost for geo-objects, by multiplying rank with [1, this].
@@ -141,7 +141,11 @@ public class ExerciseControl {
      */
     public static int postProcessing(long exerciseId, AppDatabase tempDb, AppDatabase mainDb) {
         List<Long> insertedIds = dedupeAndInsertGeoObjects(tempDb, mainDb);
-        boostGeoObjectRanksByLength(insertedIds, mainDb);
+        double maxRank = boostGeoObjectRanksByLength(insertedIds, mainDb);
+        Exercise exercise = mainDb.exerciseDao().load(exerciseId);
+        exercise.setMaxRankOfGeoObject(maxRank);
+        mainDb.exerciseDao().update(exercise);
+
         insertGeoObjectQuizzes(exerciseId, mainDb);
         return insertedIds.size();
     }
@@ -244,7 +248,7 @@ public class ExerciseControl {
                 g1.isNode() || g2.isNode())
             return null;
 
-        double d = minDistance(g1, g2);
+        double d = approximateDistance(g1, g2);
         if (d > MERGE_LIMIT)
             return null;
 
@@ -272,37 +276,37 @@ public class ExerciseControl {
         }
         return min;
     }
-//
-//    /**
-//     * @return Approximate distance in meters between g1 and g2.
-//     */
-//    private static double approximateDistance(GeoObject g1, GeoObject g2) {
-//        double min = Double.POSITIVE_INFINITY;
-//
-//        double[] bs1 = g1.getBounds();
-//        List<double[]> ns1 = new ArrayList<>();
-//        ns1.add(new double[]{bs1[0], bs1[1]});
-//        ns1.add(new double[]{bs1[0], bs1[3]});
-//        ns1.add(new double[]{bs1[2], bs1[1]});
-//        ns1.add(new double[]{bs1[2], bs1[3]});
-//        ns1.add(g1.getCenter());
-//
-//        double[] bs2 = g2.getBounds();
-//        List<double[]> ns2 = new ArrayList<>();
-//        ns2.add(new double[]{bs2[0], bs2[1]});
-//        ns2.add(new double[]{bs2[0], bs2[3]});
-//        ns2.add(new double[]{bs2[2], bs2[1]});
-//        ns2.add(new double[]{bs2[2], bs2[3]});
-//        ns2.add(g2.getCenter());
-//
-//        for (double[] n1 : ns1) {
-//            for (double[] n2 : ns2) {
-//                double d = LocaUtils.distance(n1, n2);
-//                if (d < min) min = d;
-//            }
-//        }
-//        return min;
-//    }
+
+    /**
+     * @return Approximate distance in meters between g1 and g2.
+     */
+    private static double approximateDistance(GeoObject g1, GeoObject g2) {
+        double min = Double.POSITIVE_INFINITY;
+
+        double[] bs1 = g1.getBounds();
+        List<double[]> ns1 = new ArrayList<>();
+        ns1.add(new double[]{bs1[0], bs1[1]});
+        ns1.add(new double[]{bs1[0], bs1[3]});
+        ns1.add(new double[]{bs1[2], bs1[1]});
+        ns1.add(new double[]{bs1[2], bs1[3]});
+        ns1.add(g1.getCenter());
+
+        double[] bs2 = g2.getBounds();
+        List<double[]> ns2 = new ArrayList<>();
+        ns2.add(new double[]{bs2[0], bs2[1]});
+        ns2.add(new double[]{bs2[0], bs2[3]});
+        ns2.add(new double[]{bs2[2], bs2[1]});
+        ns2.add(new double[]{bs2[2], bs2[3]});
+        ns2.add(g2.getCenter());
+
+        for (double[] n1 : ns1) {
+            for (double[] n2 : ns2) {
+                double d = LocaUtils.distance(n1, n2);
+                if (d < min) min = d;
+            }
+        }
+        return min;
+    }
 
     //endregion
 
@@ -312,18 +316,25 @@ public class ExerciseControl {
      * Increase rank of long/big geo-objects in db.
      * @param ids IDs of geo-objects to process.
      * @param db
+     * @return maxRank
      */
-    public static void boostGeoObjectRanksByLength(List<Long> ids, AppDatabase db) {
+    public static double boostGeoObjectRanksByLength(List<Long> ids, AppDatabase db) {
         double meanLength = meanGeoObjectLength(ids, db);
-        if (meanLength == 0) return;
+        if (meanLength == 0) return 0;
 
+        double maxRank = -1;
         for (long id : ids) {
             GeoObject g = db.geoDao().load(id);
 
             double ratio = g.getLength() / meanLength * RANK_BOOST_FACTOR;
-            g.setRank( g.getRank() * (1 + ratio) );
+            double rank = g.getRank() * (1 + ratio);
+            g.setRank(rank);
             db.geoDao().update(g);
+
+            if (rank > maxRank) maxRank = rank;
         }
+
+        return maxRank;
     }
 
     /**
@@ -527,7 +538,13 @@ public class ExerciseControl {
 
     //region reorder
 
-    //todo
+    public static void swapOrder(Exercise e1, Exercise e2, AppDatabase db) {
+        int temp = e1.getDisplayIndex();
+        e1.setDisplayIndex(e2.getDisplayIndex());
+        e2.setDisplayIndex(temp);
+        db.exerciseDao().update(e1);
+        db.exerciseDao().update(e2);
+    }
 
     //endregion
 

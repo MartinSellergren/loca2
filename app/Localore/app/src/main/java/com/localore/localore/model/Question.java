@@ -11,6 +11,7 @@ import com.localore.localore.modelManipulation.RunningQuizControl;
 import com.localore.localore.modelManipulation.SessionControl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -97,11 +98,22 @@ public class Question {
         this.runningQuizId = runningQuizId;
         this.geoObjectId = geoObject.getId();
         this.index = index;
-        this.type = LocaUtils.randi(3);
+        this.type = randomizeType();
 
         if (difficulty > RunningQuizControl.DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT)
             difficulty = RunningQuizControl.DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT;
         this.content = generateContent(geoObject, type, difficulty, db);
+    }
+
+    /**
+     *
+     * @return nameIt, placeIt, pairIt, with probabilities 35, 40, 25
+     */
+    private int randomizeType() {
+        double rand = LocaUtils.random.nextDouble();
+        if (rand < 0.35) return NAME_IT;
+        if (rand < 0.75) return PLACE_IT;
+        else return PAIR_IT;
     }
 
     /**
@@ -137,7 +149,7 @@ public class Question {
 
         //todo: smart alternatives
 
-        List<GeoObject> content = loadRandomGeoObjectsIncluding(geoObject, noAlternatives, db);
+        List<GeoObject> content = loadRelevantRandomGeoObjectsIncluding(geoObject, noAlternatives, db);
         if (content.size() % 2 != 0) removeAnyExcept(geoObject, content);
 
         if (content.size() < minNoAlternativePairs * 2)
@@ -153,13 +165,13 @@ public class Question {
      */
     private List<GeoObject> generateContent_placeIt(GeoObject geoObject, int difficulty, AppDatabase db) {
         int minNoAlternatives = 2;
-        int maxNoAlternatives = 6;
+        int maxNoAlternatives = 5;
         int noAlternatives = minNoAlternatives +
                 scaleBasedOnDifficulty(maxNoAlternatives - minNoAlternatives, difficulty);
 
         //todo: smart alternatives
 
-        List<GeoObject> content = loadRandomGeoObjectsIncluding(geoObject, noAlternatives, db);
+        List<GeoObject> content = loadRelevantRandomGeoObjectsIncluding(geoObject, noAlternatives, db);
 
         if (content.size() < minNoAlternatives)
             throw new RuntimeException("Not enough geo-objects in db");
@@ -174,14 +186,14 @@ public class Question {
      */
     private List<GeoObject> generateContent_PairIt(GeoObject geoObject, int difficulty, AppDatabase db) {
         int minNoAlternativePairs = 1;
-        int maxNoAlternativePairs = 3;
+        int maxNoAlternativePairs = 2;
         int noPairs = minNoAlternativePairs +
                 scaleBasedOnDifficulty(maxNoAlternativePairs - minNoAlternativePairs, difficulty);
         int noAlternatives = noPairs * 2;
 
         //todo: smart alternatives
 
-        List<GeoObject> content = loadRandomGeoObjectsIncluding(geoObject, noAlternatives, db);
+        List<GeoObject> content = loadRelevantRandomGeoObjectsIncluding(geoObject, noAlternatives, db);
         if (content.size() % 2 != 0) removeAnyExcept(geoObject, content);
 
         if (content.size() < minNoAlternativePairs * 2)
@@ -203,17 +215,49 @@ public class Question {
         return (int)Math.round(scaledValue);
     }
 
+//    /**
+//     * @param includeGeoObject
+//     * @param preferredCount
+//     * @param db
+//     * @return List of geo-objects of length preferredCount or less (if not enough geo-objects in db).
+//     *         List includes specified geo-object.
+//     */
+//    private List<GeoObject> loadRandomGeoObjectsIncluding(GeoObject includeGeoObject, int preferredCount, AppDatabase db) {
+//        long exerciseId = SessionControl.loadExercise(db).getId();
+//        List<Long> quizIds = ExerciseControl.loadQuizIdsInExercise(exerciseId, db);
+//        List<GeoObject> geoObjects = db.geoDao().loadRandomsWithQuizIn(quizIds, preferredCount);
+//
+//        if (geoObjects.size() == 0) return new ArrayList<>();
+//
+//        if (!geoObjects.contains(includeGeoObject))
+//            geoObjects.set(LocaUtils.randi(geoObjects.size()), includeGeoObject);
+//
+//        return geoObjects;
+//    }
+
     /**
-     * @param includeGeoObject
-     * @param preferredCount
+     * @param includeGeoObject Included in returned list.
+     * @param preferredCount This or less objects returned.
      * @param db
-     * @return List of geo-objects of length preferredCount or less (if not enough geo-objects in db).
-     *         List includes specified geo-object.
+     * @return Geo-objects of previous, same or next level in same quiz-category as defining geo-object.
+     *         If not enough in same quiz-category, uses others too.
      */
-    private List<GeoObject> loadRandomGeoObjectsIncluding(GeoObject includeGeoObject, int preferredCount, AppDatabase db) {
-        long exerciseId = SessionControl.loadExercise(db).getId();
-        List<Long> quizIds = ExerciseControl.loadQuizIdsInExercise(exerciseId, db);
+    private List<GeoObject> loadRelevantRandomGeoObjectsIncluding(GeoObject includeGeoObject, int preferredCount, AppDatabase db) {
+        long quizId = db.geoDao().load(geoObjectId).getQuizId();
+        long quizCategoryId = db.quizDao().load(quizId).getQuizCategoryId();
+
+        List<Quiz> quizzes = db.quizDao().loadWithQuizCategory(quizCategoryId);
+        List<Long> quizIds = relevantQuizIds(quizzes, db.quizDao().load(quizId).getLevel());
         List<GeoObject> geoObjects = db.geoDao().loadRandomsWithQuizIn(quizIds, preferredCount);
+
+        if (geoObjects.size() < preferredCount) {
+            long exerciseId = SessionControl.loadExercise(db).getId();
+            List<Long> quizIdBackups = ExerciseControl.loadQuizIdsInExercise(exerciseId, db);
+            quizIdBackups.removeAll(quizIds);
+            List<GeoObject> extraGeoObjects = db.geoDao().loadWithQuizInOrderedByRank(quizIds, preferredCount - geoObjects.size());
+            geoObjects.addAll(extraGeoObjects);
+            Collections.shuffle(geoObjects);
+        }
 
         if (geoObjects.size() == 0) return new ArrayList<>();
 
@@ -221,6 +265,19 @@ public class Question {
             geoObjects.set(LocaUtils.randi(geoObjects.size()), includeGeoObject);
 
         return geoObjects;
+    }
+
+    /**
+     * Relevant if quiz-level <= level+1
+     * @param quizzes
+     * @param level
+     */
+    private List<Long> relevantQuizIds(List<Quiz> quizzes, int level) {
+        List<Long> filtered = new ArrayList<>();
+        for (Quiz quiz : quizzes) {
+            if (quiz.getLevel() <= level + 1) filtered.add(quiz.getId());
+        }
+        return filtered;
     }
 
     /**

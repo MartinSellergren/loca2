@@ -24,7 +24,7 @@ public class RunningQuizControl {
     /**
      * Every geo-object in quiz gets this number of questions in a running-quiz...
      */
-    public static final int DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT = 1;//4;
+    public static final int DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT = 2;//4;
 
     /**
      * ..except one (selected randomly) which gets this many extra questions.
@@ -34,17 +34,17 @@ public class RunningQuizControl {
     /**
      * Required min success-rate to pass a level-quiz.
      */
-    public static final double ACCEPTABLE_QUIZ_SUCCESS_RATE = 0.85;
+    public static final double ACCEPTABLE_QUIZ_SUCCESS_RATE = 0.8;
 
     public static final int NO_PASSED_LEVELS_BEFORE_EXERCISE_REMINDER = 4;
 
-    public static final int MIN_NO_EXERCISE_REMINDERS = 2;
+    public static final int MIN_NO_EXERCISE_REMINDERS = 1;
 
-    public static final int MAX_NO_EXERCISE_REMINDERS = 5;
+    public static final int MAX_NO_EXERCISE_REMINDERS = 3;
 
     public static final int MIN_NO_QUIZ_CATEGORY_REMINDERS = 0;
 
-    public static final int MAX_NO_QUIZ_CATEGORY_REMINDERS = 3;
+    public static final int MAX_NO_QUIZ_CATEGORY_REMINDERS = 2;
 
 
 
@@ -303,6 +303,7 @@ public class RunningQuizControl {
      * and insert into db.
      * Number of questions per geo-object specified in constant. Order semi-randomized.
      * Question difficulty increases.
+     * Not two same (geo-object and question-type) questions after another.
      *
      * @param geoObjects
      * @param runningQuizId
@@ -328,18 +329,54 @@ public class RunningQuizControl {
         while (!allIsZero(questionCounts)) {
             int i = LocaUtils.randi(geoObjects.size());
             if (questionCounts[i] > 0) {
-                questionCounts[i] -= 1;
-
-                int index = questionIndex++;
-                int difficulty = questionDifficulties[i]++;
                 GeoObject geoObject = geoObjects.get(i);
-
-                Question question = new Question(runningQuizId, geoObject, index, difficulty, db);
-                newQuestions.add(question);
+                Question question = new Question(runningQuizId, geoObject, questionIndex, questionDifficulties[i], db);
+                if (newQuestions.size() == 0 ||
+                        !sameQuestionContent(newQuestions.get( newQuestions.size()-1 ), question ) ||
+                        !sameTextInAlternatives(question)) {
+                    newQuestions.add(question);
+                    questionCounts[i] -= 1;
+                    questionIndex++;
+                    questionDifficulties[i]++;
+                }
             }
         }
 
         db.questionDao().insert(newQuestions);
+    }
+
+    /**
+     * @param q1
+     * @param q2
+     * @return True if q1, q2 has same defining object and type.
+     */
+    private static boolean sameQuestionContent(Question q1, Question q2) {
+        return q1.getGeoObjectId() == q2.getGeoObjectId() &&
+                q1.getType() == q2.getType();
+    }
+
+    /**
+     * @param question
+     * @return True if it's a name-it or pair-it question with identical alternatives (button texts).
+     */
+    private static boolean sameTextInAlternatives(Question question) {
+        if (question.getType() == Question.PLACE_IT) return false;
+
+        List<String> buttonTexts = new ArrayList<>();
+        for (GeoObject go : question.getContent()) buttonTexts.add(go.getName());
+        return anyEqual(buttonTexts);
+    }
+
+    /**
+     * @param strings
+     * @return True if any equal to another.
+     */
+    private static boolean anyEqual(List<String> strings) {
+        while (strings.size() > 1) {
+            String str = strings.remove(0);
+            if (strings.contains(str)) return true;
+        }
+        return false;
     }
 
     /**

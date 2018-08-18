@@ -1,18 +1,10 @@
 # loca2
 
 TODO:
-- Time runs out for a question.
-- Inga samma svarsalternativ (same name-objects).
-- Not two same questions (type and object) after another.
-- Draw working-area in tapping with tap-text: "Working area".
+- time runs out for a question.
 
-- No answers in the map.
-- Switch overpass endpoint if problem.
-- Geo-objects in map blink when tapped.
-- Turn small geo-objects into nodes.
-
-- equal alternatives height
-- scale text after alternative-box
+- switch overpass endpoint if problem.
+- more restrictive tag-filtration
 
 - index db?
 - exercise-construction performance (load/insert/update/delete in chunks/trnsactions)
@@ -27,6 +19,7 @@ KNOWN BUGS:
 - Loading exercise service runns, activity killed. Start activity and stop service: not working
  (service reads exit-flag in previous instance).
 - Exercise activity briefly started before follow-up quiz if tapping the screen during text So...
+- Sometimes false-positives in line-segment-crossing-detection during exercise creation.
 
 
 

@@ -86,8 +86,10 @@
         android:clickable="true"
         android:onClick="onClearNodesButtonClick"
         android:visibility="invisible"
+        app:backgroundTint="?android:attr/textColorHighlight"
         app:layout_constraintEnd_toEndOf="@+id/mapView_quiz"
         app:layout_constraintTop_toTopOf="@+id/mapView_quiz"
+        app:rippleColor="@android:color/holo_purple"
         app:srcCompat="@android:drawable/ic_menu_delete"
         mapbox:elevation="5dp" />
 

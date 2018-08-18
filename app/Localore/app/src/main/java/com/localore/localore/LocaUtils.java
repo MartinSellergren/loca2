@@ -48,6 +48,7 @@ import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 
 import java.io.InputStream;
+import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,7 +72,7 @@ public class LocaUtils {
         public WorkInterruptedException() { super(); }
     }
 
-    private static Random random = new Random();
+    public static Random random = new Random();
 
     public static final int BLUE_COLOR = Color.parseColor("#3bb2d0");
     public static final int RED_COLOR = Color.parseColor("#AF0000");
@@ -271,22 +272,28 @@ public class LocaUtils {
     /**
      * Adds a border around a view.
      * @param view
-     * @param color
      */
-    public static void addBorder(View view, int color) {
-//        GradientDrawable border = new GradientDrawable();
-//        border.setColor(0x00000000);
-//        border.setStroke(10, color);
-//        border.setCornerRadius(2);
-//        view.setBackground(border);
+    public static void setDimmed(View view) {
         view.setAlpha(0.3f);
     }
 
     /**
      * @param view
      */
-    public static void removeBorder(View view) {
+    public static void unsetDimmed(View view) {
         view.setAlpha(1f);
+    }
+
+    /**
+     * Make the view stand out. Can't be undone.
+     * @param view
+     */
+    public static void setHighlighted(View view) {
+        GradientDrawable border = new GradientDrawable();
+        border.setColor(0xFFFFFFFF);
+//        border.setStroke(10, color);
+//        border.setCornerRadius(2);
+        view.setBackground(border);
     }
 
     /**
@@ -367,12 +374,25 @@ public class LocaUtils {
 
     /**
      * @param rank
-     * @return Color based on rank..
+     * @param context
+     * @return Color based on rank and max-rank of object in session-exercise.
      */
-    public static int rankBasedColor(double rank) {
-        //todo: color based on rank
-        int color = Color.argb(255, randi(256), randi(256), randi(256));
+    public static int rankBasedColor(double rank, Context context) {
+        double maxRank = SessionControl.loadExercise(context).getMaxRankOfGeoObject();
+        double ratio = rank / maxRank;
+
+        int start = 60;
+        int red = Math.round((float)(start + ratio * (255-60)));
+
+        int color = Color.argb(255, red, 0, 0);
         return color;
+    }
+
+    /**
+     * @return A random color, full alpha.
+     */
+    public static int randomColor() {
+        return Color.argb(255, randi(256), randi(256), randi(256));
     }
 
     /**
@@ -501,15 +521,28 @@ public class LocaUtils {
      */
     public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap, Map<Long,Long> markersMap,
                                                 Map<Long,Long> polylinesMap, int color, Context context) {
+        double SMALL_SIDE_LENGTH = 50; //meters
+
         List<Annotation> annotations = new ArrayList<>();
 
         for (NodeShape nodeShape : geoObject.getShapes()) {
+            double[] bounds = nodeShape.getBounds();
+            double[] ws = new double[]{bounds[0], bounds[1]};
+            double[] es = new double[]{bounds[2], bounds[1]};
+            double[] wn = new double[]{bounds[0], bounds[3]};
+
             if (nodeShape.getNodes().size() == 1) {
                 Marker marker = addMarker(nodeShape.getNodes().get(0), geoObject.getId(), color, mapboxMap, markersMap, context);
                 annotations.add(marker);
             }
+            else if (distance(ws, es) < SMALL_SIDE_LENGTH &&
+                    distance(ws, wn) < SMALL_SIDE_LENGTH) {
+                Marker marker = addMarker(nodeShape.getCenter(), geoObject.getId(), color, mapboxMap, markersMap, context);
+                annotations.add(marker);
+            }
             else {
-                Polyline polyline = addPolyline(nodeShape.asExtraClosed().getNodes(), geoObject.getId(), color, mapboxMap, polylinesMap);
+                nodeShape = nodeShape.isClosed() ? nodeShape.asExtraClosed() : nodeShape;
+                Polyline polyline = addPolyline(nodeShape.getNodes(), geoObject.getId(), color, mapboxMap, polylinesMap);
                 annotations.add(polyline);
             }
         }
@@ -522,7 +555,7 @@ public class LocaUtils {
      */
     public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap,
                                                 Map<Long,Long> markersMap, Map<Long,Long> polylinesMap, Context context) {
-        int color = LocaUtils.rankBasedColor(geoObject.getRank());
+        int color = LocaUtils.rankBasedColor(geoObject.getRank(), context);
         return addGeoObject(geoObject, mapboxMap, markersMap, polylinesMap, color, context);
     }
 
@@ -542,7 +575,7 @@ public class LocaUtils {
      * @param geoObjectId
      * @param color
      */
-    private static Marker addMarker(double[] node, long geoObjectId, int color, MapboxMap mapboxMap,
+    public static Marker addMarker(double[] node, long geoObjectId, int color, MapboxMap mapboxMap,
                            Map<Long,Long> markersMap, Context context) {
         Marker marker = mapboxMap.addMarker(new MarkerOptions()
                 .icon(LocaUtils.nodeGeoObjectIcon(color, context))
@@ -558,7 +591,7 @@ public class LocaUtils {
      * @param geoObjectId
      * @param color
      */
-    private static Polyline addPolyline(List<double[]> nodes, long geoObjectId, int color, MapboxMap mapboxMap,
+    public static Polyline addPolyline(List<double[]> nodes, long geoObjectId, int color, MapboxMap mapboxMap,
                                         Map<Long,Long> polylinesMap) {
         int GEO_OBJECT_LINE_WIDTH = 4;
 
@@ -643,6 +676,106 @@ public class LocaUtils {
     public static void flyToLocation(Location location, double zoom, MapboxMap map, int flyTime) {
         LatLng latLng = toLatLng(new double[]{location.getLongitude(), location.getLatitude()});
         flyToLocation(latLng, zoom, map, flyTime);
+    }
+
+    //endregion
+
+    //region geo-object -> annotations
+
+    /**
+     * @param geoObjectId
+     * @param markersMap
+     * @param polylinesMap
+     * @return All annotations used to draw specified geo-object.
+     */
+    public static List<Annotation> geoObjectAnnotations(long geoObjectId, MapboxMap mapboxMap, Map<Long,Long> markersMap, Map<Long,Long> polylinesMap) {
+        List<Long> markerIds = getKeysFromValue(geoObjectId, markersMap);
+        List<Long> polylinesIds = getKeysFromValue(geoObjectId, polylinesMap);
+
+        List<Annotation> annotations = new ArrayList<>();
+        annotations.addAll(getMarkersFromIds(markerIds, mapboxMap));
+        annotations.addAll(getPolylinesFromIds(polylinesIds, mapboxMap));
+        return annotations;
+    }
+
+    /**
+     * @param value
+     * @param map
+     * @return Keys with certain value.
+     */
+    private static List<Long> getKeysFromValue(long value, Map<Long,Long> map) {
+        List<Long> keys = new ArrayList<>();
+        for (Map.Entry<Long,Long> entry : map.entrySet()) {
+            if (entry.getValue() == value) keys.add(entry.getKey());
+        }
+        return keys;
+    }
+
+    /**
+     * @param ids
+     * @return Markers in map with id in ids.
+     */
+    private static List<Marker> getMarkersFromIds(List<Long> ids, MapboxMap mapboxMap) {
+        List<Marker> markers = new ArrayList<>();
+        for (Marker marker : mapboxMap.getMarkers()) {
+            if (ids.contains(marker.getId())) markers.add(marker);
+        }
+        return markers;
+    }
+
+    /**
+     * @param ids
+     * @return Polylines in map with id in ids.
+     */
+    private static List<Polyline> getPolylinesFromIds(List<Long> ids, MapboxMap mapboxMap) {
+        List<Polyline> polylines = new ArrayList<>();
+        for (Polyline polyline : mapboxMap.getPolylines()) {
+            if (ids.contains(polyline.getId())) polylines.add(polyline);
+        }
+        return polylines;
+    }
+
+    //endregion
+
+    //region blink annotations
+
+    /**
+     * Remove, then add annotations.
+     * @param annotations
+     * @param map
+     */
+    public static void blinkAnnotations(List<Annotation> annotations, MapboxMap map, Context context) {
+        int BLINK_TIME = 400;
+
+        List<Icon> markerIcons = new ArrayList<>();
+        List<Integer> polylineColors = new ArrayList<>();
+
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof Marker) {
+                Marker marker = (Marker)annotation;
+                markerIcons.add(marker.getIcon());
+                marker.setIcon(IconFactory.getInstance(context)
+                        .fromResource(R.drawable.transparent_icon));
+            }
+            else if (annotation instanceof Polyline) {
+                Polyline polyline = (Polyline)annotation;
+                polylineColors.add(polyline.getColor());
+                polyline.setColor(0x00000000);
+            }
+        }
+
+        new Handler().postDelayed(() -> {
+            for (int i = 0; i < annotations.size(); i++) {
+                Annotation annotation = annotations.get(i);
+                if (annotation instanceof Marker) {
+                    ((Marker)annotation).setIcon(markerIcons.get(i));
+                }
+                else if (annotation instanceof Polyline) {
+                    ((Polyline)annotation).setColor(polylineColors.get(i));
+                }
+            }
+
+        }, BLINK_TIME);
     }
 
     //endregion

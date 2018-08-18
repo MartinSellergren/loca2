@@ -70,15 +70,16 @@ public class QuizCategory {
     }
 
     /**
+     * @param type
      * @return Icon representing category.
      */
-    public int getIconResource() {
-        switch(this.type) {
-            case SETTLEMENTS: return R.drawable.loca_notification_icon;
-            case ROADS: return R.drawable.mapbox_compass_icon;
-            case NATURE: return R.drawable.mapbox_marker_icon_default;
-            case TRANSPORT: return R.drawable.mapbox_marker_icon_default;
-            case CONSTRUCTIONS: return R.drawable.mapbox_marker_icon_default;
+    public static int getIconResource(int type) {
+        switch(type) {
+            case SETTLEMENTS: return R.drawable.settlements;
+            case ROADS: return R.drawable.roads;
+            case NATURE: return R.drawable.nature;
+            case TRANSPORT: return R.drawable.transport;
+            case CONSTRUCTIONS: return R.drawable.constructions;
             default: throw new RuntimeException("Dead end");
         }
     }

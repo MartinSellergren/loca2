@@ -26,4 +26,18 @@
 
     </com.mapbox.mapboxsdk.maps.MapView>
 
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/button_tapping_toggleZoom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="2dp"
+        android:layout_marginRight="2dp"
+        android:layout_marginTop="2dp"
+        android:clickable="true"
+        app:backgroundTint="@android:color/holo_blue_dark"
+        app:elevation="5dp"
+        app:layout_constraintEnd_toEndOf="@+id/mapView_quiz"
+        app:layout_constraintTop_toTopOf="@+id/mapView_quiz"
+        app:srcCompat="@android:drawable/ic_menu_zoom" />
+
 </android.support.constraint.ConstraintLayout>

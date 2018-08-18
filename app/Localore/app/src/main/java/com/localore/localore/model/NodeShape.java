@@ -97,6 +97,14 @@ public class NodeShape implements Serializable {
     }
 
     /**
+     * @return Center-point (of bounds).
+     */
+    public double[] getCenter() {
+        double[] bs = getBounds();
+        return new double[]{ (bs[2]-bs[0]) / 2, (bs[3] - bs[1]) / 2 };
+    }
+
+    /**
      * @return "lat1 lon1 lat2 lon2 lat3 lon3 ..."
      * Note: lat lon, not lon lat.
      */
@@ -307,11 +315,11 @@ public class NodeShape implements Serializable {
     }
 
     /**
-     * @return A extra closed node-shape if already closed (this or a new constructed from this).
+     * @return A extra closed node-shape (this or a new constructed from this).
      *         Extra closed by continue around the shape in same path, a little distance.
      */
     public NodeShape asExtraClosed() {
-        if (nodes.size() < 3 || !isClosed()) return this;
+        if (nodes.size() < 3) return this;
 
         NodeShape nodeShape = new NodeShape(this.getNodes());
         nodeShape.nodes.add( nodeShape.nodes.get(0) );

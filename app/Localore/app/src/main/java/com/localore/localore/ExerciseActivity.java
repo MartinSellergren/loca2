@@ -4,8 +4,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.provider.Telephony;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,6 +20,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -25,7 +31,9 @@ import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
 import com.localore.localore.model.QuizCategory;
 import com.localore.localore.model.RunningQuiz;
+import com.localore.localore.model.Session;
 import com.localore.localore.modelManipulation.ExerciseControl;
+import com.localore.localore.modelManipulation.RunningQuizControl;
 import com.localore.localore.modelManipulation.SessionControl;
 
 import java.util.ArrayList;
@@ -39,7 +47,9 @@ import java.util.List;
 public class ExerciseActivity extends AppCompatActivity {
 
     private FrameLayout overlay;
-    private Button exerciseReminderButton;
+    private FloatingActionButton exerciseReminderButton;
+    private TextView textView_noRequiredExerciseReminders;
+    private ImageView imageView_speechBubble;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +58,8 @@ public class ExerciseActivity extends AppCompatActivity {
 
         this.overlay = findViewById(R.id.overlay_exercise);
         this.exerciseReminderButton = findViewById(R.id.button_exerciseReminder);
+        this.textView_noRequiredExerciseReminders = findViewById(R.id.textView_exercise_noRequiredExerciseReminders);
+        this.imageView_speechBubble = findViewById(R.id.imageView_exercise_speechBubble);
 
         updateLayout();
     }
@@ -94,12 +106,22 @@ public class ExerciseActivity extends AppCompatActivity {
         Exercise exercise = SessionControl.loadExercise(this);
         setTitle(exercise.getName());
 
+        ActionBar bar = getSupportActionBar();
+        bar.setBackgroundDrawable(new ColorDrawable(exercise.getColor()));
+        bar.setDisplayShowTitleEnabled(false);
+        bar.setDisplayShowTitleEnabled(true);
+        findViewById(R.id.layout_exercise_background).setBackgroundColor(exercise.getColor());
+
+        if (Build.VERSION.SDK_INT >= 21) {
+            Window window = getWindow();
+//            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+//            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(exercise.getColor());
+        }
+
         updateQuizCategories();
         updateExerciseReminder();
-
-        exerciseReminderButton.setOnClickListener(view -> {
-            QuizActivity.freshStart(RunningQuiz.EXERCISE_REMINDER, -1, this);
-        });
     }
 
     /**
@@ -176,7 +198,7 @@ public class ExerciseActivity extends AppCompatActivity {
             AlertDialog.Builder alertBuilder = new AlertDialog.Builder(ExerciseActivity.this);
             alertBuilder.setTitle(QuizCategory.DISPLAY_TYPES[quizCategoryType]);
 
-            List<CharSequence> optionsList = new ArrayList<>();
+            List<String> optionsList = new ArrayList<>();
             optionsList.add("Tapping");
 
             if (noRequiredReminders == 0 && nextLevel < totalNoLevels)
@@ -193,7 +215,7 @@ public class ExerciseActivity extends AppCompatActivity {
                 if (item == 0) {
                     TappingActivity.start(quizCategoryType, ExerciseActivity.this);
                 }
-                else if (item == 1) {
+                else if (item == 1 && optionsList.get(1).equals("Level quiz")) {
                     QuizActivity.freshStart(RunningQuiz.LEVEL_QUIZ, quizCategoryType, ExerciseActivity.this);
                 }
                 else {
@@ -217,7 +239,7 @@ public class ExerciseActivity extends AppCompatActivity {
             this.nextLevel = quizCategoryData[2];
             this.noRequiredReminders = quizCategoryData[3];
 
-            this.quizCategoryIcon.setImageResource(R.drawable.mapbox_compass_icon);
+            this.quizCategoryIcon.setImageResource( QuizCategory.getIconResource(quizCategoryType) );
             this.quizCategoryName.setText( getString(QuizCategory.DISPLAY_TYPES[quizCategoryType]) );
 
             String levelString = String.format("%s %s / %s",
@@ -230,15 +252,35 @@ public class ExerciseActivity extends AppCompatActivity {
     //endregion
 
     private void updateExerciseReminder() {
-        int requiredNoExerciseReminders = SessionControl.loadExercise(this).getNoRequiredExerciseReminders();
+        Exercise exercise = SessionControl.loadExercise(this);
+        int noPassedLevels = ExerciseControl.loadPassedQuizzesInExercise(exercise.getId(), AppDatabase.getInstance(this)).size();
+        int requiredNoExerciseReminders = exercise.getNoRequiredExerciseReminders();
 
-        if (requiredNoExerciseReminders > 0) {
-            exerciseReminderButton.setText(String.format("%s (%s)",
-                    getString(R.string.reminder),
-                    requiredNoExerciseReminders));
+        if (noPassedLevels == 0) {
+            exerciseReminderButton.hide();
+            textView_noRequiredExerciseReminders.setVisibility(View.INVISIBLE);
+            imageView_speechBubble.setVisibility(View.INVISIBLE);
+        }
+        else {
+            exerciseReminderButton.show();
+            exerciseReminderButton.setOnClickListener(view -> {
+                QuizActivity.freshStart(RunningQuiz.EXERCISE_REMINDER, -1, this);
+            });
 
-            overlay.setAlpha(0.5f);
-            overlay.setClickable(true);
+            if (requiredNoExerciseReminders > 0) {
+                //exerciseReminderButton.setText(String.format("%s (%s)",
+//                    getString(R.string.reminder),
+//                    requiredNoExerciseReminders));
+                textView_noRequiredExerciseReminders.setText(requiredNoExerciseReminders + "");
+                textView_noRequiredExerciseReminders.setVisibility(View.VISIBLE);
+                imageView_speechBubble.setVisibility(View.VISIBLE);
+
+                overlay.setAlpha(0.5f);
+                overlay.setClickable(true);
+            } else {
+                textView_noRequiredExerciseReminders.setVisibility(View.INVISIBLE);
+                imageView_speechBubble.setVisibility(View.INVISIBLE);
+            }
         }
     }
 

@@ -67,6 +67,7 @@ public class QuizResultActivity extends AppCompatActivity {
             QuizActivity.freshStart(RunningQuiz.FOLLOW_UP_QUIZ, -1, this);
         }
         catch (RunningQuizControl.QuizConstructionException e) {
+            RunningQuizControl.deleteRunningQuiz(this);
             ExerciseActivity.start(this);
         }
     }

@@ -3,6 +3,8 @@ package com.localore.localore.model;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 
+import com.localore.localore.LocaUtils;
+
 /**
  * Class representing an exercise.
  */
@@ -44,9 +46,14 @@ public class Exercise {
     private int noRequiredExerciseReminders = 0;
 
     /**
-     * Color theme of every view of this exercise.
+     * Rank of geo-object with highest rank.
      */
-    //private ColorTheme colorTheme;
+    private double maxRankOfGeoObject = 0;
+
+    /**
+     * Color "theme" of every view of this exercise.
+     */
+    private int color;
 
 
     /**
@@ -58,6 +65,7 @@ public class Exercise {
         this.userId = userId;
         this.name = name;
         this.workingArea = workingArea;
+        this.color = LocaUtils.randomColor();
     }
 
     public long getId() {
@@ -104,6 +112,14 @@ public class Exercise {
         return noPassedLevelsSinceExerciseReminder;
     }
 
+    public double getMaxRankOfGeoObject() {
+        return maxRankOfGeoObject;
+    }
+
+    public void setMaxRankOfGeoObject(double maxRankOfGeoObject) {
+        this.maxRankOfGeoObject = maxRankOfGeoObject;
+    }
+
     public void setNoPassedLevelsSinceExerciseReminder(int noPassedLevelsSinceExerciseReminder) {
         this.noPassedLevelsSinceExerciseReminder = noPassedLevelsSinceExerciseReminder;
     }
@@ -114,6 +130,14 @@ public class Exercise {
 
     public void setNoRequiredExerciseReminders(int noRequiredExerciseReminders) {
         this.noRequiredExerciseReminders = noRequiredExerciseReminders;
+    }
+
+    public int getColor() {
+        return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
     }
 
     @Override

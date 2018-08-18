@@ -1,10 +1,10 @@
 package com.localore.localore;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
+import android.support.constraint.ConstraintSet;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,8 +16,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.TextView;
 
 import com.localore.localore.model.AppDatabase;
@@ -53,8 +51,11 @@ public class SelectExerciseActivity extends AppCompatActivity {
 
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder viewHolder1) {
-
-                return false;
+                AppDatabase db = AppDatabase.getInstance(SelectExerciseActivity.this);
+                ExerciseControl.swapOrder(((ExerciseLabelHolder)viewHolder).getExercise(),
+                        ((ExerciseLabelHolder)viewHolder1).getExercise(), db);
+                updateLayout();
+                return true;
             }
 
             @Override
@@ -67,20 +68,11 @@ public class SelectExerciseActivity extends AppCompatActivity {
                 alertBuilder.setTitle(getString(R.string.delete_confirmation_request) + delExercise.getName() + "?");
 
                 CharSequence[] dialogOptions = {getString(R.string.Yes), getString(R.string.No)};
-                alertBuilder.setItems(dialogOptions, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int item) {
-                        if (item == 0) ExerciseControl.deleteExercise(delExercise, db);
-                    }
+                alertBuilder.setItems(dialogOptions, (dialog, item) -> {
+                    if (item == 0) ExerciseControl.deleteExercise(delExercise, db);
                 });
 
-                alertBuilder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialogInterface) {
-                        updateLayout();
-                    }
-                });
-
+                alertBuilder.setOnDismissListener(dialogInterface -> updateLayout());
 
                 AlertDialog functionDialog = alertBuilder.create();
                 functionDialog.show();
@@ -173,25 +165,30 @@ public class SelectExerciseActivity extends AppCompatActivity {
     private class ExerciseLabelHolder extends RecyclerView.ViewHolder {
         private Exercise exercise;
         private int progress;
-        private TextView textView;
+        private TextView textView_name;
+        private TextView textView_progress;
+        private ConstraintLayout background;
 
         public ExerciseLabelHolder(LayoutInflater inflater, ViewGroup parent) {
             super(inflater.inflate(R.layout.listitem_exercise_label, parent, false));
 
-            this.textView = (TextView)itemView.findViewById(R.id.textView_exerciseLabel);
+            this.textView_name = itemView.findViewById(R.id.textView_exerciseLabel);
+            this.textView_progress = itemView.findViewById(R.id.textView_exerciseProgress);
+            this.background = itemView.findViewById(R.id.layout_selectExercise_background);
 
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    ExerciseActivity.start(exercise.getId(), SelectExerciseActivity.this);
-                }
-            });
+            itemView.setOnClickListener(view -> ExerciseActivity.start(exercise.getId(), SelectExerciseActivity.this));
         }
 
         public void bind(Exercise exercise, int progress) {
             this.exercise = exercise;
             this.progress = progress;
-            this.textView.setText(String.format("%s : %s percent", exercise.getName(), progress));
+            this.textView_name.setText(exercise.getName());
+            this.textView_progress.setText(progress + "%");
+            this.background.setBackgroundColor(exercise.getColor());
+        }
+
+        public Exercise getExercise() {
+            return exercise;
         }
     }
 

@@ -7,14 +7,24 @@
     android:layout_height="match_parent"
     tools:context=".QuizActivity">
 
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/layout_quiz_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0.2"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <android.support.constraint.ConstraintLayout
         android:id="@+id/layout_quiz_topContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="?android:attr/colorBackground"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
 
         <ImageButton
             android:id="@+id/imageButton_quiz_close"
@@ -27,7 +37,8 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            mapbox:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
+            mapbox:srcCompat="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?android:selectableItemBackground"/>
 
         <ProgressBar
             android:id="@+id/progressBar_quiz"
@@ -117,10 +128,12 @@
         android:id="@+id/button_quiz_toggleZoom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginEnd="2dp"
+        android:layout_marginRight="2dp"
+        android:layout_marginTop="2dp"
         android:clickable="true"
+        app:backgroundTint="@android:color/holo_blue_dark"
+        app:elevation="5dp"
         app:layout_constraintEnd_toEndOf="@+id/mapView_quiz"
         app:layout_constraintTop_toTopOf="@+id/mapView_quiz"
         app:srcCompat="@android:drawable/ic_menu_zoom" />
@@ -133,6 +146,8 @@
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
         android:clickable="true"
+        app:backgroundTint="@android:color/holo_green_light"
+        app:elevation="5dp"
         app:layout_constraintBottom_toBottomOf="@+id/mapView_quiz"
         app:layout_constraintEnd_toEndOf="@+id/mapView_quiz"
         app:srcCompat="@android:drawable/ic_media_next" />

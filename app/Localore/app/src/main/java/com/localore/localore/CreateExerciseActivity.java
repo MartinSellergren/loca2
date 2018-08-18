@@ -104,9 +104,9 @@ public class CreateExerciseActivity extends AppCompatActivity {
         this.button_validZoom = findViewById(R.id.button_validZoom);
 
         this.WORKING_AREA_NODE_ICON =
-                IconFactory.getInstance(CreateExerciseActivity.this).fromResource(R.drawable.mapbox_logo_icon);
+                IconFactory.getInstance(CreateExerciseActivity.this).fromResource(R.drawable.mapbox_marker_icon_default);
         this.WORKING_AREA_NODE_ICON_FRONTIER =
-                IconFactory.getInstance(CreateExerciseActivity.this).fromResource(R.drawable.mapbox_compass_icon);
+                IconFactory.getInstance(CreateExerciseActivity.this).fromResource(R.drawable.purple_marker);
 
         mapView.onCreate(null);
         mapView.getMapAsync(new OnMapReadyCallback() {

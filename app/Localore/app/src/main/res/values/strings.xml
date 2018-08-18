@@ -41,9 +41,10 @@
     <string name="follow_up_quiz_init_talk">So...</string>
     <string name="reminder_quiz_init_talk">Remember...</string>
     <string name="no_thats">No, that\'s</string>
-    <string name="correct">Correct</string>
+    <string name="correct">Correct!</string>
     <string name="sure_is">Sure is</string>
     <string name="incorrect">Incorrect</string>
     <string name="reminder">Reminder</string>
     <string name="default_map_style">mapbox://styles/masel/cjkyl6he503zy2rptne68047q</string>
+    <string name="exercise_border">Exercise border</string>
 </resources>
