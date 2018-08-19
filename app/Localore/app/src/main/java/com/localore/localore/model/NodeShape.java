@@ -101,7 +101,7 @@ public class NodeShape implements Serializable {
      */
     public double[] getCenter() {
         double[] bs = getBounds();
-        return new double[]{ (bs[2]-bs[0]) / 2, (bs[3] - bs[1]) / 2 };
+        return new double[]{ (bs[2]+bs[0]) / 2, (bs[3]+bs[1]) / 2 };
     }
 
     /**

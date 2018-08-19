@@ -209,7 +209,7 @@ public class TappingActivity extends AppCompatActivity {
         this.polylinesMap.clear();
 
         //LocaUtils.highlightWorkingArea(mapboxMap, exercise.getWorkingArea());
-        LocaUtils.addPolyline(exercise.getWorkingArea().asExtraClosed().getNodes(), -1, Color.GRAY, mapboxMap, polylinesMap);
+        LocaUtils.addPolyline(exercise.getWorkingArea().asExtraClosed().getNodes(), -1, Color.LTGRAY, mapboxMap, polylinesMap);
         LocaUtils.addGeoObjects(geoObjects, mapboxMap, markersMap, polylinesMap, this);
 
         if (nextLevelObjects)

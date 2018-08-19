@@ -107,12 +107,12 @@ public class Question {
 
     /**
      *
-     * @return nameIt, placeIt, pairIt, with probabilities 35, 40, 25
+     * @return nameIt, placeIt, pairIt, with probabilities 40, 40, 20
      */
     private int randomizeType() {
         double rand = LocaUtils.random.nextDouble();
-        if (rand < 0.35) return NAME_IT;
-        if (rand < 0.75) return PLACE_IT;
+        if (rand < 0.40) return NAME_IT;
+        if (rand < 0.80) return PLACE_IT;
         else return PAIR_IT;
     }
 

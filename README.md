@@ -1,6 +1,9 @@
 # loca2
 
 TODO:
+
+- color coding
+- conform polylines after map.. (functionality of mapbox?)
 - time runs out for a question.
 
 - switch overpass endpoint if problem.

@@ -24,12 +24,12 @@ public class RunningQuizControl {
     /**
      * Every geo-object in quiz gets this number of questions in a running-quiz...
      */
-    public static final int DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT = 1;//2;
+    public static final int DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT = 3;
 
     /**
      * ..except one (selected randomly) which gets this many extra questions.
      */
-    public static final int NO_EXTRA_QUESTIONS = 0;//2;
+    public static final int NO_EXTRA_QUESTIONS = 2;
 
     /**
      * Required min success-rate to pass a level-quiz.

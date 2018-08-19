@@ -523,7 +523,7 @@ public class LocaUtils {
      */
     public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap, Map<Long,Long> markersMap,
                                                 Map<Long,Long> polylinesMap, int color, Context context) {
-        double SMALL_SIDE_LENGTH = 50; //meters
+        double SMALL_SIDE_LENGTH = 100; //meters
 
         List<Annotation> annotations = new ArrayList<>();
 
@@ -758,21 +758,27 @@ public class LocaUtils {
                 markerIcons.add(marker.getIcon());
                 marker.setIcon(IconFactory.getInstance(context)
                         .fromResource(R.drawable.transparent_icon));
+                map.updateMarker(marker);
             }
             else if (annotation instanceof Polyline) {
                 Polyline polyline = (Polyline)annotation;
                 polylineColors.add(polyline.getColor());
                 polyline.setColor(0x00000000);
+                map.updatePolyline(polyline);
             }
         }
 
         new Handler().postDelayed(() -> {
             for (Annotation annotation : annotations) {
                 if (annotation instanceof Marker) {
-                    ((Marker)annotation).setIcon(markerIcons.remove(0));
+                    Marker marker = (Marker)annotation;
+                    marker.setIcon(markerIcons.remove(0));
+                    map.updateMarker(marker);
                 }
                 else if (annotation instanceof Polyline) {
-                    ((Polyline)annotation).setColor(polylineColors.remove(0));
+                    Polyline polyline = (Polyline)annotation;
+                    polyline.setColor(polylineColors.remove(0));
+                    map.updatePolyline(polyline);
                 }
             }
 

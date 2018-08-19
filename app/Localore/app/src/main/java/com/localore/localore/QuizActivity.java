@@ -347,7 +347,8 @@ public class QuizActivity extends AppCompatActivity {
             }
             clickedHolder.setCorrect();
             nextQuestionButton.show();
-            Toast.makeText(this, R.string.correct, Toast.LENGTH_SHORT).show();
+            String correctText = String.format("%s %s", getString(R.string.correct), clickedHolder.getGeoObject().getName());
+            Toast.makeText(this, correctText, Toast.LENGTH_SHORT).show();
         }
         else {
             clickedHolder.setIncorrect();
@@ -442,16 +443,20 @@ public class QuizActivity extends AppCompatActivity {
         LocaUtils.addGeoObjects(alternatives, mapboxMap, markersLookupMap, polylinesLookupMap, this);
 
         mapboxMap.setOnMarkerClickListener(marker -> {
+            Long answeredId = markersLookupMap.get(marker.getId());
+            if (answeredId == null) return true;
+
             AppDatabase db = AppDatabase.getInstance(this);
-            long answeredId = markersLookupMap.get(marker.getId());
             GeoObject answered = db.geoDao().load(answeredId);
             int contentIndex = alternatives.indexOf(answered);
             alternativeClicked_placeIt(contentIndex, answered, markersLookupMap, polylinesLookupMap);
             return true;
         });
         mapboxMap.setOnPolylineClickListener(polyline -> {
+            Long answeredId = polylinesLookupMap.get(polyline.getId());
+            if (answeredId == null) return;
+
             AppDatabase db = AppDatabase.getInstance(this);
-            long answeredId = polylinesLookupMap.get(polyline.getId());
             GeoObject answered = db.geoDao().load(answeredId);
             int contentIndex = alternatives.indexOf(answered);
             alternativeClicked_placeIt(contentIndex, answered, markersLookupMap, polylinesLookupMap);
@@ -472,17 +477,18 @@ public class QuizActivity extends AppCompatActivity {
             removeAllAnnotationsExcept(selectedAnnotations);
             removeMapListeners();
 
-            Toast.makeText(this, R.string.correct, Toast.LENGTH_SHORT).show();
+            String correctText = String.format("%s %s", getString(R.string.correct), answered.getName());
+            Toast.makeText(this, correctText, Toast.LENGTH_SHORT).show();
             nextQuestionButton.show();
         }
         else {
-            for (Annotation annotation : selectedAnnotations) {
-                if (annotation instanceof Marker) {
-                    ((Marker) annotation).setIcon(LocaUtils.nodeGeoObjectIcon(Color.GRAY, this));
-                } else {
-                    ((Polyline) annotation).setColor(Color.GRAY);
-                }
-            }
+//            for (Annotation annotation : selectedAnnotations) {
+//                if (annotation instanceof Marker) {
+//                    ((Marker) annotation).setIcon(LocaUtils.nodeGeoObjectIcon(Color.GRAY, this));
+//                } else {
+//                    ((Polyline) annotation).setColor(Color.LTGRAY);
+//                }
+//            }
 
             String incorrectText = answered.getName();
             Toast.makeText(this, incorrectText, Toast.LENGTH_SHORT).show();
@@ -751,7 +757,9 @@ public class QuizActivity extends AppCompatActivity {
         }
 
         mapboxMap.setOnMarkerClickListener(marker -> {
-            long answeredId = markersLookupMap.get(marker.getId());
+            Long answeredId = markersLookupMap.get(marker.getId());
+            if (answeredId == null) return true;
+
             AppDatabase db = AppDatabase.getInstance(this);
             GeoObject geoObject = db.geoDao().load(answeredId);
 
@@ -761,7 +769,9 @@ public class QuizActivity extends AppCompatActivity {
         });
 
         mapboxMap.setOnPolylineClickListener(polyline -> {
-            long answeredId = polylinesLookupMap.get(polyline.getId());
+            Long answeredId = polylinesLookupMap.get(polyline.getId());
+            if (answeredId == null) return;
+
             AppDatabase db = AppDatabase.getInstance(this);
             GeoObject geoObject = db.geoDao().load(answeredId);
 
@@ -784,12 +794,14 @@ public class QuizActivity extends AppCompatActivity {
             //ignore map-click
         }
         else if (!selectedHolder.getGeoObject().equals(geoObject)) {
-            Toast.makeText(this, R.string.incorrect, Toast.LENGTH_SHORT).show();
+            String errorText = geoObject.getName();
+            Toast.makeText(this, errorText, Toast.LENGTH_SHORT).show();
             selectedHolder.setSelected(false);
             RunningQuizControl.reportIncorrectPairItAnswer(this);
         }
         else {
-            Toast.makeText(this, R.string.correct, Toast.LENGTH_LONG).show();
+            String correctText = String.format("%s %s", getString(R.string.correct), geoObject.getName());
+            Toast.makeText(this, correctText, Toast.LENGTH_LONG).show();
             selectedHolder.setPaired();
             mapboxMap.removeAnnotations(annotations);
 

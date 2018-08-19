@@ -44,7 +44,7 @@ public class ExerciseControl {
     /**
      * Max number of geo-objects in a level. If more: split into two levels.
      */
-    public static final int MAX_NO_GEO_OBJECTS_IN_A_LEVEL = 5;
+    public static final int MAX_NO_GEO_OBJECTS_IN_A_LEVEL = 4;
 
     //region create
 
