@@ -56,7 +56,17 @@ public class QuizActivity extends AppCompatActivity {
 //    private static final int ZOOM_TO_ELEMENTS_ICON = android.R.drawable.ic_menu_search;
 //    private static final int OVERVIEW_ZOOM_ICON = android.R.drawable.ic_menu_revert;
 
+    /**
+     * Time in ms after an incorrect answer a correct-answer-indication is show.
+     */
     private static final int CORRECT_INDICATION_DELAY = 700;
+
+    /**
+     * Time provided for a question.
+     */
+    int NAME_IT_TIME = 15;
+    int PLACE_IT_TIME = 15;
+    int PAIR_IT_TIME = 25;
 
     private Activity activity;
 
@@ -72,7 +82,7 @@ public class QuizActivity extends AppCompatActivity {
     private RecyclerView bottomRecycler;
 
     private FloatingActionButton nextQuestionButton;
-    //private FloatingActionButton toggleZoomButton;
+    private Timer timer;
 
     private GeoObjectMap geoObjectMap;
 
@@ -96,6 +106,7 @@ public class QuizActivity extends AppCompatActivity {
         this.topRecycler = findViewById(R.id.recyclerView_quiz_top);
         this.mapView = findViewById(R.id.mapView_quiz);
         this.bottomRecycler = findViewById(R.id.recyclerView_bottom);
+        this.timer = new Timer(findViewById(R.id.imageView_quiz_timer), findViewById(R.id.textView_quiz_time));
 
         mapView.onCreate(null);
         mapView.getMapAsync(mapboxMap -> {
@@ -122,6 +133,10 @@ public class QuizActivity extends AppCompatActivity {
 
         Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
         updateProgressBar();
+
+        RunningQuiz runningQuiz = RunningQuizControl.load(this);
+        if (runningQuiz.getType() != RunningQuiz.FOLLOW_UP_QUIZ) timer.show();
+        else timer.hide();
 
         switch (currentQuestion.getType()) {
             case Question.NAME_IT:
@@ -191,6 +206,16 @@ public class QuizActivity extends AppCompatActivity {
 
         updateMap_nameIt(geoObject);
         updateAlternatives_nameIt(currentQuestion.getContent());
+
+        timer.start(NAME_IT_TIME, () -> {
+            RunningQuizControl.reportNameItPlaceItAnswer(-1, this);
+            AlternativeHolder correctHolder = findAlternativeHolderOfGeoObject(geoObject);
+            hideAllAlternativesExcept(correctHolder);
+            correctHolder.setCorrect();
+            nextQuestionButton.show();
+
+            Toast.makeText(this, R.string.times_up, Toast.LENGTH_SHORT).show();
+        });
     }
 
     /**
@@ -293,14 +318,10 @@ public class QuizActivity extends AppCompatActivity {
      */
     private void onAnswer_nameIt(AlternativeHolder clickedHolder, boolean correct) {
         if (correct) {
-            for (int i = 0; i < bottomRecycler.getChildCount(); i++) {
-                if (i != clickedHolder.getAdapterPosition()) {
-                    View holder = bottomRecycler.getChildAt(i);
-                    holder.setVisibility(View.INVISIBLE);
-                }
-            }
+            hideAllAlternativesExcept(clickedHolder);
             clickedHolder.setCorrect();
             nextQuestionButton.show();
+            timer.stop();
             String correctText = String.format("%s %s", getString(R.string.correct), clickedHolder.getGeoObject().getName());
             Toast.makeText(this, correctText, Toast.LENGTH_SHORT).show();
         }
@@ -314,6 +335,19 @@ public class QuizActivity extends AppCompatActivity {
             GeoObject correctAnswerObject = RunningQuizControl.loadGeoObjectFromQuestion(currentQuestion, this);
             AlternativeHolder correctHolder = findAlternativeHolderOfGeoObject(correctAnswerObject);
             new Handler().postDelayed(() -> correctHolder.blink(), CORRECT_INDICATION_DELAY);
+        }
+    }
+
+    /**
+     * Hide all holders in the bottom-recycler, except one.
+     * @param exceptHolder
+     */
+    private void hideAllAlternativesExcept(AlternativeHolder exceptHolder) {
+        for (int i = 0; i < bottomRecycler.getChildCount(); i++) {
+            if (i != exceptHolder.getAdapterPosition()) {
+                View holder = bottomRecycler.getChildAt(i);
+                holder.setVisibility(View.INVISIBLE);
+            }
         }
     }
 
@@ -352,6 +386,16 @@ public class QuizActivity extends AppCompatActivity {
         this.textView_questionContent.setBackgroundColor(geoObject.getColor());
 
         updateMap_placeIt(currentQuestion.getContent());
+
+        timer.start(PLACE_IT_TIME, () -> {
+            RunningQuizControl.reportNameItPlaceItAnswer(-1, this);
+            geoObjectMap.setGeoObjectColor(geoObject);
+            geoObjectMap.removeAllGeoObjectsExcept(geoObject.getId());
+            geoObjectMap.removeMapListeners();
+            nextQuestionButton.show();
+
+            Toast.makeText(this, R.string.times_up, Toast.LENGTH_SHORT).show();
+        });
     }
 
     /**
@@ -384,6 +428,7 @@ public class QuizActivity extends AppCompatActivity {
             String correctText = String.format("%s %s", getString(R.string.correct), answeredGeoObject.getName());
             Toast.makeText(this, correctText, Toast.LENGTH_SHORT).show();
             nextQuestionButton.show();
+            timer.stop();
         }
         else {
             geoObjectMap.flashGeoObjectInColor(answeredGeoObject);
@@ -416,6 +461,13 @@ public class QuizActivity extends AppCompatActivity {
 
         Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
         updateTopButtonsAndMap_pairIt(currentQuestion.getContent());
+
+        timer.start(PAIR_IT_TIME, () -> {
+            RunningQuizControl.reportIncorrectPairItAnswer(this);
+            geoObjectMap.removeMapListeners();
+            nextQuestionButton.show();
+            Toast.makeText(this, R.string.times_up, Toast.LENGTH_SHORT).show();
+        });
     }
 //
 //    /**
@@ -612,10 +664,12 @@ public class QuizActivity extends AppCompatActivity {
 
         if (correct) {
             geoObjectMap.setGeoObjectColor(clickedGeoObject);
+            boolean allDone = allTopItemsPaired();
+            if (allDone) timer.stop();
             new Handler().postDelayed(() -> {
                 geoObjectMap.removeGeoObject(clickedGeoObject.getId());
                 selectedHolder.setPaired();
-                if (allTopItemsPaired()) nextQuestionButton.show();
+                if (allDone) nextQuestionButton.show();
             }, GeoObjectMap.FLASH_TIME);
 
             String correctText = String.format("%s %s", getString(R.string.correct), clickedGeoObject.getName());

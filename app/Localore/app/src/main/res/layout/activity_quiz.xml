@@ -56,6 +56,26 @@
 
     </android.support.constraint.ConstraintLayout>
 
+    <ImageView
+        android:id="@+id/imageView_quiz_timer"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/layout_quiz_contentTextContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/layout_quiz_topContainer"
+        mapbox:srcCompat="@drawable/timer" />
+
+    <TextView
+        android:id="@+id/textView_quiz_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        app:layout_constraintBottom_toBottomOf="@+id/imageView_quiz_timer"
+        app:layout_constraintEnd_toEndOf="@+id/imageView_quiz_timer"
+        app:layout_constraintStart_toStartOf="@+id/imageView_quiz_timer"
+        app:layout_constraintTop_toTopOf="@+id/imageView_quiz_timer"
+        tools:text="XX" />
+
     <TextView
         android:id="@+id/textView_quiz_questionType"
         android:layout_width="wrap_content"

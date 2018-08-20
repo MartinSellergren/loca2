@@ -434,7 +434,7 @@ public class RunningQuizControl {
      *
      * If is-answered-correctly is false: Incorrect answer already provided: does nothing.
      *
-     * @param contentIndex
+     * @param contentIndex Index of answered object in question-content. -1 means no answer given.
      * @param context
      * @return True if correct answer.
      */
@@ -443,6 +443,12 @@ public class RunningQuizControl {
         Question question = loadCurrentQuestion(context);
         if (question.getType() != Question.NAME_IT && question.getType() != Question.PLACE_IT) {
             throw new RuntimeException("Illegal call");
+        }
+
+        if (contentIndex == -1) {
+            question.setAnsweredCorrectly(false);
+            db.questionDao().update(question);
+            return false;
         }
 
         boolean correctAnswer = checkNameItPlaceItAnswer(question, contentIndex);
