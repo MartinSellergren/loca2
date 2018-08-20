@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.location.Location;
 import android.os.Build;
@@ -13,9 +14,13 @@ import android.support.constraint.ConstraintLayout;
 import android.support.constraint.ConstraintSet;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.view.ViewCompat;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,36 +36,15 @@ import com.localore.localore.model.RunningQuiz;
 import com.localore.localore.model.Session;
 import com.localore.localore.model.User;
 import com.localore.localore.modelManipulation.SessionControl;
-import com.mapbox.mapboxsdk.annotations.Annotation;
-import com.mapbox.mapboxsdk.annotations.Icon;
-import com.mapbox.mapboxsdk.annotations.IconFactory;
-import com.mapbox.mapboxsdk.annotations.Marker;
-import com.mapbox.mapboxsdk.annotations.MarkerOptions;
-import com.mapbox.mapboxsdk.annotations.Polygon;
-import com.mapbox.mapboxsdk.annotations.PolygonOptions;
-import com.mapbox.mapboxsdk.annotations.Polyline;
-import com.mapbox.mapboxsdk.annotations.PolylineOptions;
-import com.mapbox.mapboxsdk.camera.CameraPosition;
-import com.mapbox.mapboxsdk.camera.CameraUpdate;
-import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
-import com.mapbox.mapboxsdk.geometry.LatLngBounds;
-import com.mapbox.mapboxsdk.maps.MapboxMap;
 
 import java.io.InputStream;
-import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.fillColor;
-import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.fillOpacity;
 
 public class LocaUtils {
 
@@ -298,103 +282,55 @@ public class LocaUtils {
         view.setBackground(border);
     }
 
-    /**
-     * @param mapboxMap
-     * @param workingArea
-     */
-    public static void highlightWorkingArea(MapboxMap mapboxMap, NodeShape workingArea) {
-//        JsonArray tl = new JsonArray(); tl.add(-180); tl.add(-LAT_MAX);
-//        JsonArray tr = new JsonArray(); tr.add(180); tr.add(-LAT_MAX);
-//        JsonArray br = new JsonArray(); br.add(180); br.add(LAT_MAX);
-//        JsonArray bl = new JsonArray(); bl.add(-180); bl.add(LAT_MAX);
-//        JsonArray outerPolygon = new JsonArray();
-//        outerPolygon.add(tl); outerPolygon.add(tr); outerPolygon.add(br); outerPolygon.add(bl);
-//
-//        JsonArray hole = new JsonArray();
-//        for (double[] node : workingArea.asClosed().getNodes()) {
-//            JsonArray holeNode = new JsonArray();
-//            holeNode.add(node[0]);
-//            holeNode.add(node[1]);
-//            hole.add(holeNode);
-//        }
-//
-//
-//        JsonArray coordinates = new JsonArray();
-//        coordinates.add(outerPolygon);
-//        coordinates.add(hole);
-//
-//        JsonObject top = new JsonObject();
-//        top.addProperty("type", "Feature");
-//
-//        JsonObject properties = new JsonObject();
-//        properties.addProperty("name", "GeoObject");
-//        top.add("properties", properties);
-//
-//        JsonObject geometry = new JsonObject();
-//        geometry.addProperty("type", "Polygon");
-//        geometry.add("coordinates", coordinates);
-//        top.add("geometry", geometry);
-//
-//        String geoJson = new Gson().toJson(top);
-//
-//        Feature polygon = Feature.fromJson(geoJson);
-//        FeatureCollection collection = FeatureCollection.fromFeatures(new Feature[]{polygon});
-//
-//        Source geoJsonSource = new GeoJsonSource("poly-source", collection);
-//        mapboxMap.addSource(geoJsonSource);
-//
-//        FillLayer fillLayer = new FillLayer("layerId", "poly-source");
-//        fillLayer.setProperties(
-//                fillColor(DIM_OVERLAY_COLOR)
-//                //fillOpacity(0.7f)
-//        );
-//
-//        mapboxMap.addLayer(fillLayer);
+//    /**
+//     * @param color
+//     * @param context
+//     * @return Icon for a one-node geo-objects.
+//     */
+//    public static Icon nodeGeoObjectIcon(int color, Context context) {
+//        //todo color icon
+//        return IconFactory.getInstance(context).fromResource(R.drawable.mapbox_marker_icon_default);
+//    }
 
-
-        List<LatLng> hole = toLatLngs(workingArea.asClosed().getNodes());
-//        Polygon polygon = mapboxMap.addPolygon(new PolygonOptions()
-//                .addAll(LocaUtils.WORLD_CORNER_COORDINATES)
-//                .addHole(hole)
-//                .fillColor(LocaUtils.DIM_OVERLAY_COLOR));
-
-        mapboxMap.addPolyline(new PolylineOptions()
-                .addAll(hole)
-                .width(5)
-                .color(LocaUtils.DIM_OVERLAY_COLOR));
-    }
-
-    /**
-     * @param color
-     * @param context
-     * @return Icon for a one-node geo-objects.
-     */
-    public static Icon nodeGeoObjectIcon(int color, Context context) {
-        //todo color icon
-        return IconFactory.getInstance(context).fromResource(R.drawable.mapbox_marker_icon_default);
-    }
-
-    /**
-     * @param rank
-     * @param context
-     * @return Color based on rank and max-rank of object in session-exercise.
-     */
-    public static int rankBasedColor(double rank, Context context) {
-        double maxRank = SessionControl.loadExercise(context).getMaxRankOfGeoObject();
-        double ratio = rank / maxRank;
-
-        int start = 60;
-        int red = Math.round((float)(start + ratio * (255-60)));
-
-        int color = Color.argb(255, red, 0, 0);
-        return color;
-    }
+//    /**
+//     * @param rank
+//     * @param context
+//     * @return Color based on rank and max-rank of object in session-exercise.
+//     */
+//    public static int rankBasedColor(double rank, Context context) {
+//        double maxRank = SessionControl.loadExercise(context).getMaxRankOfGeoObject();
+//        double ratio = rank / maxRank;
+//
+//        int start = 60;
+//        int red = Math.round((float)(start + ratio * (255-60)));
+//
+//        int color = Color.argb(255, red, 0, 0);
+//        return color;
+//    }
 
     /**
      * @return A random color, full alpha.
      */
     public static int randomColor() {
         return Color.argb(255, randi(256), randi(256), randi(256));
+    }
+
+    /**
+     * @return An randomly generated non-gray color.
+     */
+    public static int randomNonGrayColor() {
+        int v0 = randi(256);
+        int v1 = randi(256);
+        int v2 = randi(2) == 0 ? 0 : 255;
+
+        int constellation = randi(6);
+        if (constellation == 0) return Color.argb(255, v0, v1, v2);
+        if (constellation == 1) return Color.argb(255, v0, v2, v1);
+        if (constellation == 2) return Color.argb(255, v1, v0, v2);
+        if (constellation == 3) return Color.argb(255, v1, v2, v0);
+        if (constellation == 4) return Color.argb(255, v2, v0, v1);
+        if (constellation == 5) return Color.argb(255, v2, v1, v0);
+        else throw new RuntimeException("Dead end");
     }
 
     /**
@@ -447,345 +383,34 @@ public class LocaUtils {
         return dist;
     }
 
-
-    //region LatLng converters
-
     /**
-     * @param point [lon lat]
-     * @return Converted to LatLng-mapbox-object
-     */
-    public static LatLng toLatLng(double[] point) {
-        return new LatLng(point[1], point[0]);
-    }
-
-    /**
-     *
-     * @param points [lon lat]
-     * @return Converted to LatLng-mapbox-objects
-     */
-    public static List<LatLng> toLatLngs(List<double[]> points) {
-        List<LatLng> latLngs = new ArrayList<>();
-        for (double[] point : points) latLngs.add(toLatLng(point));
-        return latLngs;
-    }
-
-    /**
-     * @param bounds [wsen|
-     * @return Converted to LatLngBounds-mapbox-object.
-     */
-    public static LatLngBounds toLatLngBounds(double[] bounds) {
-        return new LatLngBounds.Builder()
-                .include( new LatLng(bounds[3], bounds[2]) ) // Northeast
-                .include( new LatLng(bounds[1], bounds[0])) // Southwest
-                .build();
-    }
-
-    //endregion
-
-    //region Draw geo-objects on map
-
-
-    /**
-     * Adds geo-objects to the map (markers and polylines). Also updates id-maps.
-     *
-     * @param geoObjects
-     * @param mapboxMap
-     * @param markersMap Afterwards updated with mappings: markerId -> geoObjectId. May be null.
-     * @param polylinesMap Afterwards updated with mappings: polylineId -> geoObjectId. May be null.
-     */
-    public static void addGeoObjects(List<GeoObject> geoObjects, MapboxMap mapboxMap,
-                              Map<Long,Long> markersMap, Map<Long,Long> polylinesMap, Context context) {
-        for (GeoObject geoObject : geoObjects)
-            addGeoObject(geoObject, mapboxMap, markersMap, polylinesMap, context);
-    }
-
-    /**
-     * Adds geo-objects to the map (markers and polylines).
-     *
-     * @param geoObjects
-     * @param mapboxMap
-     */
-    public static void addGeoObjects(List<GeoObject> geoObjects, MapboxMap mapboxMap, Context context) {
-        addGeoObjects(geoObjects, mapboxMap, null, null, context);
-    }
-
-
-
-    /**
-     * Adds a geo-object to the map. Also updates id-maps if not null.
-     * @param geoObject
-     * @param mapboxMap
-     * @param markersMap
-     * @param polylinesMap
+     * Color activity's action-bar.
      * @param color
-     * @param context
-     * @return Added stuff.
+     * @param activity
      */
-    public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap, Map<Long,Long> markersMap,
-                                                Map<Long,Long> polylinesMap, int color, Context context) {
-        double SMALL_SIDE_LENGTH = 100; //meters
-
-        List<Annotation> annotations = new ArrayList<>();
-
-        for (NodeShape nodeShape : geoObject.getShapes()) {
-            double[] bounds = nodeShape.getBounds();
-            double[] ws = new double[]{bounds[0], bounds[1]};
-            double[] es = new double[]{bounds[2], bounds[1]};
-            double[] wn = new double[]{bounds[0], bounds[3]};
-
-            if (nodeShape.getNodes().size() == 1) {
-                Marker marker = addMarker(nodeShape.getNodes().get(0), geoObject.getId(), color, mapboxMap, markersMap, context);
-                annotations.add(marker);
-            }
-            else if (distance(ws, es) < SMALL_SIDE_LENGTH &&
-                    distance(ws, wn) < SMALL_SIDE_LENGTH) {
-                Marker marker = addMarker(nodeShape.getCenter(), geoObject.getId(), color, mapboxMap, markersMap, context);
-                annotations.add(marker);
-            }
-            else {
-                nodeShape = nodeShape.isClosed() ? nodeShape.asExtraClosed() : nodeShape;
-                Polyline polyline = addPolyline(nodeShape.getNodes(), geoObject.getId(), color, mapboxMap, polylinesMap);
-                annotations.add(polyline);
-            }
-        }
-
-        return annotations;
+    public static void colorActionBar(int color, AppCompatActivity activity) {
+        ActionBar bar = activity.getSupportActionBar();
+        bar.setBackgroundDrawable(new ColorDrawable(color));
+        bar.setDisplayShowTitleEnabled(false);
+        bar.setDisplayShowTitleEnabled(true);
     }
 
     /**
-     * With color based on object-rank.
-     */
-    public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap,
-                                                Map<Long,Long> markersMap, Map<Long,Long> polylinesMap, Context context) {
-        int color = LocaUtils.rankBasedColor(geoObject.getRank(), context);
-        return addGeoObject(geoObject, mapboxMap, markersMap, polylinesMap, color, context);
-    }
-
-    /**
-     * Without lookup-maps.
-     */
-    public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap, int color, Context context) {
-        return addGeoObject(geoObject, mapboxMap, null, null, color, context);
-    }
-    public static List<Annotation> addGeoObject(GeoObject geoObject, MapboxMap mapboxMap, Context context) {
-        return addGeoObject(geoObject, mapboxMap, null, null, context);
-    }
-
-    /**
-     * Adds a marker. Updates id-map if not null.
-     * @param node
-     * @param geoObjectId
+     * Color status bar if supported.
      * @param color
+     * @param activity
      */
-    public static Marker addMarker(double[] node, long geoObjectId, int color, MapboxMap mapboxMap,
-                           Map<Long,Long> markersMap, Context context) {
-        Marker marker = mapboxMap.addMarker(new MarkerOptions()
-                .icon(LocaUtils.nodeGeoObjectIcon(color, context))
-                .position(LocaUtils.toLatLng(node)));
-
-        if (markersMap != null) markersMap.put(marker.getId(), geoObjectId);
-        return marker;
-    }
-
-    /**
-     * Adds a polyline. Updates id-map if not null.
-     * @param nodes
-     * @param geoObjectId
-     * @param color
-     */
-    public static Polyline addPolyline(List<double[]> nodes, long geoObjectId, int color, MapboxMap mapboxMap,
-                                        Map<Long,Long> polylinesMap) {
-        int GEO_OBJECT_LINE_WIDTH = 4;
-
-
-        Polyline polyline = mapboxMap.addPolyline(new PolylineOptions()
-                .addAll(LocaUtils.toLatLngs(nodes))
-                .color(color)
-                .width( GEO_OBJECT_LINE_WIDTH ));
-
-        if (polylinesMap != null) polylinesMap.put(polyline.getId(), geoObjectId);
-        return polyline;
-    }
-
-    //endregion
-
-
-    //region Map-camera motion
-
-    /**
-     * Time in ms for flying (moving camera to new pos).
-     */
-    public static final int SHORT_FLY_TIME = 2000;
-    public static final int LONG_FLY_TIME = 5000;
-
-    /**
-     * When fitting camera to shape, don't zoom more than this.
-     */
-    private static final double CAMERA_FITTING_MAX_ZOOM = 18;
-
-    /**
-     * Padding around working area for the initial camera-view.
-     */
-    private static final int CAMERA_FITTING_PADDING = 50;
-
-    /**
-     * Move camera gradually to fit shape including padding.
-     * @param shape
-     * @param map
-     * @param flyTime
-     */
-    public static void flyToFitShape(NodeShape shape, MapboxMap map, int flyTime) {
-//        if (shape.isNode()) {
-//            flyToLocation(toLatLng(shape.getFirst()), CAMERA_FITTING_MAX_ZOOM, map);
-//        }
-//        else {
-        flyToFitBounds(shape.getBounds(), map, flyTime);
-        //}
-    }
-
-    /**
-     * Move camera gradually to fit the bounds including padding.
-     * @param bs
-     * @param map
-     * @param flyTime
-     */
-    public static void flyToFitBounds(double[] bs, MapboxMap map, int flyTime) {
-        LatLngBounds latLngBounds = toLatLngBounds(bs);
-        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(latLngBounds, CAMERA_FITTING_PADDING);
-        CameraPosition cameraPosition = cameraUpdate.getCameraPosition(map);
-
-        if (cameraPosition.zoom > CAMERA_FITTING_MAX_ZOOM) {
-            flyToLocation(cameraPosition.target, CAMERA_FITTING_MAX_ZOOM, map, flyTime);
-        }
-        else {
-            map.animateCamera(cameraUpdate, flyTime);
-        }
-    }
-
-    /**
-     * Move camera gradually to new location.
-     * @param latLng
-     * @param map
-     */
-    public static void flyToLocation(LatLng latLng, double zoom, MapboxMap map, int flyTime) {
-        CameraPosition position = new CameraPosition.Builder()
-                .target(latLng)
-                .zoom(zoom)
-                .build();
-
-        map.animateCamera(CameraUpdateFactory.newCameraPosition(position), flyTime);
-    }
-    public static void flyToLocation(Location location, double zoom, MapboxMap map, int flyTime) {
-        LatLng latLng = toLatLng(new double[]{location.getLongitude(), location.getLatitude()});
-        flyToLocation(latLng, zoom, map, flyTime);
-    }
-
-    //endregion
-
-    //region geo-object -> annotations
-
-    /**
-     * @param geoObjectId
-     * @param markersMap
-     * @param polylinesMap
-     * @return All annotations used to draw specified geo-object.
-     */
-    public static List<Annotation> geoObjectAnnotations(long geoObjectId, MapboxMap mapboxMap, Map<Long,Long> markersMap, Map<Long,Long> polylinesMap) {
-        List<Long> markerIds = getKeysFromValue(geoObjectId, markersMap);
-        List<Long> polylinesIds = getKeysFromValue(geoObjectId, polylinesMap);
-
-        List<Annotation> annotations = new ArrayList<>();
-        annotations.addAll(getMarkersFromIds(markerIds, mapboxMap));
-        annotations.addAll(getPolylinesFromIds(polylinesIds, mapboxMap));
-        return annotations;
-    }
-
-    /**
-     * @param value
-     * @param map
-     * @return Keys with certain value.
-     */
-    private static List<Long> getKeysFromValue(long value, Map<Long,Long> map) {
-        List<Long> keys = new ArrayList<>();
-        for (Map.Entry<Long,Long> entry : map.entrySet()) {
-            if (entry.getValue() == value) keys.add(entry.getKey());
-        }
-        return keys;
-    }
-
-    /**
-     * @param ids
-     * @return Markers in map with id in ids.
-     */
-    private static List<Marker> getMarkersFromIds(List<Long> ids, MapboxMap mapboxMap) {
-        List<Marker> markers = new ArrayList<>();
-        for (Marker marker : mapboxMap.getMarkers()) {
-            if (ids.contains(marker.getId())) markers.add(marker);
-        }
-        return markers;
-    }
-
-    /**
-     * @param ids
-     * @return Polylines in map with id in ids.
-     */
-    private static List<Polyline> getPolylinesFromIds(List<Long> ids, MapboxMap mapboxMap) {
-        List<Polyline> polylines = new ArrayList<>();
-        for (Polyline polyline : mapboxMap.getPolylines()) {
-            if (ids.contains(polyline.getId())) polylines.add(polyline);
-        }
-        return polylines;
-    }
-
-    //endregion
-
-    //region blink annotations
-
-    /**
-     * Remove, then add annotations.
-     * @param annotations
-     * @param map
-     */
-    public static void blinkAnnotations(List<Annotation> annotations, MapboxMap map, Context context) {
-        int BLINK_TIME = 300;
-
-        List<Icon> markerIcons = new ArrayList<>();
-        List<Integer> polylineColors = new ArrayList<>();
-
-        for (Annotation annotation : annotations) {
-            if (annotation instanceof Marker) {
-                Marker marker = (Marker)annotation;
-                markerIcons.add(marker.getIcon());
-                marker.setIcon(IconFactory.getInstance(context)
-                        .fromResource(R.drawable.transparent_icon));
-                map.updateMarker(marker);
-            }
-            else if (annotation instanceof Polyline) {
-                Polyline polyline = (Polyline)annotation;
-                polylineColors.add(polyline.getColor());
-                polyline.setColor(0x00000000);
-                map.updatePolyline(polyline);
-            }
+    public static void colorStatusBar(int color, AppCompatActivity activity) {
+        if (Build.VERSION.SDK_INT >= 21) {
+            Window window = activity.getWindow();
+//            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+//            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(color);
         }
 
-        new Handler().postDelayed(() -> {
-            for (Annotation annotation : annotations) {
-                if (annotation instanceof Marker) {
-                    Marker marker = (Marker)annotation;
-                    marker.setIcon(markerIcons.remove(0));
-                    map.updateMarker(marker);
-                }
-                else if (annotation instanceof Polyline) {
-                    Polyline polyline = (Polyline)annotation;
-                    polyline.setColor(polylineColors.remove(0));
-                    map.updatePolyline(polyline);
-                }
-            }
-
-        }, BLINK_TIME);
     }
 
-    //endregion
 
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
     public static int generateViewId() {

@@ -3,18 +3,11 @@ package com.localore.localore;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.os.Build;
-import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.CompoundButton;
 import android.widget.RelativeLayout;
 import android.widget.Switch;
 import android.widget.Toast;
@@ -23,20 +16,11 @@ import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
 import com.localore.localore.model.GeoObject;
 import com.localore.localore.model.NodeShape;
-import com.localore.localore.model.Quiz;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.SessionControl;
-import com.mapbox.mapboxsdk.annotations.Annotation;
-import com.mapbox.mapboxsdk.annotations.Marker;
-import com.mapbox.mapboxsdk.annotations.Polyline;
 import com.mapbox.mapboxsdk.maps.MapView;
-import com.mapbox.mapboxsdk.maps.MapboxMap;
-import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class TappingActivity extends AppCompatActivity {
 
@@ -55,13 +39,8 @@ public class TappingActivity extends AppCompatActivity {
     private Exercise exercise;
 
     private MapView mapView;
-    private MapboxMap mapboxMap;
+    private GeoObjectMap geoObjectMap;
 
-    /**
-     * Mapping marker/polyline id to geo-object id.
-     */
-    private Map<Long, Long> markersMap = new HashMap<>();
-    private Map<Long, Long> polylinesMap = new HashMap<>();
 
 
     /**
@@ -86,18 +65,8 @@ public class TappingActivity extends AppCompatActivity {
 
         this.exercise = SessionControl.loadExercise(this);
         setTitle(exercise.getName());
-
-        ActionBar bar = getSupportActionBar();
-        bar.setBackgroundDrawable(new ColorDrawable(exercise.getColor()));
-        bar.setDisplayShowTitleEnabled(false);
-        bar.setDisplayShowTitleEnabled(true);
-        if (Build.VERSION.SDK_INT >= 21) {
-            Window window = getWindow();
-//            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-//            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(exercise.getColor());
-        }
+        LocaUtils.colorActionBar(exercise.getColor(), this);
+        LocaUtils.colorStatusBar(exercise.getColor(), this);
 
         this.toggleZoomButton = findViewById(R.id.button_tapping_toggleZoom);
         this.mapView = findViewById(R.id.mapView_quiz);
@@ -115,38 +84,44 @@ public class TappingActivity extends AppCompatActivity {
         Switch switch_tapping = layout.findViewById(R.id.switch_tapping);
         boolean nextLevelObjects = switch_tapping.isChecked();
 
-        TappingActivity.this.mapView.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(MapboxMap mapboxMap) {
-                TappingActivity.this.mapboxMap = mapboxMap;
-                LocaUtils.flyToFitShape(exercise.getWorkingArea(), mapboxMap, LocaUtils.LONG_FLY_TIME);
-                updateMap(nextLevelObjects);
+        mapView.getMapAsync(mapboxMap -> {
+            NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
+            boolean showBorder = true;
+            FloatingActionButton toggleZoomButton = findViewById(R.id.button_tapping_toggleZoom);
+            geoObjectMap = new GeoObjectMap(mapboxMap, Color.GRAY, workingArea, showBorder, toggleZoomButton, this);
+            geoObjectMap.flyToOverview(GeoObjectMap.LONG_FLY_TIME);
+            updateMap(nextLevelObjects);
 
-                mapboxMap.setOnMarkerClickListener(new MapboxMap.OnMarkerClickListener() {
-                    @Override
-                    public boolean onMarkerClick(@NonNull Marker marker) {
-                        Long geoObjectId = markersMap.get(marker.getId());
-                        if (geoObjectId != null) onGeoObjectClick(geoObjectId);
-                        return true;
-                    }
-                });
+            geoObjectMap.setOnGeoObjectClick(new GeoObjectMap.OnGeoObjectClickListener() {
 
-                mapboxMap.setOnPolylineClickListener(new MapboxMap.OnPolylineClickListener() {
-                    @Override
-                    public void onPolylineClick(@NonNull Polyline polyline) {
-                        Long geoObjectId = polylinesMap.get(polyline.getId());
-                        if (geoObjectId != null) onGeoObjectClick(geoObjectId);
-                    }
-                });
-            }
-        });
+                /**
+                 * Display toast on clicked geo-object.
+                 * Also on working-area-border click (id -1).
+                 *
+                 * @param geoObjectId
+                 */
+                @Override
+                public void onGeoObjectClick(long geoObjectId) {
+                    GeoObject geoObject = AppDatabase.getInstance(TappingActivity.this).geoDao().load(geoObjectId);
+                    //geoObjectMap.blinkGeoObject(geoObjectId);
+                    geoObjectMap.flashGeoObjectInColor(geoObject.getId(), geoObject.getColor());
 
-        switch_tapping.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                boolean nextLevelObjects = isChecked;
-                updateMap(nextLevelObjects);
-            }
+                    String str = String.format("%s (%s)",
+                            geoObject.getName(),
+                            geoObject.getCategory());
+                    Toast.makeText(TappingActivity.this, str, Toast.LENGTH_LONG).show();
+                }
+
+                @Override
+                public void onWorkingAreaBorderClick() {
+                    Toast.makeText(TappingActivity.this, R.string.exercise_border, Toast.LENGTH_LONG).show();
+                }
+            });
+
+            switch_tapping.setOnCheckedChangeListener((compoundButton, isChecked) -> {
+                boolean updateWithNextLevelObjects = isChecked;
+                updateMap(updateWithNextLevelObjects);
+            });
         });
 
         return true;
@@ -157,34 +132,8 @@ public class TappingActivity extends AppCompatActivity {
         if (item.getItemId() == android.R.id.home) {
             onBackPressed();
         }
-
         return super.onOptionsItemSelected(item);
     }
-
-
-    /**
-     * Display toast on clicked geo-object.
-     * Also on working-area-border click (id -1).
-     * @param geoObjectId
-     */
-    public void onGeoObjectClick(long geoObjectId) {
-        List<Annotation> annotations = LocaUtils.geoObjectAnnotations(geoObjectId, mapboxMap, markersMap, polylinesMap);
-        LocaUtils.blinkAnnotations(annotations, mapboxMap, this);
-
-        if (geoObjectId == -1) {
-            Toast.makeText(this, R.string.exercise_border, Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        AppDatabase db = AppDatabase.getInstance(this);
-        GeoObject geoObject = db.geoDao().load(geoObjectId);
-
-        String str = String.format("%s (%s)",
-                geoObject.getName(),
-                geoObject.getCategory());
-        Toast.makeText(TappingActivity.this, str, Toast.LENGTH_LONG).show();
-    }
-
 
     /**
      * @param nextLevelObjects Next vs pasts level objects.
@@ -193,77 +142,13 @@ public class TappingActivity extends AppCompatActivity {
         AppDatabase db = AppDatabase.getInstance(this);
         List<GeoObject> geoObjects = ExerciseControl.loadGeoObjectsForTapping(
                 exercise.getId(), quizCategoryType, nextLevelObjects, db);
-
-//        if (nextLevelObjects == false) {
-//            List<Quiz> quizzes = ExerciseControl.loadQuizzesInExercise(exercise.getId(), db);
-//            geoObjects = new ArrayList<>();
-//
-//            for (Quiz quiz : quizzes) {
-//                List<GeoObject> geoObjects1 = db.geoDao().loadWithQuiz(quiz.getId());
-//                geoObjects.addAll(geoObjects1);
-//            }
-//        }
-
-        this.mapboxMap.clear();
-        this.markersMap.clear();
-        this.polylinesMap.clear();
-
-        //LocaUtils.highlightWorkingArea(mapboxMap, exercise.getWorkingArea());
-        LocaUtils.addPolyline(exercise.getWorkingArea().asExtraClosed().getNodes(), -1, Color.LTGRAY, mapboxMap, polylinesMap);
-        LocaUtils.addGeoObjects(geoObjects, mapboxMap, markersMap, polylinesMap, this);
+        geoObjectMap.addGeoObjects(geoObjects);
 
         if (nextLevelObjects)
             Toast.makeText(TappingActivity.this, "Next level", Toast.LENGTH_SHORT).show();
         else
             Toast.makeText(TappingActivity.this, "Past levels", Toast.LENGTH_SHORT).show();
-
-        //region zoom-toggle-button
-
-        updateToggleZoomButton(WORKING_AREA_ZOOM);
-        NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
-        double[] alternativesBounds = GeoObject.getBounds(geoObjects);
-        toggleZoomButton.setOnClickListener(view -> {
-            int currentZoomLevelTag = (int)toggleZoomButton.getTag();
-
-            if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
-                updateToggleZoomButton(QUESTION_ZOOM);
-                LocaUtils.flyToFitBounds(alternativesBounds, mapboxMap, LocaUtils.SHORT_FLY_TIME);
-            }
-            else if (currentZoomLevelTag == QUESTION_ZOOM) {
-                updateToggleZoomButton(WORKING_AREA_ZOOM);
-                LocaUtils.flyToFitShape(workingArea, mapboxMap, LocaUtils.SHORT_FLY_TIME);
-            }
-            else {
-                throw new RuntimeException("Dead end");
-            }
-        });
-
-        //endregion
     }
-
-    //region zoom-toggle-button
-    private static final int WORKING_AREA_ZOOM = 0;
-    private static final int QUESTION_ZOOM = 1;
-    private static final int ZOOM_TO_ELEMENTS_ICON = android.R.drawable.ic_menu_search;
-    private static final int OVERVIEW_ZOOM_ICON = android.R.drawable.ic_menu_revert;
-    /**
-     * @param currentZoomLevelTag
-     */
-    private void updateToggleZoomButton(int currentZoomLevelTag) {
-        if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
-            toggleZoomButton.setImageResource(ZOOM_TO_ELEMENTS_ICON);
-            toggleZoomButton.setTag(WORKING_AREA_ZOOM);
-        }
-        else if (currentZoomLevelTag == QUESTION_ZOOM) {
-            toggleZoomButton.setImageResource(OVERVIEW_ZOOM_ICON);
-            toggleZoomButton.setTag(QUESTION_ZOOM);
-        }
-        else {
-            throw new RuntimeException("Dead end");
-        }
-    }
-
-    //endregion
 
     //region handle mapView's lifecycle
     @Override
@@ -302,7 +187,6 @@ public class TappingActivity extends AppCompatActivity {
         mapView.onDestroy();
     }
     //endregion
-
 
     @Override
     public void onBackPressed() {

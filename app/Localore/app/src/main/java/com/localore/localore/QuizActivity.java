@@ -3,7 +3,6 @@ package com.localore.localore;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -82,7 +81,7 @@ public class QuizActivity extends AppCompatActivity {
     private FloatingActionButton nextQuestionButton;
     private FloatingActionButton toggleZoomButton;
 
-    private MapboxMap mapboxMap;
+    private GeoObjectMap geoObjectMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,7 +107,12 @@ public class QuizActivity extends AppCompatActivity {
 
         mapView.onCreate(null);
         mapView.getMapAsync(mapboxMap -> {
-            QuizActivity.this.mapboxMap = mapboxMap;
+            NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
+            boolean showBorder = false;
+            FloatingActionButton toggleZoomButton = findViewById(R.id.button_quiz_toggleZoom);
+            geoObjectMap = new GeoObjectMap(mapboxMap, Color.GRAY, workingArea, showBorder, toggleZoomButton, this);
+            geoObjectMap.flyToOverview(GeoObjectMap.LONG_FLY_TIME);
+
             update();
         });
         exitButton.setOnClickListener(view -> interruptionExit());
@@ -121,18 +125,12 @@ public class QuizActivity extends AppCompatActivity {
     private void update() {
         Exercise exercise = SessionControl.loadExercise(AppDatabase.getInstance(this));
         findViewById(R.id.layout_quiz_background).setBackgroundColor(exercise.getColor());
+
         topContainer.setBackgroundColor(exercise.getColor());
-        if (Build.VERSION.SDK_INT >= 21) {
-            Window window = getWindow();
-//            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-//            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(exercise.getColor());
-        }
+        LocaUtils.colorStatusBar(exercise.getColor(), this);
 
         Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
         updateProgressBar();
-        this.mapboxMap.clear();
 
         switch (currentQuestion.getType()) {
             case Question.NAME_IT:
@@ -148,9 +146,7 @@ public class QuizActivity extends AppCompatActivity {
                 throw new RuntimeException("Dead end");
         }
 
-        NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
-        LocaUtils.flyToFitShape(workingArea, this.mapboxMap, LocaUtils.LONG_FLY_TIME);
-        updateToggleZoomButton(WORKING_AREA_ZOOM);
+        NodeShape workingArea = exercise.getWorkingArea();
         updateExitButton();
         nextQuestionButton.hide();
     }
@@ -202,24 +198,7 @@ public class QuizActivity extends AppCompatActivity {
                 String.format("%s:\n%s", getString(R.string.name_it), geoObject.getCategory()));
 
         updateMap_nameIt(geoObject);
-        updateAlternatives_nameIt(geoObject, currentQuestion.getContent());
-
-        NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
-        toggleZoomButton.setOnClickListener(view -> {
-            int currentZoomLevelTag = (int)toggleZoomButton.getTag();
-
-            if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
-                updateToggleZoomButton(QUESTION_ZOOM);
-                LocaUtils.flyToFitBounds(geoObject.getBounds(), mapboxMap, LocaUtils.SHORT_FLY_TIME);
-            }
-            else if (currentZoomLevelTag == QUESTION_ZOOM) {
-                updateToggleZoomButton(WORKING_AREA_ZOOM);
-                LocaUtils.flyToFitShape(workingArea, mapboxMap, LocaUtils.SHORT_FLY_TIME);
-            }
-            else {
-                throw new RuntimeException("Dead end");
-            }
-        });
+        updateAlternatives_nameIt(currentQuestion.getContent());
     }
 
     /**
@@ -227,24 +206,7 @@ public class QuizActivity extends AppCompatActivity {
      * @param geoObject
      */
     private void updateMap_nameIt(GeoObject geoObject) {
-        LocaUtils.addGeoObject(geoObject, this.mapboxMap, this);
-    }
-
-    /**
-     * @param currentZoomLevelTag
-     */
-    private void updateToggleZoomButton(int currentZoomLevelTag) {
-        if (currentZoomLevelTag == WORKING_AREA_ZOOM) {
-            toggleZoomButton.setImageResource(ZOOM_TO_ELEMENTS_ICON);
-            toggleZoomButton.setTag(WORKING_AREA_ZOOM);
-        }
-        else if (currentZoomLevelTag == QUESTION_ZOOM) {
-            toggleZoomButton.setImageResource(OVERVIEW_ZOOM_ICON);
-            toggleZoomButton.setTag(QUESTION_ZOOM);
-        }
-        else {
-            throw new RuntimeException("Dead end");
-        }
+        geoObjectMap.addGeoObject(geoObject);
     }
 
     /**
@@ -253,7 +215,7 @@ public class QuizActivity extends AppCompatActivity {
      * @param correct
      * @param alternatives
      */
-    private void updateAlternatives_nameIt(GeoObject correct, List<GeoObject> alternatives) {
+    private void updateAlternatives_nameIt(List<GeoObject> alternatives) {
         this.bottomRecycler.setLayoutManager(new GridLayoutManager(this, 2));
         AlternativesAdapter alternativesAdapter = new AlternativesAdapter(alternatives);
         bottomRecycler.setAdapter(alternativesAdapter);
@@ -284,7 +246,6 @@ public class QuizActivity extends AppCompatActivity {
             return this.geoObjectAlternatives.size();
         }
     }
-
     private class AlternativeHolder extends RecyclerView.ViewHolder {
         private GeoObject geoObjectAlternative;
         private Button button_alternative;

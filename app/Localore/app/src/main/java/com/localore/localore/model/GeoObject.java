@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
+import com.localore.localore.LocaUtils;
 
 /**
  * Class representing a geo-object. Lives inside a quiz.
@@ -70,6 +71,11 @@ public class GeoObject {
      */
     private double noCorrectAnswers = 0;
 
+    /**
+     * Color associated with this object.
+     */
+    private int color;
+
     public GeoObject() {}
 
     /**
@@ -87,11 +93,19 @@ public class GeoObject {
         }
 
         this.quizId = -1;
+        this.color = generateColor();
     }
     public class BuildException extends Exception {
         public BuildException(String msg, List<String> instr) {
             super(msg + "\n" + Arrays.toString(instr.toArray()));
         }
+    }
+
+    /**
+     * @return A relevant color of this object.
+     */
+    private int generateColor() {
+        return LocaUtils.randomNonGrayColor();
     }
 
     /**
@@ -292,6 +306,14 @@ public class GeoObject {
 
     public void setNoCorrectAnswers(double noCorrectAnswers) {
         this.noCorrectAnswers = noCorrectAnswers;
+    }
+
+    public int getColor() {
+        return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
     }
 
     /**
