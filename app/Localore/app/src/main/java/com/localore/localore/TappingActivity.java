@@ -19,6 +19,7 @@ import com.localore.localore.model.NodeShape;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.SessionControl;
 import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
 
 import java.util.List;
 
@@ -82,14 +83,14 @@ public class TappingActivity extends AppCompatActivity {
         MenuItem item = menu.findItem(R.id.menuItem_switch_tapping);
         RelativeLayout layout = (RelativeLayout)item.getActionView();
         Switch switch_tapping = layout.findViewById(R.id.switch_tapping);
-        boolean nextLevelObjects = switch_tapping.isChecked();
 
         mapView.getMapAsync(mapboxMap -> {
             NodeShape workingArea = SessionControl.loadExercise(this).getWorkingArea();
             boolean showBorder = true;
             FloatingActionButton toggleZoomButton = findViewById(R.id.button_tapping_toggleZoom);
-            geoObjectMap = new GeoObjectMap(mapboxMap, Color.GRAY, workingArea, showBorder, toggleZoomButton, this);
-            geoObjectMap.flyToOverview(GeoObjectMap.LONG_FLY_TIME);
+            geoObjectMap = new GeoObjectMap(mapboxMap, GeoObjectMap.GEO_OBJECT_PROPERTY_COLOR, workingArea, showBorder, toggleZoomButton, this);
+
+            boolean nextLevelObjects = switch_tapping.isChecked();
             updateMap(nextLevelObjects);
 
             geoObjectMap.setOnGeoObjectClick(new GeoObjectMap.OnGeoObjectClickListener() {
@@ -103,8 +104,8 @@ public class TappingActivity extends AppCompatActivity {
                 @Override
                 public void onGeoObjectClick(long geoObjectId) {
                     GeoObject geoObject = AppDatabase.getInstance(TappingActivity.this).geoDao().load(geoObjectId);
-                    //geoObjectMap.blinkGeoObject(geoObjectId);
-                    geoObjectMap.flashGeoObjectInColor(geoObject.getId(), geoObject.getColor());
+                    geoObjectMap.blinkGeoObject(geoObjectId);
+                    //geoObjectMap.flashGeoObjectInColor(geoObject);
 
                     String str = String.format("%s (%s)",
                             geoObject.getName(),
@@ -114,6 +115,7 @@ public class TappingActivity extends AppCompatActivity {
 
                 @Override
                 public void onWorkingAreaBorderClick() {
+                    geoObjectMap.blinkGeoObject(GeoObjectMap.BORDER_OBJECT_ID);
                     Toast.makeText(TappingActivity.this, R.string.exercise_border, Toast.LENGTH_LONG).show();
                 }
             });
@@ -139,10 +141,13 @@ public class TappingActivity extends AppCompatActivity {
      * @param nextLevelObjects Next vs pasts level objects.
      */
     private void updateMap(boolean nextLevelObjects) {
+        geoObjectMap.clearGeoObjects();
+
         AppDatabase db = AppDatabase.getInstance(this);
         List<GeoObject> geoObjects = ExerciseControl.loadGeoObjectsForTapping(
                 exercise.getId(), quizCategoryType, nextLevelObjects, db);
         geoObjectMap.addGeoObjects(geoObjects);
+        geoObjectMap.flyToOverview(GeoObjectMap.LONG_FLY_TIME);
 
         if (nextLevelObjects)
             Toast.makeText(TappingActivity.this, "Next level", Toast.LENGTH_SHORT).show();

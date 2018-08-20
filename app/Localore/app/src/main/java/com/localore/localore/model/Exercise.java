@@ -65,7 +65,7 @@ public class Exercise {
         this.userId = userId;
         this.name = name;
         this.workingArea = workingArea;
-        this.color = LocaUtils.randomColor();
+        this.color = LocaUtils.randomNonGrayColor();
     }
 
     public long getId() {

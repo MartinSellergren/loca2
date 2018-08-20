@@ -5,8 +5,8 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.location.Location;
 import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 
 import com.localore.localore.model.GeoObject;
@@ -27,35 +27,44 @@ import com.mapbox.mapboxsdk.maps.MapboxMap;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Wrapper of the MapboxMap for displaying geo-objects represented as markers and poly-lines.
+ * Wrapper of the MapboxMap for displaying geo-objects represented as markers and poly-lines-annotations.
+ * Annotations are normally colored after the standard-geo-object-color value of the map (which may be
+ * individual colors based on geo-object-property). They can also be set to any color but toggling
+ * between colors etc will not work as expected.
+ *
  * (Not persistent, so recreate when Activity created).
  */
 public class GeoObjectMap {
     /**
      * Side-length of an icon of a node (diameter of circle).
      */
-    private static final int NODE_ICON_SIDE_LENGTH = 30;
+    private static final int NODE_INSIDE_WAY_ICON_SIDE_LENGTH = 20;
+    private static final int STANDALONE_NODE_ICON_SIDE_LENGTH = 50;
 
-    private final int workingAreaPolylineId = -1;
+    public static final int GEO_OBJECT_PROPERTY_COLOR = -1;
+    public static final int BORDER_OBJECT_ID = -2;
 
     /**
      * Time used when objects are blinked/flashed..
      */
-    private static final int BLINK_TIME = 300;
+//    public static final int BLINK_TIME_LONG = 2000;
+//    public static final int BLINK_TIME_SHORT = 1000;
+    public static final int BLINK_TIME = 300;
+    public static final int FLASH_TIME = 1000;
 
     private MapboxMap mapboxMap;
-    private List<GeoObject> geoObjects;
     private NodeShape border;
     private FloatingActionButton toggleZoomButton;
     private Context context;
 
     /**
-     * Default display-color of all geo-objects. -1 means individual colors based on
-     * geo-object's property-color.
+     * Default display-color of all geo-objects. May be GEO_OBJECT_PROPERTY_COLOR for individual
+     * colors based on geo-object's property-color.
      */
     private int defaultGeoObjectColor;
 
@@ -77,25 +86,40 @@ public class GeoObjectMap {
      * @param context
      */
     public GeoObjectMap(MapboxMap mapboxMap, int defaultGeoObjectColor, NodeShape border, boolean showBorder,
-                        FloatingActionButton toggleZoomButton, Context context) {
+                        @Nullable FloatingActionButton toggleZoomButton, Context context) {
         mapboxMap.clear();
         this.mapboxMap = mapboxMap;
         this.defaultGeoObjectColor = defaultGeoObjectColor;
-        this.geoObjects = new ArrayList<>();
         this.border = border;
         this.toggleZoomButton = toggleZoomButton;
         this.context = context;
 
-        if (showBorder)
-            addPolyline(border.getNodes(), workingAreaPolylineId, Color.LTGRAY);
+        if (showBorder) {
+            addPolyline(border.asClosed().getNodes(), BORDER_OBJECT_ID, Color.LTGRAY);
+        }
 
-        setToggleZoomButton(OVERVIEW_ZOOM);
-        toggleZoomButton.setOnClickListener(view -> {
-            onToggleZoomClick();
-        });
+        if (toggleZoomButton != null) {
+            setToggleZoomButton(OVERVIEW_ZOOM);
+            toggleZoomButton.setOnClickListener(view -> {
+                onToggleZoomClick();
+            });
+        }
     }
 
-    //region zoom-toggle-button
+    /**
+     * Remove all geo-objects. Keep border if present.
+     */
+    public void clearGeoObjects() {
+        boolean showBorder = getKeysFromValue(BORDER_OBJECT_ID, polylinesLookupMap).size() != 0;
+        mapboxMap.clear();
+        markersLookupMap.clear();
+        polylinesLookupMap.clear();
+
+        if (showBorder)
+            addPolyline(border.asClosed().getNodes(), BORDER_OBJECT_ID, Color.LTGRAY);
+    }
+
+    //region Zoom-toggle-button
     private static final int OVERVIEW_ZOOM = 0;
     private static final int OBJECTS_ZOOM = 1;
     private static final int ZOOM_TO_OBJECTS_ICON = android.R.drawable.ic_menu_search;
@@ -128,7 +152,7 @@ public class GeoObjectMap {
             flyToObjects(SHORT_FLY_TIME);
         }
         else if (currentZoomId == OBJECTS_ZOOM) {
-            setToggleZoomButton(OBJECTS_ZOOM);
+            setToggleZoomButton(OVERVIEW_ZOOM);
             flyToOverview(SHORT_FLY_TIME);
         }
         else {
@@ -153,51 +177,72 @@ public class GeoObjectMap {
     /**
      * Adds a geo-object to the map. Also updates id-maps if not null.
      * @param geoObject
+     * @param color
      * @return Added stuff.
      */
-    public void addGeoObject(GeoObject geoObject) {
-        double SMALL_SIDE_LENGTH = 100; //meters
-        int color = defaultGeoObjectColor == -1 ? geoObject.getColor() : defaultGeoObjectColor;
-
-        for (NodeShape nodeShape : geoObject.getShapes()) {
-            double[] bounds = nodeShape.getBounds();
-            double[] ws = new double[]{bounds[0], bounds[1]};
-            double[] es = new double[]{bounds[2], bounds[1]};
-            double[] wn = new double[]{bounds[0], bounds[3]};
-
-            if (nodeShape.getNodes().size() == 1) {
-                addMarker(nodeShape.getNodes().get(0), geoObject.getId(), color);
-            }
-            else if (LocaUtils.distance(ws, es) < SMALL_SIDE_LENGTH &&
-                    LocaUtils.distance(ws, wn) < SMALL_SIDE_LENGTH) {
-                addMarker(nodeShape.getCenter(), geoObject.getId(), color);
-            }
-            else {
-                nodeShape = nodeShape.isClosed() ? nodeShape.asExtraClosed() : nodeShape;
-                addPolyline(nodeShape.getNodes(), geoObject.getId(), color);
+    public void addGeoObject(GeoObject geoObject, int color) {
+        if (geoObject.isNode()) {
+            addMarker(geoObject.getNodes().get(0), geoObject.getId(), color, STANDALONE_NODE_ICON_SIDE_LENGTH);
+        }
+        else if (useMarkerSize(geoObject.getBounds())) {
+            addMarker(geoObject.getCenter(), geoObject.getId(), color, STANDALONE_NODE_ICON_SIDE_LENGTH);
+        }
+        else {
+            for (NodeShape nodeShape : geoObject.getShapes()) {
+                if (nodeShape.getNodes().size() == 1) {
+                    addMarker(nodeShape.getNodes().get(0), geoObject.getId(), color, NODE_INSIDE_WAY_ICON_SIDE_LENGTH);
+                }
+                else if (useMarkerSize(nodeShape.getBounds())) {
+                    addMarker(nodeShape.getCenter(), geoObject.getId(), color, NODE_INSIDE_WAY_ICON_SIDE_LENGTH);
+                }
+                else {
+                    nodeShape = nodeShape.isClosed() ? nodeShape.asExtraClosed() : nodeShape;
+                    addPolyline(nodeShape.getNodes(), geoObject.getId(), color);
+                }
             }
         }
     }
 
     /**
+     * Geo-objects/ node-shapes with bounds of bs or less should be displayed as a single
+     * marker on the map - if this function returns true.
+     * @param bounds
+     * @return True if use marker.
+     */
+    private boolean useMarkerSize(double[] bounds) {
+        double SMALL_SIDE_LENGTH = 100; //meters
+
+        double[] ws = new double[]{bounds[0], bounds[1]};
+        double[] es = new double[]{bounds[2], bounds[1]};
+        double[] wn = new double[]{bounds[0], bounds[3]};
+        return LocaUtils.distance(ws, es) < SMALL_SIDE_LENGTH &&
+                LocaUtils.distance(ws, wn) < SMALL_SIDE_LENGTH;
+    }
+
+    public void addGeoObject(GeoObject geoObject) {
+        int color = defaultGeoObjectColor == GEO_OBJECT_PROPERTY_COLOR ? geoObject.getColor() : defaultGeoObjectColor;
+        addGeoObject(geoObject, color);
+    }
+
+    /**
      * Adds a marker. Updates id-map if not null.
      * @param node
-     * @param geoObjectId
+     * @param geoObjectId -1 of not part of a geo-object.
      * @param color
      */
-    public Marker addMarker(double[] node, long geoObjectId, int color) {
+    public Marker addMarker(double[] node, long geoObjectId, int color, int diameter) {
         Marker marker = mapboxMap.addMarker(new MarkerOptions()
-                .icon(generateNodeIcon(color))
+                .icon(generateNodeIcon(color, diameter))
                 .position(toLatLng(node)));
 
-        this.markersLookupMap.put(marker.getId(), geoObjectId);
+        if (geoObjectId != -1) this.markersLookupMap.put(marker.getId(), geoObjectId);
         return marker;
     }
 
     /**
      * Adds a polyline. Updates id-map if not null.
      * @param nodes
-     * @param geoObjectId
+     * @param geoObjectId -1 of not part of a geo-object.
      * @param color
      */
     public Polyline addPolyline(List<double[]> nodes, long geoObjectId, int color) {
@@ -208,25 +253,63 @@ public class GeoObjectMap {
                 .color(color)
                 .width( GEO_OBJECT_LINE_WIDTH ));
 
-        this.polylinesLookupMap.put(polyline.getId(), geoObjectId);
+        if (geoObjectId != -1) this.polylinesLookupMap.put(polyline.getId(), geoObjectId);
         return polyline;
     }
 
+    //endregion
+
+    //region create a node-icon
+
     /**
      * @param color
+     * @param diameter
      * @return Icon of a node-geo-object.
      */
-    private Icon generateNodeIcon(int color) {
-        int s = NODE_ICON_SIDE_LENGTH;
+    private Icon generateNodeIcon(int color, int diameter) {
+        return LocaUtils.generateCircleIcon(color, diameter, context);
+    }
 
-        Bitmap.Config conf = Bitmap.Config.ARGB_8888;
-        Bitmap bmp = Bitmap.createBitmap(s, s, conf);
-        Canvas canvas = new Canvas(bmp);
-        Paint paint = new Paint();
-        paint.setColor(color);
-        canvas.drawCircle(s, s, s/2f, paint);
+    //endregion
 
-        return IconFactory.getInstance(context).fromBitmap(bmp);
+    //region Remove geo-objects
+
+
+    /**
+     * @param geoObjectId
+     */
+    public void removeGeoObject(long geoObjectId) {
+        List<Annotation> annotations = geoObjectAnnotations(geoObjectId);
+        mapboxMap.removeAnnotations(annotations);
+
+        for (long markerId : getKeysFromValue(geoObjectId, markersLookupMap)) {
+            markersLookupMap.remove(markerId);
+        }
+        for (long polylineId : getKeysFromValue(geoObjectId, polylinesLookupMap)) {
+            polylinesLookupMap.remove(polylineId);
+        }
+    }
+
+    /**
+     * Remove all except one.
+     * @param geoObjectId
+     */
+    public void removeAllGeoObjectsExcept(long geoObjectId) {
+        for (Iterator<Map.Entry<Long, Long>> iterator = markersLookupMap.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry<Long, Long> entry = iterator.next();
+            if (entry.getValue() != geoObjectId) {
+                iterator.remove();
+                mapboxMap.removeAnnotation(entry.getKey());
+            }
+        }
+
+        for (Iterator<Map.Entry<Long, Long>> iterator = polylinesLookupMap.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry<Long, Long> entry = iterator.next();
+            if (entry.getValue() != geoObjectId) {
+                iterator.remove();
+                mapboxMap.removeAnnotation(entry.getKey());
+            }
+        }
     }
 
     //endregion
@@ -253,11 +336,17 @@ public class GeoObjectMap {
      * Fit all object in camera-view.
      */
     public void flyToOverview(int flyTime) {
-        flyToFitBounds(border.getBounds(), flyTime);
+        flyToFitBounds(toLatLngBounds(border.getBounds()), flyTime);
     }
 
     public void flyToObjects(int flyTime) {
-        flyToFitBounds(GeoObject.getBounds(geoObjects), flyTime);
+        List<Annotation> annotations = mapboxMap.getAnnotations();
+        if (annotations.size() == 0) flyToOverview(flyTime);
+        else {
+            List<LatLng> allLatLngs = allPoints(annotations);
+            LatLngBounds bounds = new LatLngBounds.Builder().includes(allLatLngs).build();
+            flyToFitBounds(bounds, flyTime);
+        }
     }
 
     /**
@@ -270,12 +359,11 @@ public class GeoObjectMap {
 
     /**
      * Move camera gradually to fit the bounds including padding.
-     * @param bs
+     * @param bounds
      * @param flyTime
      */
-    private void flyToFitBounds(double[] bs, int flyTime) {
-        LatLngBounds latLngBounds = toLatLngBounds(bs);
-        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(latLngBounds, CAMERA_FITTING_PADDING);
+    private void flyToFitBounds(LatLngBounds bounds, int flyTime) {
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, CAMERA_FITTING_PADDING);
         CameraPosition cameraPosition = cameraUpdate.getCameraPosition(mapboxMap);
 
         if (cameraPosition.zoom > CAMERA_FITTING_MAX_ZOOM) {
@@ -298,10 +386,6 @@ public class GeoObjectMap {
                 .build();
 
         map.animateCamera(CameraUpdateFactory.newCameraPosition(position), flyTime);
-    }
-    private void flyToLocation(Location location, double zoom, MapboxMap map, int flyTime) {
-        LatLng latLng = toLatLng(new double[]{location.getLongitude(), location.getLatitude()});
-        flyToLocation(latLng, zoom, map, flyTime);
     }
 
     //endregion
@@ -340,7 +424,7 @@ public class GeoObjectMap {
 
     //endregion
 
-    //region geo-object -> annotations
+    //region Geo-object -> annotations
 
     /**
      * @param geoObjectId
@@ -395,13 +479,30 @@ public class GeoObjectMap {
 
     //endregion
 
-    //region blink annotations
+    //region Blink geo-objects
 
 
     /**
-     * Remove, then add geo-object.
+     * Briefly displays a geo-object not currently in the map.
+     * @param geoObject
+     */
+    public void flashGeoObject(GeoObject geoObject, int color) {
+        if (isInMap(geoObject.getId())) return;
+
+        int displayTime = 1500;
+        addGeoObject(geoObject, color);
+        new Handler().postDelayed(() -> removeGeoObject(geoObject.getId()), displayTime);
+    }
+    public void flashGeoObject(GeoObject geoObject) {
+        flashGeoObject(geoObject, geoObject.getColor());
+    }
+
+    /**
+     * Hide, then show a geo-object in the map.
      */
     public void blinkGeoObject(long geoObjectId) {
+        if (!isInMap(geoObjectId)) return;
+
         List<Icon> markerIcons = new ArrayList<>();
         List<Integer> polylineColors = new ArrayList<>();
 
@@ -422,6 +523,8 @@ public class GeoObjectMap {
         }
 
         new Handler().postDelayed(() -> {
+            if (!isInMap(geoObjectId)) return;
+
             for (Annotation annotation : geoObjectAnnotations(geoObjectId)) {
                 if (annotation instanceof Marker) {
                     Marker marker = (Marker)annotation;
@@ -439,23 +542,37 @@ public class GeoObjectMap {
     }
 
     /**
-     * Briefly change color of geo-object.
-     * @param geoObjectId
+     * Briefly change color of geo-object in the map. The back again to default-geo-object-color (map-defined).
+     * @param geoObject
      */
-    public void flashGeoObjectInColor(long geoObjectId, int color) {
-        setGeoObjectColor(geoObjectId, color);
-        new Handler().postDelayed(() -> setGeoObjectColor(geoObjectId, defaultGeoObjectColor), BLINK_TIME);
+    public void flashGeoObjectInColor(GeoObject geoObject, int color) {
+        if (!isInMap(geoObject.getId())) return;
+
+        setGeoObjectColor(geoObject, color);
+        new Handler().postDelayed(() -> {
+            if (!isInMap(geoObject.getId())) return;
+            setGeoObjectColor(geoObject, defaultGeoObjectColor);
+        }, FLASH_TIME);
+    }
+    public void flashGeoObjectInColor(GeoObject geoObject) {
+        flashGeoObjectInColor(geoObject, geoObject.getColor());
     }
 
     /**
-     * @param geoObjectId
+     * Sets new color of geo-object in map.
+     * @param geoObject
      * @param color
      */
-    public void setGeoObjectColor(long geoObjectId, int color) {
-        for (Annotation annotation : geoObjectAnnotations(geoObjectId)) {
+    public void setGeoObjectColor(GeoObject geoObject, int color) {
+        if (!isInMap(geoObject.getId())) return;
+
+        color = color == GEO_OBJECT_PROPERTY_COLOR ? geoObject.getColor() : color;
+        for (Annotation annotation : geoObjectAnnotations(geoObject.getId())) {
             if (annotation instanceof Marker) {
                 Marker marker = (Marker)annotation;
-                marker.setIcon(generateNodeIcon(color));
+                Icon currentIcon = marker.getIcon();
+                int currentIconDiameter = currentIcon.getBitmap().getWidth();
+                marker.setIcon(generateNodeIcon(color, currentIconDiameter));
                 mapboxMap.updateMarker(marker);
             }
             else if (annotation instanceof  Polyline) {
@@ -468,10 +585,13 @@ public class GeoObjectMap {
             }
         }
     }
+    public void setGeoObjectColor(GeoObject geoObject) {
+        setGeoObjectColor(geoObject, geoObject.getColor());
+    }
 
     //endregion
 
-    //region working area highlighting fail
+    //region Working area highlighting fail
 //    /**
 //     * @param mapboxMap
 //     * @param workingArea
@@ -540,7 +660,7 @@ public class GeoObjectMap {
 
     //endregion
 
-    //region map-interaction
+    //region Map-interaction
 
     /**
      * Specify action when an object is clicked.
@@ -550,8 +670,6 @@ public class GeoObjectMap {
         mapboxMap.setOnMarkerClickListener(marker -> {
             Long geoObjectId = markersLookupMap.get(marker.getId());
             if (geoObjectId == null) return true;
-
-            if (geoObjectId == workingAreaPolylineId) listener.onWorkingAreaBorderClick();
             else listener.onGeoObjectClick(geoObjectId);
             return true;
         });
@@ -559,8 +677,7 @@ public class GeoObjectMap {
         mapboxMap.setOnPolylineClickListener(polyline -> {
             Long geoObjectId = polylinesLookupMap.get(polyline.getId());
             if (geoObjectId == null) return;
-
-            if (geoObjectId == workingAreaPolylineId) listener.onWorkingAreaBorderClick();
+            if (geoObjectId == BORDER_OBJECT_ID) listener.onWorkingAreaBorderClick();
             else listener.onGeoObjectClick(geoObjectId);
         });
     }
@@ -568,6 +685,48 @@ public class GeoObjectMap {
     public interface OnGeoObjectClickListener {
         void onGeoObjectClick(long geoObjectId);
         default void onWorkingAreaBorderClick() {}
+    }
+
+    //endregion
+
+    //region Utils
+
+    /**
+     * @param geoObjectId
+     * @return True if geoObject is currently in the map.
+     */
+    public boolean isInMap(long geoObjectId) {
+        return getKeysFromValue(geoObjectId, markersLookupMap).size() > 0 ||
+                getKeysFromValue(geoObjectId, polylinesLookupMap).size() > 0;
+    }
+
+    /**
+     * Remove map-listeners.
+     */
+    public void removeMapListeners() {
+        mapboxMap.setOnMarkerClickListener(null);
+        mapboxMap.setOnPolylineClickListener(null);
+    }
+
+    /**
+     * @param annotations Markers and poly-lines.
+     * @return All points making up annotations.
+     */
+    private List<LatLng> allPoints(List<Annotation> annotations) {
+        List<LatLng> latLngs = new ArrayList<>();
+
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof Marker) {
+                latLngs.add(((Marker)annotation).getPosition());
+            }
+            else if (annotation instanceof Polyline) {
+                latLngs.addAll(((Polyline)annotation).getPoints());
+            }
+            else {
+                throw new RuntimeException("Dead end");
+            }
+        }
+        return latLngs;
     }
 
     //endregion

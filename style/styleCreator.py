@@ -69,8 +69,11 @@ if __name__ == '__main__':
     setOwnerAndVisibility(data)
     setDefaultViewport(data)
 
-    removeAllLabels(data)
-
     name = 'loca-default-map-style'
+    setName(data, name)
+    dumpStyle(data, name)
+
+    removeAllLabels(data)
+    name = 'loca-default-map-style_noLabels'
     setName(data, name)
     dumpStyle(data, name)

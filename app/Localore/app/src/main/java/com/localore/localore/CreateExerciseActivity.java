@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -22,6 +23,7 @@ import android.view.View;
 import android.widget.EditText;
 
 import com.localore.localore.model.AppDatabase;
+import com.localore.localore.model.GeoObject;
 import com.localore.localore.model.NodeShape;
 import com.localore.localore.modelManipulation.SessionControl;
 import com.mapbox.mapboxsdk.annotations.Icon;
@@ -103,18 +105,14 @@ public class CreateExerciseActivity extends AppCompatActivity {
         this.button_clearNodes = findViewById(R.id.button_clearNodes);
         this.button_validZoom = findViewById(R.id.button_validZoom);
 
-        this.WORKING_AREA_NODE_ICON =
-                IconFactory.getInstance(CreateExerciseActivity.this).fromResource(R.drawable.mapbox_marker_icon_default);
-        this.WORKING_AREA_NODE_ICON_FRONTIER =
-                IconFactory.getInstance(CreateExerciseActivity.this).fromResource(R.drawable.purple_marker);
+        int iconDim = 64;
+        this.WORKING_AREA_NODE_ICON = LocaUtils.generateCircleIcon(Color.GREEN, iconDim, this);
+        this.WORKING_AREA_NODE_ICON_FRONTIER = LocaUtils.generateCircleIcon(Color.BLUE, iconDim+5, this);
 
         mapView.onCreate(null);
-        mapView.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(MapboxMap mapboxMap) {
-                CreateExerciseActivity.this.mapboxMap = mapboxMap;
-                initializeMap();
-            }
+        mapView.getMapAsync(mapboxMap -> {
+            CreateExerciseActivity.this.mapboxMap = mapboxMap;
+            initializeMap();
         });
     }
 
@@ -213,20 +211,20 @@ public class CreateExerciseActivity extends AppCompatActivity {
             String locationProvider = LocationManager.GPS_PROVIDER;
             Location location = locationManager.getLastKnownLocation(locationProvider);
             if (location != null) {
-                LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL + 0.001, mapboxMap, LocaUtils.LONG_FLY_TIME);
+                flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL + 0.001, GeoObjectMap.LONG_FLY_TIME);
                 return;
             }
 
             locationProvider = LocationManager.NETWORK_PROVIDER;
             location = locationManager.getLastKnownLocation(locationProvider);
             if (location != null) {
-                LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL + 0.001, mapboxMap, LocaUtils.LONG_FLY_TIME);
+                flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL + 0.001, GeoObjectMap.LONG_FLY_TIME);
                 return;
             }
 
             LocationListener locationListener = new LocationListener() {
                 public void onLocationChanged(Location location) {
-                    LocaUtils.flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL + 0.001, mapboxMap, LocaUtils.LONG_FLY_TIME);
+                    flyToLocation(location, MIN_WORKING_AREA_ZOOM_LEVEL + 0.001, GeoObjectMap.LONG_FLY_TIME);
                     locationManager.removeUpdates(this);
                 }
 
@@ -244,6 +242,22 @@ public class CreateExerciseActivity extends AppCompatActivity {
                     LocationManager.NETWORK_PROVIDER, Integer.MAX_VALUE, Integer.MAX_VALUE, locationListener);
         }
         catch (SecurityException e) {}
+    }
+
+    /**
+     * Fly to specified location on map.
+     * @param location
+     * @param zoom
+     * @param flyTime
+     */
+    private void flyToLocation(Location location, double zoom, int flyTime) {
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        CameraPosition position = new CameraPosition.Builder()
+                .target(latLng)
+                .zoom(zoom)
+                .build();
+
+        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), flyTime);
     }
 
     /**
@@ -394,7 +408,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
                 .zoom(MIN_WORKING_AREA_ZOOM_LEVEL + 0.001)
                 .build();
 
-        this.mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), LocaUtils.SHORT_FLY_TIME);
+        this.mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), GeoObjectMap.SHORT_FLY_TIME);
     }
 
     /**

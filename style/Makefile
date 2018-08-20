@@ -1,7 +1,8 @@
 USER_NAME = masel
 TOKEN = sk.eyJ1IjoibWFzZWwiLCJhIjoiY2pkM2YwYXlvMncyZTMzczYzbXJ1Mzd3ayJ9.OBMENh5mWq6iwPZut8s0iw
 BASE_MAP_ID = streets-v10
-LOCA_DEFAULT_MAP_ID = cjkyl6he503zy2rptne68047q
+LOCA_DEFAULT_MAP_ID = cjl2kpdyg2xia2so7gs7lxmq3
+LOCA_DEFAULT_MAP_ID_noLabels = cjkyl6he503zy2rptne68047q
 
 all: clean fetch generate update
 
@@ -15,6 +16,7 @@ generate:
 
 update:
 	curl -X PATCH "https://api.mapbox.com/styles/v1/$(USER_NAME)/$(LOCA_DEFAULT_MAP_ID)?access_token=$(TOKEN)" --data @loca-default-map-style.json --header "Content-Type:application/json"
+	curl -X PATCH "https://api.mapbox.com/styles/v1/$(USER_NAME)/$(LOCA_DEFAULT_MAP_ID_noLabels)?access_token=$(TOKEN)" --data @loca-default-map-style_noLabels.json --header "Content-Type:application/json"
 
 #remove generated
 clean:

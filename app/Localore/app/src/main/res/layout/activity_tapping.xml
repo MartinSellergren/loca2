@@ -16,7 +16,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        mapbox:mapbox_styleUrl="@string/default_map_style"
+        mapbox:mapbox_styleUrl="@string/default_map_style_noLabels"
         mapbox:mapbox_cameraTargetLat="0"
         mapbox:mapbox_cameraTargetLng="0"
         mapbox:mapbox_cameraZoom="0"

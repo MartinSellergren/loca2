@@ -3,7 +3,10 @@ package com.localore.localore;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.location.Location;
@@ -36,6 +39,8 @@ import com.localore.localore.model.RunningQuiz;
 import com.localore.localore.model.Session;
 import com.localore.localore.model.User;
 import com.localore.localore.modelManipulation.SessionControl;
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 
 import java.io.InputStream;
@@ -319,9 +324,11 @@ public class LocaUtils {
      * @return An randomly generated non-gray color.
      */
     public static int randomNonGrayColor() {
-        int v0 = randi(256);
-        int v1 = randi(256);
-        int v2 = randi(2) == 0 ? 0 : 255;
+        int min = 50;
+
+        int v0 = min + randi(256 - min);
+        int v1 = min + randi(256 - min);
+        int v2 = 255;//randi(2) == 0 ? 0 : 255;
 
         int constellation = randi(6);
         if (constellation == 0) return Color.argb(255, v0, v1, v2);
@@ -423,6 +430,23 @@ public class LocaUtils {
                 return result;
             }
         }
+    }
+
+    /**
+     * @param color
+     * @param diameter
+     * @param context
+     * @return Circle shaped icon.
+     */
+    public static Icon generateCircleIcon(int color, int diameter, Context context) {
+        Bitmap.Config conf = Bitmap.Config.ARGB_8888;
+        Bitmap bmp = Bitmap.createBitmap(diameter, diameter, conf);
+        Canvas canvas = new Canvas(bmp);
+        Paint paint = new Paint();
+        paint.setColor(color);
+        canvas.drawCircle(diameter/2f, diameter/2f, diameter/2f, paint);
+
+        return IconFactory.getInstance(context).fromBitmap(bmp);
     }
 
     //region Logging
