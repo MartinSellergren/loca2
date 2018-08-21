@@ -14,8 +14,9 @@ TODO:
 - toString() reflection
 - trust bad overpass.certificates
 
-- Predefined exercise-areas, progress sharing.
+- Predefined exercise-areas, progress sharing
 - Change theme/ map-theme
+- Exercise persistance through app-uninstalls
 
 
 KNOWN BUGS:
