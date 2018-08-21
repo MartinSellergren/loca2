@@ -214,7 +214,7 @@ public class QuizActivity extends AppCompatActivity {
             correctHolder.setCorrect();
             nextQuestionButton.show();
 
-            Toast.makeText(this, R.string.times_up, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.times_up, Toast.LENGTH_LONG).show();
         });
     }
 
@@ -318,6 +318,7 @@ public class QuizActivity extends AppCompatActivity {
      */
     private void onAnswer_nameIt(AlternativeHolder clickedHolder, boolean correct) {
         if (correct) {
+            geoObjectMap.boostGeoObjectSize(clickedHolder.getGeoObject(), this);
             hideAllAlternativesExcept(clickedHolder);
             clickedHolder.setCorrect();
             nextQuestionButton.show();
@@ -394,7 +395,7 @@ public class QuizActivity extends AppCompatActivity {
             geoObjectMap.removeMapListeners();
             nextQuestionButton.show();
 
-            Toast.makeText(this, R.string.times_up, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.times_up, Toast.LENGTH_LONG).show();
         });
     }
 
@@ -422,6 +423,7 @@ public class QuizActivity extends AppCompatActivity {
     private void onAnswer_placeIt(GeoObject answeredGeoObject, boolean correct) {
         if (correct) {
             geoObjectMap.setGeoObjectColor(answeredGeoObject);
+            geoObjectMap.boostGeoObjectSize(answeredGeoObject, this);
             geoObjectMap.removeAllGeoObjectsExcept(answeredGeoObject.getId());
             geoObjectMap.removeMapListeners();
 
@@ -466,7 +468,7 @@ public class QuizActivity extends AppCompatActivity {
             RunningQuizControl.reportIncorrectPairItAnswer(this);
             geoObjectMap.removeMapListeners();
             nextQuestionButton.show();
-            Toast.makeText(this, R.string.times_up, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.times_up, Toast.LENGTH_LONG).show();
         });
     }
 //
@@ -664,12 +666,14 @@ public class QuizActivity extends AppCompatActivity {
 
         if (correct) {
             geoObjectMap.setGeoObjectColor(clickedGeoObject);
-            boolean allDone = allTopItemsPaired();
-            if (allDone) timer.stop();
+            geoObjectMap.boostGeoObjectSize(clickedGeoObject, this);
             new Handler().postDelayed(() -> {
                 geoObjectMap.removeGeoObject(clickedGeoObject.getId());
                 selectedHolder.setPaired();
-                if (allDone) nextQuestionButton.show();
+                if (allTopItemsPaired()) {
+                    nextQuestionButton.show();
+                    timer.stop();
+                }
             }, GeoObjectMap.FLASH_TIME);
 
             String correctText = String.format("%s %s", getString(R.string.correct), clickedGeoObject.getName());
@@ -738,6 +742,7 @@ public class QuizActivity extends AppCompatActivity {
 
         int type = RunningQuizControl.load(this).getType();
         if (type != RunningQuiz.FOLLOW_UP_QUIZ) {
+            timer.stop();
             QuizResultActivity.start(this);
         }
         else {
@@ -863,6 +868,7 @@ public class QuizActivity extends AppCompatActivity {
      * Only way out! (unless follow-up).
      */
     public void backToExercise() {
+        timer.stop();
         AppDatabase db = AppDatabase.getInstance(activity);
         RunningQuizControl.deleteRunningQuiz(activity);
         ExerciseActivity.start(SessionControl.load(db).getExerciseId(), activity);

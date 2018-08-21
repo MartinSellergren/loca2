@@ -324,11 +324,11 @@ public class LocaUtils {
      * @return An randomly generated non-gray color.
      */
     public static int randomNonGrayColor() {
-        int min = 50;
+        int min = 100;
 
-        int v0 = min + randi(256 - min);
-        int v1 = min + randi(256 - min);
-        int v2 = 255;//randi(2) == 0 ? 0 : 255;
+        int v0 = randi(256);
+        int v1 = randi(256);
+        int v2 = min + randi(256 - min);
 
         int constellation = randi(6);
         if (constellation == 0) return Color.argb(255, v0, v1, v2);
@@ -432,6 +432,11 @@ public class LocaUtils {
         }
     }
 
+
+    /**
+     * Node-icon icon size is this*this. Bigger than circle-diameters for better tapping.
+     */
+    private static final int NODE_ICON_SIDE_LENGTH = 120;
     /**
      * @param color
      * @param diameter
@@ -439,12 +444,15 @@ public class LocaUtils {
      * @return Circle shaped icon.
      */
     public static Icon generateCircleIcon(int color, int diameter, Context context) {
+        if (diameter > NODE_ICON_SIDE_LENGTH) throw new RuntimeException("Bad diameter");
+
+        int side = NODE_ICON_SIDE_LENGTH;
         Bitmap.Config conf = Bitmap.Config.ARGB_8888;
-        Bitmap bmp = Bitmap.createBitmap(diameter, diameter, conf);
+        Bitmap bmp = Bitmap.createBitmap(side, side, conf);
         Canvas canvas = new Canvas(bmp);
         Paint paint = new Paint();
         paint.setColor(color);
-        canvas.drawCircle(diameter/2f, diameter/2f, diameter/2f, paint);
+        canvas.drawCircle(side/2f, side/2f, diameter/2f, paint);
 
         return IconFactory.getInstance(context).fromBitmap(bmp);
     }

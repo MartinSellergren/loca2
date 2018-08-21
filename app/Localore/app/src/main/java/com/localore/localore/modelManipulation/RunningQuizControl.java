@@ -121,6 +121,8 @@ public class RunningQuizControl {
     public static Question loadCurrentQuestion(Context context) {
         AppDatabase db = AppDatabase.getInstance(context);
         RunningQuiz runningQuiz = RunningQuizControl.load(context);
+        if (runningQuiz == null) return null;
+
         int currentQuestionIndex = runningQuiz.getCurrentQuestionIndex();
         return db.questionDao().loadWithRunningQuizAndIndex(runningQuiz.getId(), currentQuestionIndex);
     }

@@ -203,7 +203,7 @@ public class ExerciseControl {
      * @return List with merged (if possible) geo-objects.
      */
     private static List<GeoObject> mergeMergables(List<GeoObject> sameNames) {
-        List<GeoObject> merged = new ArrayList<GeoObject>();
+        List<GeoObject> merged = new ArrayList<>();
 
         while (sameNames.size() > 0) {
             GeoObject accum = sameNames.remove(0);
@@ -243,9 +243,7 @@ public class ExerciseControl {
      * @pre g1, g2 has same (or similar) name.
      */
     private static GeoObject merge(GeoObject g1, GeoObject g2) {
-        if (!g1.getSupercat().equals(g2.getSupercat()) ||
-                !g1.getSubcat().equals(g2.getSubcat()) ||
-                g1.isNode() || g2.isNode())
+        if (!g1.getSupercat().equals(g2.getSupercat()))
             return null;
 
         double d = approximateDistance(g1, g2);
@@ -491,6 +489,9 @@ public class ExerciseControl {
 
         db.exerciseDao().delete(exercise);
         decrementExerciseDisplayIndexesAbove(exercise.getDisplayIndex(), exercise.getUserId(), db);
+
+        //just to be safe
+        SessionControl.setNoActiveExercise(db);
     }
 
     /**

@@ -44,4 +44,5 @@
     <string name="default_map_style">mapbox://styles/masel/cjl2kpdyg2xia2so7gs7lxmq3</string>
     <string name="default_map_style_noLabels">mapbox://styles/masel/cjkyl6he503zy2rptne68047q</string>
     <string name="times_up">Time\'s up!</string>
+    <string name="about_text">Created by Martin Sellergren, Uppsala University</string>
 </resources>

@@ -3,7 +3,6 @@ package com.localore.localore;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -27,7 +26,6 @@ import com.localore.localore.model.GeoObject;
 import com.localore.localore.model.NodeShape;
 import com.localore.localore.modelManipulation.SessionControl;
 import com.mapbox.mapboxsdk.annotations.Icon;
-import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.Polygon;
@@ -39,7 +37,6 @@ import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
-import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,9 +67,10 @@ public class CreateExerciseActivity extends AppCompatActivity {
     private Icon WORKING_AREA_NODE_ICON;
 
     /**
-     * Color of line-segments.
+     * Color of drawn path.
      */
-    private static final int LINE_SEGMENTS_COLOR = LocaUtils.BLUE_COLOR;
+    private static final int SEGMENTS_COLOR = LocaUtils.BLUE_COLOR;
+    private static final int FRONTIER_COLOR = Color.BLACK;
 
     /**
      * Dim-overlay over whole map.
@@ -105,9 +103,9 @@ public class CreateExerciseActivity extends AppCompatActivity {
         this.button_clearNodes = findViewById(R.id.button_clearNodes);
         this.button_validZoom = findViewById(R.id.button_validZoom);
 
-        int iconDim = 64;
-        this.WORKING_AREA_NODE_ICON = LocaUtils.generateCircleIcon(Color.GREEN, iconDim, this);
-        this.WORKING_AREA_NODE_ICON_FRONTIER = LocaUtils.generateCircleIcon(Color.BLUE, iconDim+5, this);
+        int iconDim = GeoObjectMap.STANDALONE_NODE_ICON_DIAMETER;
+        this.WORKING_AREA_NODE_ICON = LocaUtils.generateCircleIcon(SEGMENTS_COLOR, iconDim, this);
+        this.WORKING_AREA_NODE_ICON_FRONTIER = LocaUtils.generateCircleIcon(FRONTIER_COLOR, iconDim, this);
 
         mapView.onCreate(null);
         mapView.getMapAsync(mapboxMap -> {
@@ -309,7 +307,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
                     LatLng prevPoint = prevMarker.getPosition();
                     mapboxMap.addPolyline(new PolylineOptions()
                             .add(prevPoint, point)
-                            .color(LINE_SEGMENTS_COLOR)
+                            .color(SEGMENTS_COLOR)
                             .width(2));
                 }
 
@@ -324,7 +322,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
                     LatLng firstPoint = markers.get(0).getPosition();
                     mapboxMap.addPolyline(new PolylineOptions()
                             .add(point, firstPoint)
-                            .color(LINE_SEGMENTS_COLOR)
+                            .color(SEGMENTS_COLOR)
                             .width(2));
                 }
 

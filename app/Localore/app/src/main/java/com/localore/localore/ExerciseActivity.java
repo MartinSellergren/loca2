@@ -88,6 +88,7 @@ public class ExerciseActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.menuItem_selectExercise) {
+            SessionControl.setNoActiveExercise(AppDatabase.getInstance(this));
             SelectExerciseActivity.start(ExerciseActivity.this);
         }
         else if (item.getItemId() == R.id.menuItem_about) {

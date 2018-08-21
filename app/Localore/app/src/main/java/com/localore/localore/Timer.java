@@ -25,7 +25,12 @@ public class Timer {
             timerText.setText(timeLeft + "");
 
             if (timeLeft > 0) timerHandler.postDelayed(timerRunnable, 1000);
-            else onStop.run();
+            else {
+                try {
+                    onStop.run();
+                }
+                catch (Exception e) {}
+            }
         };
     }
 
@@ -53,7 +58,7 @@ public class Timer {
     public void start(int time, Runnable onStop) {
         if (timerText.getVisibility() == View.INVISIBLE) return;
 
-        this.timeLeft = time;
+        this.timeLeft = time + 1;
         this.onStop = onStop;
         timerHandler.removeCallbacks(timerRunnable);
         timerHandler.postDelayed(timerRunnable, 0);

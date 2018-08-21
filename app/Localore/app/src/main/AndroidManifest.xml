@@ -13,7 +13,7 @@
     <application
         android:name=".LocaloreApplication"
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/loca_notification_icon"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
@@ -82,7 +82,11 @@
             android:launchMode="singleTask"
             android:noHistory="true"
             android:screenOrientation="portrait" />
-        <activity android:name=".QuizResultActivity"></activity>
+        <activity
+            android:name=".QuizResultActivity"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

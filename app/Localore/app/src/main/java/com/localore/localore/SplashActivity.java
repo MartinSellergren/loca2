@@ -27,29 +27,25 @@ public class SplashActivity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.hide();
 
-        new Handler().postDelayed(new Runnable(){
-            @Override
-            public void run(){
-                AppDatabase db = AppDatabase.getInstance(SplashActivity.this);
-                Session session = SessionControl.load(db);
+        new Handler().postDelayed(() -> {
+            AppDatabase db = AppDatabase.getInstance(SplashActivity.this);
+            Session session = SessionControl.load(db);
 
-                if (session.getUserId() == -1) {
-                    //log-in / sign-up
-                }
-                else if (session.getLoadingExerciseStatus() != LoadingNewExerciseActivity.NOT_STARTED) {
-                    LoadingNewExerciseActivity.resumedStart(SplashActivity.this);
-                }
-                else if (session.getExerciseId() == -1) {
-                    SelectExerciseActivity.start(SplashActivity.this);
-                }
-                else if (RunningQuizControl.isCurrentlyRunning(SplashActivity.this)) {
-                    QuizActivity.resumedStart(SplashActivity.this);
-                }
-                else {
-                    ExerciseActivity.start(session.getExerciseId(), SplashActivity.this);
-                }
+            if (session.getUserId() == -1) {
+                //log-in / sign-up
             }
-
+            else if (session.getLoadingExerciseStatus() != LoadingNewExerciseActivity.NOT_STARTED) {
+                LoadingNewExerciseActivity.resumedStart(SplashActivity.this);
+            }
+            else if (session.getExerciseId() == -1) {
+                SelectExerciseActivity.start(SplashActivity.this);
+            }
+            else if (RunningQuizControl.isCurrentlyRunning(SplashActivity.this)) {
+                QuizActivity.resumedStart(SplashActivity.this);
+            }
+            else {
+                ExerciseActivity.start(session.getExerciseId(), SplashActivity.this);
+            }
         }, DISPLAY_TIME);
     }
 }
