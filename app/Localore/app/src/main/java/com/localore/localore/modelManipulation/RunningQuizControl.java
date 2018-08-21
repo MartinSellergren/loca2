@@ -626,6 +626,8 @@ public class RunningQuizControl {
      * Only updates n.o exercise-reminders if enough quizzes passed since last time required.
      * If new exercise-require: set n.o passed levels since exercise-reminder to zero.
      *
+     * No reminders if progress 100% (of exercise/ quiz-category).
+     *
      * @param exercise
      * @param quizCategory
      * @param db
@@ -633,12 +635,20 @@ public class RunningQuizControl {
     private static void setNoRequiredReminders(Exercise exercise, QuizCategory quizCategory, AppDatabase db) {
         //todo: based on n.o problematic/ old words (not random)
 
+        if (ExerciseControl.progressOfExercise(exercise.getId(), db) == 100) return;
+
         if (exercise.getNoPassedLevelsSinceExerciseReminder() >= NO_PASSED_LEVELS_BEFORE_EXERCISE_REMINDER) {
             int noExerciseReminders = LocaUtils.randi(MIN_NO_EXERCISE_REMINDERS, MAX_NO_EXERCISE_REMINDERS + 1);
             exercise.setNoRequiredExerciseReminders(noExerciseReminders);
             exercise.setNoPassedLevelsSinceExerciseReminder(0);
             db.exerciseDao().update(exercise);
         }
+
+        int noQuizCategoryLevels = db.quizDao()
+                .countWithQuizCategory(quizCategory.getId());
+        int noPassedQuizCategoryLevels = db.quizDao()
+                .countPassedWithQuizCategory(quizCategory.getId());
+        if (noPassedQuizCategoryLevels == noQuizCategoryLevels) return;
 
         int noQuizCategoryReminders = LocaUtils.randi(MIN_NO_QUIZ_CATEGORY_REMINDERS, MAX_NO_QUIZ_CATEGORY_REMINDERS + 1);
         quizCategory.setNoRequiredReminders(noQuizCategoryReminders);
