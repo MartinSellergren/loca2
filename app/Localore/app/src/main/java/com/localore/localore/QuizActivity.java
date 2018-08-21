@@ -114,7 +114,7 @@ public class QuizActivity extends AppCompatActivity {
             boolean showBorder = false;
             FloatingActionButton toggleZoomButton = findViewById(R.id.button_quiz_toggleZoom);
             geoObjectMap = new GeoObjectMap(mapboxMap, Color.GRAY, workingArea, showBorder, toggleZoomButton, this);
-            geoObjectMap.flyToOverview(GeoObjectMap.LONG_FLY_TIME);
+            geoObjectMap.resetCamera(GeoObjectMap.LONG_FLY_TIME);
             update();
         });
         exitButton.setOnClickListener(view -> interruptionExit());
@@ -729,7 +729,7 @@ public class QuizActivity extends AppCompatActivity {
         else {
             LocaUtils.fadeOutFadeIn(this, () -> {
                 update();
-                geoObjectMap.flyToOverview(GeoObjectMap.SHORT_FLY_TIME);
+                geoObjectMap.resetCamera(GeoObjectMap.SHORT_FLY_TIME);
             });
         }
     }

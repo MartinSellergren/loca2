@@ -324,11 +324,10 @@ public class LocaUtils {
      * @return An randomly generated non-gray color.
      */
     public static int randomNonGrayColor() {
-        int min = 100;
-
         int v0 = randi(256);
         int v1 = randi(256);
-        int v2 = min + randi(256 - min);
+        int v2 = 255;
+        if (v0 + v1 + v2 > 200*3) return randomNonGrayColor();
 
         int constellation = randi(6);
         if (constellation == 0) return Color.argb(255, v0, v1, v2);

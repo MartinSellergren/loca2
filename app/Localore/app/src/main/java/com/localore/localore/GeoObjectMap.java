@@ -122,6 +122,14 @@ public class GeoObjectMap {
             addPolyline(border.asExtraClosed().getNodes(), BORDER_OBJECT_ID, Color.LTGRAY);
     }
 
+    /**
+     * Reset camera to overview.
+     */
+    public void resetCamera(int flyTime) {
+        setToggleZoomButton(OVERVIEW_ZOOM);
+        flyToOverview(flyTime);
+    }
+
     //region Zoom-toggle-button
     private static final int OVERVIEW_ZOOM = 0;
     private static final int OBJECTS_ZOOM = 1;
@@ -336,11 +344,12 @@ public class GeoObjectMap {
     /**
      * Fit all object in camera-view.
      */
-    public void flyToOverview(int flyTime) {
+    private void flyToOverview(int flyTime) {
+        setToggleZoomButton(OVERVIEW_ZOOM);
         flyToFitBounds(toLatLngBounds(border.getBounds()), flyTime);
     }
 
-    public void flyToObjects(int flyTime) {
+    private void flyToObjects(int flyTime) {
         List<LatLng> allLatLngs = allPoints(mapboxMap.getAnnotations());
         if (allLatLngs.size() == 0) {
             flyToOverview(flyTime);

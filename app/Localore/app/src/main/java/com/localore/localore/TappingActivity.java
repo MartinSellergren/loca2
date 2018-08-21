@@ -147,7 +147,7 @@ public class TappingActivity extends AppCompatActivity {
         List<GeoObject> geoObjects = ExerciseControl.loadGeoObjectsForTapping(
                 exercise.getId(), quizCategoryType, nextLevelObjects, db);
         geoObjectMap.addGeoObjects(geoObjects);
-        geoObjectMap.flyToOverview(GeoObjectMap.LONG_FLY_TIME);
+        geoObjectMap.resetCamera(GeoObjectMap.LONG_FLY_TIME);
 
         if (nextLevelObjects)
             Toast.makeText(TappingActivity.this, "Next level", Toast.LENGTH_SHORT).show();
