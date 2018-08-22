@@ -324,19 +324,17 @@ public class LocaUtils {
      * @return An randomly generated non-gray color.
      */
     public static int randomNonGrayColor() {
-        int v0 = randi(256);
-        int v1 = randi(256);
-        int v2 = 255;
-        if (v0 + v1 + v2 > 200*3) return randomNonGrayColor();
+        while (true) {
+            int c = randomColor();
+            int red = Color.red(c);
+            int green = Color.green(c);
+            int blue = Color.blue(c);
+            int sum = red + green + blue;
+            int mean = sum / 3;
+            int dev = Math.abs(red-mean) + Math.abs(green-mean) + Math.abs(blue-mean);
 
-        int constellation = randi(6);
-        if (constellation == 0) return Color.argb(255, v0, v1, v2);
-        if (constellation == 1) return Color.argb(255, v0, v2, v1);
-        if (constellation == 2) return Color.argb(255, v1, v0, v2);
-        if (constellation == 3) return Color.argb(255, v1, v2, v0);
-        if (constellation == 4) return Color.argb(255, v2, v0, v1);
-        if (constellation == 5) return Color.argb(255, v2, v1, v0);
-        else throw new RuntimeException("Dead end");
+            if (sum < 170*3 && sum > 90*3 && dev > 60*3) return c;
+        }
     }
 
     /**
@@ -435,7 +433,7 @@ public class LocaUtils {
     /**
      * Node-icon icon size is this*this. Bigger than circle-diameters for better tapping.
      */
-    private static final int NODE_ICON_SIDE_LENGTH = 120;
+    private static final int NODE_ICON_SIDE_LENGTH = 150;
     /**
      * @param color
      * @param diameter

@@ -345,7 +345,6 @@ public class GeoObjectMap {
      * Fit all object in camera-view.
      */
     private void flyToOverview(int flyTime) {
-        setToggleZoomButton(OVERVIEW_ZOOM);
         flyToFitBounds(toLatLngBounds(border.getBounds()), flyTime);
     }
 

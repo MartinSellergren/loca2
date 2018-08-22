@@ -254,7 +254,7 @@ public class Question {
             long exerciseId = SessionControl.loadExercise(db).getId();
             List<Long> quizIdBackups = ExerciseControl.loadQuizIdsInExercise(exerciseId, db);
             quizIdBackups.removeAll(quizIds);
-            List<GeoObject> extraGeoObjects = db.geoDao().loadWithQuizInOrderedByRank(quizIds, preferredCount - geoObjects.size());
+            List<GeoObject> extraGeoObjects = db.geoDao().loadWithQuizInOrderedByRank(quizIdBackups, preferredCount - geoObjects.size());
             geoObjects.addAll(extraGeoObjects);
             Collections.shuffle(geoObjects);
         }

@@ -46,7 +46,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
     /**
      * Above this level, exercise-creation is not allowed.
      */
-    private static final double MIN_WORKING_AREA_ZOOM_LEVEL = 9;
+    private static final double MIN_WORKING_AREA_ZOOM_LEVEL = 10;
 
     private EditText editText_exerciseName;
     private MenuItem menuItem_createExercise;

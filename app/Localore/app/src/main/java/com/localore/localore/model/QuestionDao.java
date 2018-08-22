@@ -43,8 +43,8 @@ public interface QuestionDao {
 //    @Transaction @Query("SELECT DISTINCT geoObjectId FROM question WHERE answeredCorrectly = 0 AND runningQuizId = :runningQuizId")
 //    public List<Long> loadGeoObjectsIdIncorrectlyAnsweredWithRunningQuiz(long runningQuizId);
 
-    @Transaction @Query("SELECT * FROM question WHERE answeredCorrectly = 0 AND runningQuizId = :runningQuizId ORDER BY `index`")
-    public List<Question> loadIncorrectWithRunningQuizOrderedByIndex(long runningQuizId);
+    @Transaction @Query("SELECT * FROM question WHERE answeredCorrectly = 0 AND type != 2 AND runningQuizId = :runningQuizId ORDER BY `index`")
+    public List<Question> loadIncorrectNonPairItWithRunningQuizOrderedByIndex(long runningQuizId);
 
     @Transaction @Query("SELECT count(*) FROM question WHERE runningQuizId = :runningQuizId")
     public int countWithRunningQuiz(long runningQuizId);

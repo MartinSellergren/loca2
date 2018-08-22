@@ -180,7 +180,7 @@ public class RunningQuizControl {
         RunningQuiz runningQuiz = load(context);
         long runningQuizId = load(context).getId();
         List<Question> incorrectQuestions = db.questionDao()
-                        .loadIncorrectWithRunningQuizOrderedByIndex(runningQuizId);
+                        .loadIncorrectNonPairItWithRunningQuizOrderedByIndex(runningQuizId);
 
         if (runningQuiz.getType() == RunningQuiz.FOLLOW_UP_QUIZ)
             throw new QuizConstructionException("Previous quiz a follow-up");

@@ -57,6 +57,9 @@ public abstract class GeoObjectDao {
     @Query("SELECT * FROM GeoObject LIMIT 1")
     public abstract GeoObject loadOne();
 
+    @Query("SELECT * FROM GeoObject WHERE quizId IN (:quizIds) LIMIT 1")
+    public abstract GeoObject loadOneWithQuizIn(List<Long> quizIds);
+
     @Query("SELECT * FROM GeoObject WHERE id = :id")
     public abstract GeoObject load(long id);
 
