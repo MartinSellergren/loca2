@@ -37,6 +37,9 @@ public interface QuizDao {
     @Transaction @Query("SELECT * FROM quiz WHERE quizCategoryId IN (:quizCategoryIds)")
     public List<Quiz> loadWithQuizCategoryIn(List<Long> quizCategoryIds);
 
+    @Transaction @Query("SELECT id FROM quiz WHERE quizCategoryId == :quizCategoryId")
+    public List<Long> loadIdsWithQuizCategory(Long quizCategoryId);
+
     @Transaction @Query("SELECT id FROM quiz WHERE quizCategoryId IN (:quizCategoryIds)")
     public List<Long> loadIdsWithQuizCategoryIn(List<Long> quizCategoryIds);
 

@@ -18,7 +18,12 @@ import com.localore.localore.model.QuizCategory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Static class for exercise related operations (manipulate the database).
@@ -577,6 +582,90 @@ public class ExerciseControl {
 
     //endregion
 
+    //region problem-ratings
+//
+//    /**
+//     * Problem-ratings of all geo-objects in specified quizzes.
+//     *
+//     * @param quizIds
+//     * @param db
+//     * @return Map: [geo-object-id -> problem-rating] sorted by rating.
+//     */
+//    public static Map<Long, Double> problemRatings(List<Long> quizIds, AppDatabase db) {
+//        Map<Long, Double> problemRatings = new LinkedHashMap<>();
+//        List<Long> geoObjectIds = db.geoDao().loadIdsWithQuizIn(quizIds);
+//
+//        long maxTimeSinceCorrectlyAnswered = 0;
+//        double maxFailRate = 0;
+//        long currentTime = System.currentTimeMillis();
+//        for (long geoObjectId : geoObjectIds) {
+//            GeoObject geoObject = db.geoDao().load(geoObjectId);
+//
+//            long timeOfPreviousCorrectAnswer = geoObject.getTimeOfPreviousCorrectAnswer();
+//            long timeSinceCorrectlyAnswered = currentTime - timeOfPreviousCorrectAnswer;
+//            if (timeSinceCorrectlyAnswered > maxTimeSinceCorrectlyAnswered)
+//                maxTimeSinceCorrectlyAnswered = timeSinceCorrectlyAnswered;
+//
+//            double failRate = failRate(geoObject);
+//            if (failRate > maxFailRate)
+//                maxFailRate = failRate;
+//        }
+//
+//        for (long geoObjectId : geoObjectIds) {
+//            GeoObject geoObject = db.geoDao().load(geoObjectId);
+//            problemRatings.put(geoObjectId,
+//                    problemRating(geoObject, maxTimeSinceCorrectlyAnswered, maxFailRate));
+//        }
+//
+//        return sortByRanking(problemRatings);
+//    }
+//
+//    /**
+//     * @param geoObject
+//     * @return Geo-object's fail-rate.
+//     */
+//    private static double failRate(GeoObject geoObject) {
+//        if (geoObject.getTimesAsked() == 0) return 0;
+//
+//        double successRate = geoObject.getNoCorrectAnswers() / geoObject.getTimesAsked();
+//        return 1 - successRate;
+//    }
+//
+//    /**
+//     * Problem rating of a geo-object in a specific set of geo-objects.
+//     *
+//     * @param geoObject
+//     * @param maxTimeSinceCorrectlyAnswered Max time-since-correctly-answered of objects in specific set.
+//     * @param maxFailRate Max fail-rate of objects in the specific set.
+//     * @return Geo-object's problem-rating <- [0,1].
+//     */
+//    private static double problemRating(GeoObject geoObject, long maxTimeSinceCorrectlyAnswered, double maxFailRate) {
+//        float WEAKNESS_INFLUENCE = 0.4f;
+//        float AGE_INFLUENCE = 0.3f;
+//        float RANDOM_INFLUENCE = 0.3f;
+//
+//        double timeSinceCorrectlyAnswered = System.currentTimeMillis() - geoObject.getTimeOfPreviousCorrectAnswer();
+//        double ageRate = timeSinceCorrectlyAnswered / maxTimeSinceCorrectlyAnswered;
+//        double weaknessRate = LocaUtils.aroundZero(maxFailRate) ? 0 : failRate(geoObject) / maxFailRate;
+//        double rand = 0;//LocaUtils.random.nextDouble(); //TODO
+//
+//        return WEAKNESS_INFLUENCE * weaknessRate + AGE_INFLUENCE * ageRate + RANDOM_INFLUENCE * rand;
+//    }
+//
+//    private static Map<Long, Double> sortByRanking(Map<Long, Double> map) {
+//        List<Map.Entry<Long, Double>> entries = new ArrayList<>(map.entrySet());
+//        Collections.sort(entries, (a, b) -> a.getValue().compareTo(b.getValue()));
+//
+//        Map<Long, Double> sortedMap = new LinkedHashMap<>();
+//        for (Map.Entry<Long, Double> entry : entries) {
+//            sortedMap.put(entry.getKey(), entry.getValue());
+//        }
+//        return sortedMap;
+//    }
+//
+//
+    //endregion
+
     //region misc
 
     /**
@@ -607,6 +696,10 @@ public class ExerciseControl {
     public static List<Quiz> loadPassedQuizzesInExercise(long exerciseId, AppDatabase db) {
         List<Long> quizCategoryIds = db.quizCategoryDao().loadIdsWithExercise(exerciseId);
         return db.quizDao().loadPassedWithQuizCategories(quizCategoryIds);
+    }
+    public static List<Long> loadPassedQuizIdsInExercise(long exerciseId, AppDatabase db) {
+        List<Long> quizCategoryIds = db.quizCategoryDao().loadIdsWithExercise(exerciseId);
+        return db.quizDao().loadPassedIdsWithQuizCategoryIn(quizCategoryIds);
     }
 
     /**

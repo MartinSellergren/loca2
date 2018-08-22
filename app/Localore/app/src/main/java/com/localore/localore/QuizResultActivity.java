@@ -3,6 +3,7 @@ package com.localore.localore;
 import android.app.Activity;
 import android.content.Intent;
 import android.support.constraint.ConstraintLayout;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -55,8 +56,8 @@ public class QuizResultActivity extends AppCompatActivity {
         this.textView = findViewById(R.id.textView_quizResult);
         textView.setText(feedbackStr);
 
-        ConstraintLayout layout = findViewById(R.id.layout_quizResult);
-        layout.setOnClickListener(view -> doneOrFollowUp());
+        FloatingActionButton nextButton = findViewById(R.id.button_quizResult_next);
+        nextButton.setOnClickListener(view -> doneOrFollowUp());
     }
 
     /**
@@ -76,7 +77,7 @@ public class QuizResultActivity extends AppCompatActivity {
      * @param successRate
      * @return Brief feedback.
      */
-    private static int feedback(double successRate) {
+    public static int feedback(double successRate) {
         if (successRate >= RunningQuizControl.ACCEPTABLE_QUIZ_SUCCESS_RATE)
             return EXCELLENT_RESULT;
         else if (successRate >= 0.75)

@@ -120,7 +120,7 @@ public class SelectExerciseActivity extends AppCompatActivity {
         List<Integer> exerciseProgresses = ExerciseControl.exerciseProgresses(userId, db);
 
         recyclerView_exerciseLabels.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView_exerciseLabels.setHasFixedSize(true); //todo: recyclerView fixed size?
+        recyclerView_exerciseLabels.setHasFixedSize(true);
         ExerciseLabelAdapter adapter = new ExerciseLabelAdapter(exercises, exerciseProgresses);
         recyclerView_exerciseLabels.setAdapter(adapter);
     }

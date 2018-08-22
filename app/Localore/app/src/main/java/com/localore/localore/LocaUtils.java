@@ -293,7 +293,6 @@ public class LocaUtils {
 //     * @return Icon for a one-node geo-objects.
 //     */
 //    public static Icon nodeGeoObjectIcon(int color, Context context) {
-//        //todo color icon
 //        return IconFactory.getInstance(context).fromResource(R.drawable.mapbox_marker_icon_default);
 //    }
 
@@ -452,6 +451,14 @@ public class LocaUtils {
         canvas.drawCircle(side/2f, side/2f, diameter/2f, paint);
 
         return IconFactory.getInstance(context).fromBitmap(bmp);
+    }
+
+    /**
+     * @param v
+     * @return True if v is around zero.
+     */
+    public static boolean aroundZero(double v) {
+        return Math.abs(v) < 0.00001;
     }
 
     //region Logging

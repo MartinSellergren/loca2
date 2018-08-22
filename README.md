@@ -2,9 +2,10 @@
 
 TODO:
 
+- smarter reminder-counts/ reminder-object-selection
+- prefer next level objects in pair-it
 - color coding
 - conform polylines after map.. (functionality of mapbox?)
-- time runs out for a question.
 
 - switch overpass endpoint if problem.
 - more restrictive tag-filtration
@@ -13,6 +14,7 @@ TODO:
 - exercise-construction performance (load/insert/update/delete in chunks/trnsactions)
 - toString() reflection
 - trust bad overpass.certificates
+- stats from pair-it
 
 - Predefined exercise-areas, progress sharing
 - Change theme/ map-theme
@@ -22,8 +24,8 @@ TODO:
 KNOWN BUGS:
 - Loading exercise service runns, activity killed. Start activity and stop service: not working
  (service reads exit-flag in previous instance).
-- Exercise activity briefly started before follow-up quiz if tapping the screen during text So...
-- Sometimes false-positives in line-segment-crossing-detection during exercise creation.
+(fixed?) - Exercise activity briefly started before follow-up quiz if tapping the screen during text So...
+(fixed?) - Sometimes false-positives in line-segment-crossing-detection during exercise creation.
 
 
 

@@ -3,6 +3,7 @@ package com.localore.localore.modelManipulation;
 import android.content.Context;
 
 import com.localore.localore.LocaUtils;
+import com.localore.localore.QuizResultActivity;
 import com.localore.localore.R;
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.Exercise;
@@ -14,6 +15,7 @@ import com.localore.localore.model.RunningQuiz;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Static class for running-exercise related operations (manipulate the database).
@@ -38,13 +40,15 @@ public class RunningQuizControl {
 
     public static final int NO_PASSED_LEVELS_BEFORE_EXERCISE_REMINDER = 4;
 
-    public static final int MIN_NO_EXERCISE_REMINDERS = 1;
+//    public static final int MIN_NO_EXERCISE_REMINDERS = 1;
+//
+//    public static final int MAX_NO_EXERCISE_REMINDERS = 3;
+//
+//    public static final int MIN_NO_QUIZ_CATEGORY_REMINDERS = 0;
+//
+//    public static final int MAX_NO_QUIZ_CATEGORY_REMINDERS = 2;
 
-    public static final int MAX_NO_EXERCISE_REMINDERS = 3;
-
-    public static final int MIN_NO_QUIZ_CATEGORY_REMINDERS = 0;
-
-    public static final int MAX_NO_QUIZ_CATEGORY_REMINDERS = 2;
+    public static final int MAX_NO_REMINDERS = 3;
 
 
 
@@ -253,15 +257,13 @@ public class RunningQuizControl {
      * @return Selected geo-objects for reminder.
      */
     private static List<GeoObject> pickReminderQuizGeoObjects(List<Long> geoObjectCandidateIds, AppDatabase db) {
-        int noQuestions = Math.min(
-                ExerciseControl.MAX_NO_GEO_OBJECTS_IN_A_LEVEL * DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT,
-                geoObjectCandidateIds.size());
+        int noGeoObjects = Math.min(ExerciseControl.MAX_NO_GEO_OBJECTS_IN_A_LEVEL, geoObjectCandidateIds.size());
 
         //todo: select relevant objects
 
         List<GeoObject> selected = new ArrayList<>();
 
-        for (int i = 0; i < noQuestions; i++) {
+        for (int i = 0; i < noGeoObjects; i++) {
             long id = geoObjectCandidateIds.get(i);
             GeoObject geoObject = db.geoDao().load(id);
             selected.add(geoObject);
@@ -555,7 +557,7 @@ public class RunningQuizControl {
         if (runningQuiz.getType() == RunningQuiz.LEVEL_QUIZ) {
             if (successRate >= ACCEPTABLE_QUIZ_SUCCESS_RATE) {
                 reportLevelPassed(exercise, quiz, db);
-                setNoRequiredReminders(exercise, quizCategory, db);
+                setNoRequiredReminders(exercise, quizCategory, context);
             }
         }
         else if (runningQuiz.getType() == RunningQuiz.QUIZ_CATEGORY_REMINDER) {
@@ -620,8 +622,13 @@ public class RunningQuizControl {
         db.exerciseDao().update(exercise);
     }
 
+    //endregion
+
+    //region Number of reminders
+
     /**
      * Derive and set number of required reminder quizzes for a quiz-category and exercise.
+     * Called after level-quiz.
      *
      * Only updates n.o exercise-reminders if enough quizzes passed since last time required.
      * If new exercise-require: set n.o passed levels since exercise-reminder to zero.
@@ -630,32 +637,107 @@ public class RunningQuizControl {
      *
      * @param exercise
      * @param quizCategory
-     * @param db
+     * @param context
      */
-    private static void setNoRequiredReminders(Exercise exercise, QuizCategory quizCategory, AppDatabase db) {
-        //todo: based on n.o problematic/ old words (not random)
+    private static void setNoRequiredReminders(Exercise exercise, QuizCategory quizCategory, Context context) {
+        //todo: based on n.o problematic/ old words (prev quiz-result)
+        AppDatabase db = AppDatabase.getInstance(context);
 
         if (ExerciseControl.progressOfExercise(exercise.getId(), db) == 100) return;
 
         if (exercise.getNoPassedLevelsSinceExerciseReminder() >= NO_PASSED_LEVELS_BEFORE_EXERCISE_REMINDER) {
-            int noExerciseReminders = LocaUtils.randi(MIN_NO_EXERCISE_REMINDERS, MAX_NO_EXERCISE_REMINDERS + 1);
+            //int noExerciseReminders = relevantNumberOfExerciseReminders(exercise, db);
+            int noExerciseReminders = 2;
             exercise.setNoRequiredExerciseReminders(noExerciseReminders);
             exercise.setNoPassedLevelsSinceExerciseReminder(0);
             db.exerciseDao().update(exercise);
         }
 
-        int noQuizCategoryLevels = db.quizDao()
-                .countWithQuizCategory(quizCategory.getId());
-        int noPassedQuizCategoryLevels = db.quizDao()
-                .countPassedWithQuizCategory(quizCategory.getId());
+        int noQuizCategoryLevels = db.quizDao().countWithQuizCategory(quizCategory.getId());
+        int noPassedQuizCategoryLevels = db.quizDao().countPassedWithQuizCategory(quizCategory.getId());
         if (noPassedQuizCategoryLevels == noQuizCategoryLevels) return;
 
-        int noQuizCategoryReminders = LocaUtils.randi(MIN_NO_QUIZ_CATEGORY_REMINDERS, MAX_NO_QUIZ_CATEGORY_REMINDERS + 1);
+        //int noQuizCategoryReminders = relevantNumberOfQuizCategoryReminders(quizCategory, db);
+        int noQuizCategoryReminders = relevantNumberOfReminders(context);
         quizCategory.setNoRequiredReminders(noQuizCategoryReminders);
         db.quizCategoryDao().update(quizCategory);
     }
 
+    /**
+     * @param context
+     * @return Relevant number of reminders based on prev quiz result.
+     */
+    private static int relevantNumberOfReminders(Context context) {
+        AppDatabase db = AppDatabase.getInstance(context);
+        RunningQuiz runningQuiz = RunningQuizControl.load(context);
+        List<Question> questions = db.questionDao().loadWithRunningQuiz(runningQuiz.getId());
+        double successRate = RunningQuizControl.successRate(questions);
+
+        if (successRate > 0.85) return 0;
+        else return 1;
+    }
+
+//    /**
+//     * Number of exercise-reminders, based on n.o problematic words in exercise.
+//     * @param exercise
+//     * @param db
+//     * @return N.o suggested exercise-reminders.
+//     */
+//    private static int relevantNumberOfExerciseReminders(Exercise exercise, AppDatabase db) {
+//        List<Long> passedQuizIds = ExerciseControl.loadPassedQuizIdsInExercise(exercise.getId(), db);
+//        return noSuggestedReminders(passedQuizIds, db);
+//
+//        //return LocaUtils.randi(MIN_NO_EXERCISE_REMINDERS, MAX_NO_QUIZ_EXERCISE_REMINDERS + 1);
+//    }
+//
+//    /**
+//     * Number of quiz-category-reminders, based on n.o problematic words in quiz-category.
+//     * @param quizCategory
+//     * @param db
+//     * @return N.o suggested quiz-category-reminders.
+//     */
+//    private static int relevantNumberOfQuizCategoryReminders(QuizCategory quizCategory, AppDatabase db) {
+//        List<Long> passedQuizIds = db.quizDao().loadPassedIdsWithQuizCategory(quizCategory.getId());
+//        return noSuggestedReminders(passedQuizIds, db);
+//
+//        //return LocaUtils.randi(MIN_NO_QUIZ_CATEGORY_REMINDERS, MAX_NO_QUIZ_CATEGORY_REMINDERS + 1);
+//    }
+//
+//    /**
+//     * @param passedQuizIds
+//     * @param db
+//     * @return Suggested no reminders based on n.o problematic objects in quizzes.
+//     */
+//    private static int noSuggestedReminders(List<Long> passedQuizIds, AppDatabase db) {
+//        int noProblematicObjects = noProblematicObjects(passedQuizIds, db);
+//        int noPossibleReminders = noProblematicObjects / ExerciseControl.MAX_NO_GEO_OBJECTS_IN_A_LEVEL;
+//        return Math.min(LocaUtils.randi(noPossibleReminders + 1), MAX_NO_REMINDERS);
+//    }
+//
+//    /**
+//     * @param quizIds
+//     * @param db
+//     * @return Suggested n.o problematic geo-objects in quizzes.
+//     */
+//    private static int noProblematicObjects(List<Long> quizIds, AppDatabase db) {
+//        Map<Long, Double> problemRatingsMap = ExerciseControl.problemRatings(quizIds, db);
+//        List<Double> problemRatings = new ArrayList<>(problemRatingsMap.values());
+//        return noProblematicRatings(problemRatings);
+//    }
+//
+//    /**
+//     * @param ratings
+//     * @return N.o problematic ratings of the provided ones. Hard determining line between problematic/ not problematic.
+//     */
+//    private static int noProblematicRatings(List<Double> ratings) {
+//        int HARD_LINE = 1;
+//
+//        int count = 0;
+//        for (double rating : ratings) {
+//            if (rating > HARD_LINE) count++;
+//        }
+//        return count;
+//    }
 
     //endregion
-
 }
