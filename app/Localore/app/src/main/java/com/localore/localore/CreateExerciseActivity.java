@@ -435,7 +435,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
         name = name.trim();
         boolean exists = this.existingExerciseNames.contains(name);
         if (exists) Toast.makeText(this, R.string.name_already_exists, Toast.LENGTH_LONG).show();
-        return exists && name.length() > 0;
+        return !exists && name.length() > 0;
     }
 
     /**
