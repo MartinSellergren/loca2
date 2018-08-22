@@ -20,6 +20,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.localore.localore.model.AppDatabase;
 import com.localore.localore.model.GeoObject;
@@ -140,7 +141,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                okExerciseName = okExerciseName(charSequence.toString());
+                okExerciseName = validateExerciseName(charSequence.toString());
                 updateCreateExerciseButton();
             }
 
@@ -428,11 +429,13 @@ public class CreateExerciseActivity extends AppCompatActivity {
     /**
      * @param name
      * @return True if name is ok for a new exercise (i.e is unique).
+     *         Toast text describes problem.
      */
-    private boolean okExerciseName(String name) {
+    private boolean validateExerciseName(String name) {
         name = name.trim();
-        return !this.existingExerciseNames.contains(name) &&
-                name.length() > 0;
+        boolean exists = this.existingExerciseNames.contains(name);
+        if (exists) Toast.makeText(this, R.string.name_already_exists, Toast.LENGTH_LONG).show();
+        return exists && name.length() > 0;
     }
 
     /**
