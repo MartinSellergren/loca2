@@ -569,13 +569,15 @@ public class ExerciseControl {
         Quiz nextQuiz = loadNextLevelQuiz(exerciseId, quizCategoryType, db);
 
         if (loadNextLevel) {
-            return db.geoDao().loadWithQuiz(nextQuiz.getId());
+            if (nextQuiz == null) return new ArrayList<>();
+            else return db.geoDao().loadWithQuiz(nextQuiz.getId());
         }
         else {
             QuizCategory quizCategory = db.quizCategoryDao()
                     .loadWithExerciseAndType(exerciseId, quizCategoryType);
+            int loadBelowLevel = nextQuiz != null ? nextQuiz.getLevel() : Integer.MAX_VALUE;
             List<Long> idsOfPastLevels = db.quizDao()
-                    .loadIdsWithLevelBelowAndQuizCategory(nextQuiz.getLevel(), quizCategory.getId());
+                    .loadIdsWithLevelBelowAndQuizCategory(loadBelowLevel, quizCategory.getId());
             return db.geoDao().loadWithQuizIn(idsOfPastLevels);
         }
     }

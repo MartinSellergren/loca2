@@ -2,9 +2,11 @@
 
 TODO:
 
+- not white background of talking/fading-screen
+- progress-bar during exercise creation (downloading, processing..)
 - smarter reminder-counts/ reminder-object-selection
-- prefer next level objects in pair-it
-- color coding
+- prefer next level objects in pair-it (not for reminders..)
+- smart color coding?
 - conform polylines after map.. (functionality of mapbox?)
 
 - switch overpass endpoint if problem.
@@ -24,6 +26,8 @@ TODO:
 KNOWN BUGS:
 - Loading exercise service runns, activity killed. Start activity and stop service: not working
  (service reads exit-flag in previous instance).
+- Exit-button in exercise-loading.. buggy.
+
 (fixed?) - Exercise activity briefly started before follow-up quiz if tapping the screen during text So...
 (fixed?) - Sometimes false-positives in line-segment-crossing-detection during exercise creation.
 

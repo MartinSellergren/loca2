@@ -27,8 +27,6 @@ public class TappingActivity extends AppCompatActivity {
 
     private static final String QUIZ_CATEGORY_TYPE_PARAM_KEY = "com.localore.localore.CreateExerciseService.QUIZ_CATEGORY_TYPE_PARAM_KEY";
 
-    private FloatingActionButton toggleZoomButton;
-
     /**
      * Quiz-category-type of all geo-objects.
      */
@@ -69,7 +67,6 @@ public class TappingActivity extends AppCompatActivity {
         LocaUtils.colorActionBar(exercise.getColor(), this);
         LocaUtils.colorStatusBar(exercise.getColor(), this);
 
-        this.toggleZoomButton = findViewById(R.id.button_tapping_toggleZoom);
         this.mapView = findViewById(R.id.mapView_quiz);
         mapView.onCreate(null);
     }

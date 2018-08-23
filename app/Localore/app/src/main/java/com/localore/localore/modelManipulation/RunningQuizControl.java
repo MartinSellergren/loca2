@@ -320,7 +320,7 @@ public class RunningQuizControl {
         for (int i = 0; i < questionCounts.length; i++)
             questionCounts[i] = DEFAULT_NO_QUESTIONS_PER_GEO_OBJECT;
 
-        int extraIndex = LocaUtils.randi(questionCounts.length);
+        int extraIndex = LocaUtils.randi(questionCounts.length); //TODO: smart pick
         questionCounts[extraIndex] += NO_EXTRA_QUESTIONS;
 
         int[] questionDifficulties = new int[geoObjects.size()];

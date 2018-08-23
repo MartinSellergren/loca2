@@ -328,6 +328,7 @@ public class CreateExerciseActivity extends AppCompatActivity {
                 }
 
                 CreateExerciseActivity.this.okWorkingArea = okWorkingArea(markers);
+                if (!okWorkingArea) Toast.makeText(CreateExerciseActivity.this, R.string.invalid_shape, Toast.LENGTH_LONG).show();
                 updateCreateExerciseButton();
             }
         });
