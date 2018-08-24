@@ -248,8 +248,8 @@ public class ExerciseControl {
      * @pre g1, g2 has same (or similar) name.
      */
     private static GeoObject merge(GeoObject g1, GeoObject g2) {
-        if (!g1.getSupercat().equals(g2.getSupercat()))
-            return null;
+        // if (!g1.getSupercat().equals(g2.getSupercat()))
+        //     return null;
 
         double d = approximateDistance(g1, g2);
         if (d > MERGE_LIMIT)

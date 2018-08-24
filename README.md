@@ -2,6 +2,7 @@
 
 TODO:
 
+- change exercise name, color, and display exercise's creation data (important since OSM data is perishable).
 - not white background of talking/fading-screen
 - progress-bar during exercise creation (downloading, processing..)
 - smarter reminder-counts/ reminder-object-selection
