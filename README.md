@@ -2,6 +2,9 @@
 
 TODO:
 
+- blink correct when incorrect pair-it answer
+- more padding with zoom-toggle-button
+- fade out colors of roads etc, so not confused with drawn geo-objects
 - replace alert-menu in exercise-activity with "speech bubble"
 - change exercise name, color, and display exercise's creation data (important since OSM data is perishable).
 - not white background of talking/fading-screen
