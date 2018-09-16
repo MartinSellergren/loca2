@@ -2,6 +2,7 @@
 
 TODO:
 
+- Recycler-endlayout-handler instead of waiting before restoring state in quiz.
 - blink correct when incorrect pair-it answer
 - more padding with zoom-toggle-button
 - fade out colors of roads etc, so not confused with drawn geo-objects

@@ -34,6 +34,7 @@ import com.localore.localore.model.RunningQuiz;
 import com.localore.localore.modelManipulation.ExerciseControl;
 import com.localore.localore.modelManipulation.RunningQuizControl;
 import com.localore.localore.modelManipulation.SessionControl;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.annotations.Annotation;
 
@@ -116,9 +117,70 @@ public class QuizActivity extends AppCompatActivity {
             geoObjectMap = new GeoObjectMap(mapboxMap, Color.GRAY, workingArea, showBorder, toggleZoomButton, this);
             geoObjectMap.resetCamera(GeoObjectMap.LONG_FLY_TIME);
             update();
+            restoreMapPosition(savedInstanceState);
+            new Handler().postDelayed(() -> restoreInstanceState(savedInstanceState), 50);
         });
         exitButton.setOnClickListener(view -> interruptionExit());
         nextQuestionButton.setOnClickListener(view -> nextQuestion());
+    }
+
+    private static final String QUESTION_IS_ANSWERED_KEY = "com.localore.localore.QUESTION_IS_ANSWERED";
+    private static final String CURRENT_POSITION_KEY = "com.localore.localore.CURRENT_POSITION_KEY";
+    private static final String TIME_LEFT_KEY = "com.localore.localore.TIME_LEFT";
+    @Override
+    protected void onSaveInstanceState(Bundle bundle) {
+        super.onSaveInstanceState(bundle);
+        mapView.onSaveInstanceState(bundle);
+
+        boolean isAnswered = nextQuestionButton.getVisibility() == View.VISIBLE;
+        CameraPosition pos = geoObjectMap.getCameraPosition();
+        bundle.putBoolean(QUESTION_IS_ANSWERED_KEY, isAnswered);
+        bundle.putParcelable(CURRENT_POSITION_KEY, pos);
+        bundle.putInt(TIME_LEFT_KEY, timer.getTimeLeft());
+    }
+
+    /**
+     * Restore map-position stored in bundle.
+     * @param savedInstanceState
+     */
+    private void restoreMapPosition(Bundle savedInstanceState) {
+        if (savedInstanceState == null) return;
+        CameraPosition currentPosition = savedInstanceState.getParcelable(CURRENT_POSITION_KEY);
+        geoObjectMap.setCameraPosition(currentPosition);
+    }
+    /**
+     * Restore state, if question answered.
+     * @param savedInstanceState
+     */
+    private void restoreInstanceState(Bundle savedInstanceState) {
+        if (savedInstanceState == null) return;
+
+        boolean isAnswered = savedInstanceState.getBoolean(QUESTION_IS_ANSWERED_KEY);
+        if (isAnswered) {
+            nextQuestionButton.show();
+            int timeLeft = savedInstanceState.getInt(TIME_LEFT_KEY);
+            timer.stop();
+            timer.setTimeLeft(timeLeft);
+
+            Question currentQuestion = RunningQuizControl.loadCurrentQuestion(this);
+            GeoObject geoObject = RunningQuizControl.loadGeoObjectFromQuestion(currentQuestion, this);
+            if (currentQuestion.getType() == Question.NAME_IT) {
+                AlternativeHolder correctHolder = findAlternativeHolderOfGeoObject(geoObject);
+                geoObjectMap.boostGeoObjectSize(correctHolder.getGeoObject(), this);
+                hideAllAlternativesExcept(correctHolder);
+                correctHolder.setCorrect();
+            }
+            else if (currentQuestion.getType() == Question.PLACE_IT) {
+                geoObjectMap.setGeoObjectColor(geoObject);
+                geoObjectMap.boostGeoObjectSize(geoObject, this);
+                geoObjectMap.removeAllGeoObjectsExcept(geoObject.getId());
+                geoObjectMap.removeMapListeners();
+            }
+            else {
+                geoObjectMap.clearGeoObjects();
+                setAllUnpairedButtonsPaired();
+            }
+        }
     }
 
     /**
@@ -531,6 +593,17 @@ public class QuizActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Set all top-recycler buttons as paired (invisible..).
+     */
+    private void setAllUnpairedButtonsPaired() {
+        for (int i = 0; i < topRecycler.getChildCount(); i++) {
+            UnpairedObjectHolder holder = (UnpairedObjectHolder)topRecycler.getChildViewHolder(topRecycler.getChildAt(i));
+            holder.setPaired();
+        }
+    }
+
+
     private class UnpairedObjectAdapter extends RecyclerView.Adapter<UnpairedObjectHolder> {
         private List<GeoObject> geoObjects;
 
@@ -766,17 +839,13 @@ public class QuizActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        timer.stop();
         mapView.onPause();
     }
     @Override
     protected void onStop() {
         super.onStop();
         mapView.onStop();
-    }
-    @Override
-    protected void onSaveInstanceState(Bundle bundle) {
-        super.onSaveInstanceState(bundle);
-        mapView.onSaveInstanceState(bundle);
     }
     @Override
     public void onLowMemory() {

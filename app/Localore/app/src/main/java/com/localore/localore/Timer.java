@@ -34,6 +34,14 @@ public class Timer {
         };
     }
 
+    public void setTimeLeft(int timeLeft) {
+        this.timeLeft = timeLeft;
+        timerText.setText(timeLeft + "");
+    }
+    public int getTimeLeft() {
+        return this.timeLeft;
+    }
+
     /**
      * Show the timer.
      */

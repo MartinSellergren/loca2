@@ -762,5 +762,16 @@ public class GeoObjectMap {
         return latLngs;
     }
 
+    /**
+     * Set and get current camera position.
+     * @return
+     */
+    public CameraPosition getCameraPosition() {
+        return mapboxMap.getCameraPosition();
+    }
+    public void setCameraPosition(CameraPosition cp) {
+        mapboxMap.setCameraPosition(cp);
+    }
+
     //endregion
 }
