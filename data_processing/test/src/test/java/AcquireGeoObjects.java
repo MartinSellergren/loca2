@@ -203,7 +203,7 @@ public class AcquireGeoObjects {
             String bs_str = String.format("%s,%s,%s,%s", bs[1], bs[0], bs[3], bs[2]);
             String poly_str = area.toRawString();
 
-            String query = readFile("../query.ql");
+            String query = readFile("../query.overpassql");
             query = query.replace("{{bbox}}", bs_str);
             query = query.replace("{{poly}}", poly_str);
             query = URLEncoder.encode(query);
